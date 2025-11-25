@@ -1,24 +1,55 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Search, Filter, Plus, 
   Edit2, 
   Car, CreditCard, LayoutGrid, Briefcase, MapPin, 
   UserCheck, Clock,
-  Home, XCircle, Trash2, Users, ChevronDown, ChevronUp, X, RefreshCcw, DollarSign
+  Home, XCircle, Trash2, Users, ChevronDown, ChevronUp, X, RefreshCcw, DollarSign,
+  AlertTriangle, Activity, Zap, Heart, ArrowUpDown, Calendar, ArrowDown, ArrowUp
 } from 'lucide-react';
 import { CLIENTS_DATA } from '../constants';
 import { EditClientModal } from './EditClientModal';
 import { Client } from '../types';
 
+// Helper to parse dates like "06 Ene, 2025"
+const parseClientDate = (dateStr: string) => {
+  const months: {[key: string]: number} = { 
+    'Ene': 0, 'Feb': 1, 'Mar': 2, 'Abr': 3, 'May': 4, 'Jun': 5, 
+    'Jul': 6, 'Ago': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dic': 11 
+  };
+  try {
+    // Remove comma and split
+    const parts = dateStr.replace(',', '').split(' '); 
+    if (parts.length < 3) return 0;
+    
+    const day = parseInt(parts[0]);
+    const month = months[parts[1]];
+    const year = parseInt(parts[2]);
+    
+    return new Date(year, month, day).getTime();
+  } catch (e) {
+    return 0;
+  }
+};
+
+type SortOption = 'newest' | 'oldest' | 'interests' | 'budget';
+
 export const Clients: React.FC = () => {
   // Use state for clients to allow updates
   const [clients, setClients] = useState<Client[]>(CLIENTS_DATA);
-  const [selectedClients, setSelectedClients] = useState<string[]>([]); 
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   
+  // Sort State
+  const [sortOption, setSortOption] = useState<SortOption>('newest');
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+
   // Edit Modal State
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  
+  // Delete Modal State
+  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
   
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,13 +60,16 @@ export const Clients: React.FC = () => {
     minBudget: ''
   });
 
-  const toggleSelect = (id: string) => {
-    if (selectedClients.includes(id)) {
-      setSelectedClients(selectedClients.filter(c => c !== id));
-    } else {
-      setSelectedClients([...selectedClients, id]);
-    }
-  };
+  // Close sort menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) {
+        setIsSortMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -49,6 +83,7 @@ export const Clients: React.FC = () => {
       minBudget: ''
     });
     setSearchTerm('');
+    setSortOption('newest');
   };
 
   // Handler for saving edits from the modal
@@ -59,10 +94,23 @@ export const Clients: React.FC = () => {
     setEditingClient(null);
   };
 
-  // Filter Logic
-  const filteredClients = useMemo(() => {
-    return clients.filter(client => {
-      // 1. Text Search (Name, Email, Location)
+  // Handler for Deleting
+  const handleDeleteClick = (id: string) => {
+    setClientToDelete(id);
+  };
+
+  const confirmDelete = () => {
+    if (clientToDelete) {
+      setClients(prevClients => prevClients.filter(c => c.id !== clientToDelete));
+      setClientToDelete(null);
+    }
+  };
+
+  // Filter & Sort Logic
+  const processedClients = useMemo(() => {
+    // 1. Filter
+    let result = clients.filter(client => {
+      // Text Search (Name, Email, Location)
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = 
         searchTerm === '' ||
@@ -70,22 +118,40 @@ export const Clients: React.FC = () => {
         client.email.toLowerCase().includes(searchLower) ||
         client.searchParams.location.toLowerCase().includes(searchLower);
 
-      // 2. Status Filter
+      // Status Filter
       const matchesStatus = filters.status === 'all' || client.status === filters.status;
 
-      // 3. Type Filter
+      // Type Filter
       const matchesType = filters.type === 'all' || client.searchParams.type === filters.type;
 
-      // 4. Location Filter (Specific Field)
+      // Location Filter (Specific Field)
       const matchesLocation = filters.location === '' || client.searchParams.location.toLowerCase().includes(filters.location.toLowerCase());
 
-      // 5. Budget Filter (Clients looking for properties UP TO X, so if their maxPrice is >= our filter, they qualify)
+      // Budget Filter (Clients looking for properties UP TO X, so if their maxPrice is >= our filter, they qualify)
       const budgetVal = parseInt(filters.minBudget);
       const matchesBudget = filters.minBudget === '' || client.searchParams.maxPrice >= budgetVal;
 
       return matchesSearch && matchesStatus && matchesType && matchesLocation && matchesBudget;
     });
-  }, [searchTerm, filters, clients]);
+
+    // 2. Sort
+    return result.sort((a, b) => {
+        switch (sortOption) {
+            case 'newest':
+                return parseClientDate(b.date) - parseClientDate(a.date);
+            case 'oldest':
+                return parseClientDate(a.date) - parseClientDate(b.date);
+            case 'interests':
+                // Assuming activityScore correlates with interests/engagement
+                return b.activityScore - a.activityScore;
+            case 'budget':
+                return b.searchParams.maxPrice - a.searchParams.maxPrice;
+            default:
+                return 0;
+        }
+    });
+
+  }, [searchTerm, filters, clients, sortOption]);
 
   // Stats (Global, not filtered)
   const totalClients = clients.length;
@@ -94,6 +160,59 @@ export const Clients: React.FC = () => {
 
   // Unique types for the filter dropdown
   const availableTypes = Array.from(new Set(clients.map(c => c.searchParams.type)));
+
+  // --- DELETE CONFIRMATION MODAL ---
+  const DeleteConfirmationModal = () => {
+    if (!clientToDelete) return null;
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity"
+          onClick={() => setClientToDelete(null)}
+        />
+        
+        {/* Modal */}
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative z-10 animate-fade-in-up transform scale-100 origin-center">
+            <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-500 mb-4 ring-4 ring-red-50/50">
+                    <Trash2 size={32} />
+                </div>
+                
+                <h3 className="text-xl font-bold text-gray-900 mb-2">¿Eliminar Cliente?</h3>
+                <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                   Esta acción eliminará al cliente y todo su historial de actividad de forma permanente.
+                </p>
+
+                <div className="flex gap-3 w-full">
+                   <button 
+                     onClick={() => setClientToDelete(null)}
+                     className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors"
+                   >
+                      Cancelar
+                   </button>
+                   <button 
+                     onClick={confirmDelete}
+                     className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 shadow-lg shadow-red-600/20 transition-all active:scale-95"
+                   >
+                      Eliminar
+                   </button>
+                </div>
+            </div>
+        </div>
+      </div>
+    );
+  };
+
+  const getSortLabel = () => {
+      switch(sortOption) {
+          case 'newest': return 'Mas nuevos';
+          case 'oldest': return 'Mas antiguos';
+          case 'interests': return 'Mayores intereses';
+          case 'budget': return 'Mayor presupuesto';
+          default: return 'Ordenar';
+      }
+  };
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8 animate-fade-in pb-24">
@@ -147,7 +266,7 @@ export const Clients: React.FC = () => {
              </div>
           </div>
 
-          {/* Card 4: Nuevos (Mes) - CHANGED */}
+          {/* Card 4: Nuevos (Mes) */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
              <div className="p-3 rounded-xl bg-purple-50 text-purple-600">
                 <Clock size={24} />
@@ -195,9 +314,50 @@ export const Clients: React.FC = () => {
                  Filtros Avanzados
                  {isFiltersOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                </button>
-               <button className="px-4 py-2 rounded-xl bg-gray-900 text-white font-medium text-sm transition-colors whitespace-nowrap shadow-md shadow-gray-900/10">
-                  Buscar
-               </button>
+               
+               {/* Sort Dropdown */}
+               <div className="relative" ref={sortMenuRef}>
+                   <button 
+                     onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
+                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 text-white font-bold text-sm hover:bg-black transition-all shadow-md shadow-gray-900/10 whitespace-nowrap active:scale-95"
+                   >
+                      <ArrowUpDown size={16} />
+                      {getSortLabel()}
+                      <ChevronDown size={14} className={`transition-transform duration-200 ${isSortMenuOpen ? 'rotate-180' : ''}`} />
+                   </button>
+
+                   {isSortMenuOpen && (
+                       <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-fade-in-up">
+                           <div className="p-1.5 space-y-0.5">
+                               <button 
+                                 onClick={() => { setSortOption('newest'); setIsSortMenuOpen(false); }}
+                                 className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${sortOption === 'newest' ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                               >
+                                   <Calendar size={16} className="text-gray-400" /> Mas nuevos
+                               </button>
+                               <button 
+                                 onClick={() => { setSortOption('oldest'); setIsSortMenuOpen(false); }}
+                                 className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${sortOption === 'oldest' ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                               >
+                                   <Clock size={16} className="text-gray-400" /> Mas antiguos
+                               </button>
+                               <div className="h-px bg-gray-100 my-1"></div>
+                               <button 
+                                 onClick={() => { setSortOption('interests'); setIsSortMenuOpen(false); }}
+                                 className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${sortOption === 'interests' ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                               >
+                                   <Heart size={16} className="text-gray-400" /> Mayores intereses
+                               </button>
+                               <button 
+                                 onClick={() => { setSortOption('budget'); setIsSortMenuOpen(false); }}
+                                 className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${sortOption === 'budget' ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                               >
+                                   <DollarSign size={16} className="text-gray-400" /> Mayor presupuesto
+                               </button>
+                           </div>
+                       </div>
+                   )}
+               </div>
             </div>
          </div>
 
@@ -227,210 +387,200 @@ export const Clients: React.FC = () => {
                     onChange={(e) => handleFilterChange('type', e.target.value)}
                     className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:ring-2 focus:ring-primary-100 outline-none"
                   >
-                     <option value="all">Cualquier propiedad</option>
-                     {availableTypes.map(t => (
-                        <option key={t} value={t}>{t}</option>
+                     <option value="all">Todos los tipos</option>
+                     {availableTypes.map(type => (
+                       <option key={type} value={type}>{type}</option>
                      ))}
                   </select>
                </div>
 
-               {/* Filter: Location */}
+               {/* Filter: Location (Text) */}
                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide ml-1">Ubicación / Zona</label>
-                  <input 
-                    type="text" 
-                    value={filters.location}
-                    onChange={(e) => handleFilterChange('location', e.target.value)}
-                    placeholder="Ej. Palermo, Belgrano..."
-                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:ring-2 focus:ring-primary-100 outline-none placeholder:text-gray-400"
-                  />
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide ml-1">Ubicación</label>
+                  <div className="relative">
+                      <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input 
+                        type="text"
+                        value={filters.location}
+                        onChange={(e) => handleFilterChange('location', e.target.value)}
+                        placeholder="Ej: Palermo"
+                        className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:ring-2 focus:ring-primary-100 outline-none"
+                      />
+                  </div>
                </div>
 
-               {/* Filter: Budget */}
+               {/* Filter: Min Budget */}
                <div className="space-y-1.5">
-                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide ml-1">Presupuesto del Cliente</label>
-                   <div className="flex gap-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide ml-1">Presupuesto Min.</label>
+                  <div className="relative">
+                      <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                       <input 
-                        type="number" 
+                        type="number"
                         value={filters.minBudget}
                         onChange={(e) => handleFilterChange('minBudget', e.target.value)}
-                        placeholder="Mínimo disponible"
-                        className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:ring-2 focus:ring-primary-100 outline-none placeholder:text-gray-400"
+                        placeholder="0"
+                        className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:ring-2 focus:ring-primary-100 outline-none"
                       />
-                   </div>
+                  </div>
                </div>
 
-               {/* Footer Actions */}
-               <div className="md:col-span-4 flex justify-end border-t border-gray-200/50 pt-4 mt-2">
-                  <button 
-                    onClick={clearFilters}
-                    className="text-sm text-gray-500 hover:text-red-600 font-medium flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
-                  >
+               <div className="md:col-span-4 flex justify-end">
+                   <button 
+                     onClick={clearFilters}
+                     className="text-sm font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1.5"
+                   >
                      <RefreshCcw size={14} /> Limpiar Filtros
-                  </button>
+                   </button>
                </div>
 
             </div>
          )}
       </div>
 
-      {/* Results Count */}
-      <div className="flex items-center justify-between px-2">
-         <p className="text-sm font-medium text-gray-500">
-            Viendo <span className="font-bold text-gray-900">{filteredClients.length}</span> de {totalClients} clientes
-         </p>
-      </div>
+      {/* Grid of Clients */}
+      {processedClients.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 border-dashed">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-6">
+                <Search size={40} strokeWidth={1.5} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No se encontraron clientes</h3>
+            <p className="text-gray-500 max-w-md mx-auto text-center mb-6">
+               No hay resultados que coincidan con tu búsqueda. Intenta ajustar los filtros.
+            </p>
+            <button 
+               onClick={clearFilters}
+               className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-lg transition-colors text-sm"
+            >
+               Limpiar Filtros
+            </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {processedClients.map(client => {
+                // Simulated metrics for display based on activity score
+                const matchesCount = Math.max(1, Math.floor(client.activityScore * 0.8));
+                const interestsCount = Math.max(0, Math.floor(client.activityScore * 0.3));
 
-      {/* Modern List */}
-      <div className="space-y-4">
-          {/* Header Row */}
-          <div className="hidden md:grid grid-cols-12 gap-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider">
-             <div className="col-span-4">Cliente / Perfil</div>
-             <div className="col-span-6">Parámetros de Búsqueda</div>
-             <div className="col-span-2 text-right">Acciones</div>
-          </div>
-
-          {/* Client Cards */}
-          {filteredClients.length > 0 ? (
-             filteredClients.map((client) => {
-               const isSelected = selectedClients.includes(client.id);
-
-               return (
-                 <div 
-                    key={client.id} 
-                    className={`group relative bg-white rounded-2xl p-5 border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl grid grid-cols-1 md:grid-cols-12 gap-6 items-center
-                      ${isSelected ? 'border-primary-300 ring-1 ring-primary-100' : 'border-gray-100 shadow-sm'}
-                    `}
-                 >
-                    {/* Selection Indicator Stripe */}
-                    {isSelected && <div className="absolute left-0 top-4 bottom-4 w-1 bg-primary-500 rounded-r-full"></div>}
-
-                    {/* Column 1: Profile & Status */}
-                    <div className="md:col-span-4 flex items-center gap-4">
-                       <div className="relative flex-shrink-0">
-                         <input 
-                            type="checkbox" 
-                            checked={isSelected}
-                            onChange={() => toggleSelect(client.id)}
-                            className="absolute -left-8 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" 
-                         />
-                         <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-br from-gray-100 to-gray-200 relative">
-                            <img src={client.avatar} alt="" className="w-full h-full rounded-full object-cover border-2 border-white" />
-                         </div>
-                       </div>
-                       <div className="min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                             <h3 className="font-bold text-gray-900 text-base truncate">{client.name}</h3>
-                             {/* STATUS BADGE */}
-                             {client.status === 'active' ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wide">
-                                   Activo
-                                </span>
-                             ) : (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-50 text-red-700 border border-red-100 uppercase tracking-wide">
-                                   Inactivo
-                                </span>
-                             )}
-                          </div>
-                          <p className="text-xs text-gray-500 truncate">{client.email}</p>
-                          <p className="text-[10px] text-gray-400 mt-1">Registrado: {client.date}</p>
-                       </div>
+                return (
+                <div key={client.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 group flex flex-col overflow-hidden">
+                    
+                    {/* Header: User Info */}
+                    <div className="p-6 pb-4">
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="relative">
+                                    <img src={client.avatar} alt={client.name} className="w-14 h-14 rounded-full object-cover ring-4 ring-gray-50 group-hover:ring-primary-50 transition-all" />
+                                    <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full ${client.status === 'active' ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-primary-600 transition-colors cursor-pointer" onClick={() => setEditingClient(client)}>
+                                       {client.name}
+                                    </h3>
+                                    <p className="text-xs font-medium text-gray-400 mt-0.5">{client.email}</p>
+                                    <p className="text-[10px] font-bold text-gray-300 uppercase mt-1">
+                                        Registrado: {client.date}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            {/* Replaced Edit Button with Stats Badges */}
+                            <div className="flex flex-col items-end gap-1.5">
+                                <div className="flex items-center gap-1.5 bg-violet-50 text-violet-700 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide shadow-sm border border-violet-100">
+                                    <Zap size={10} className="fill-violet-700" />
+                                    {matchesCount} Matches
+                                </div>
+                                <div className="flex items-center gap-1.5 bg-rose-50 text-rose-600 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide shadow-sm border border-rose-100">
+                                    <Heart size={10} className="fill-rose-600" />
+                                    {interestsCount} Intereses
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Column 2: CLEANER SEARCH PARAMS */}
-                    <div className="md:col-span-6 px-2">
-                       <div className="flex flex-col gap-2">
-                          
-                          {/* Row 1: Primary Info (Type, Location, Budget) */}
-                          <div className="flex flex-wrap items-center gap-y-2 gap-x-3">
-                              <div className="flex items-center gap-2 text-gray-900 font-bold text-sm">
-                                   <Home size={16} className="text-primary-500" />
-                                   {client.searchParams.type}
-                              </div>
-                              
-                              <span className="text-gray-300 hidden sm:inline">•</span>
-                              
-                              <div className="flex items-center gap-1.5 text-gray-600 text-sm font-medium">
-                                   <MapPin size={14} className="text-gray-400" />
-                                   {client.searchParams.location}
-                              </div>
+                    {/* Divider */}
+                    <div className="h-px bg-gray-50 mx-6"></div>
 
-                              <span className="text-gray-300 hidden sm:inline">•</span>
+                    {/* Search Params Summary */}
+                    <div className="p-6 space-y-4 flex-1">
+                         {/* Location & Type */}
+                         <div className="flex items-start gap-3">
+                             <div className="p-2 bg-blue-50 text-primary-600 rounded-lg shrink-0">
+                                 <Home size={16} />
+                             </div>
+                             <div>
+                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Búsqueda</p>
+                                 <div className="flex items-center gap-2">
+                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${client.searchParams.operationType === 'Alquiler' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                        {client.searchParams.operationType || 'Venta'}
+                                     </span>
+                                     <p className="text-sm font-bold text-gray-700 leading-tight truncate">
+                                        {client.searchParams.type} en {client.searchParams.location}
+                                     </p>
+                                 </div>
+                             </div>
+                         </div>
 
-                              <div className="flex items-center gap-1 text-emerald-700 font-bold text-sm bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
-                                   <DollarSign size={12} strokeWidth={2.5} />
-                                   {client.searchParams.currency} {client.searchParams.maxPrice.toLocaleString()}
-                              </div>
-                          </div>
+                         {/* Budget */}
+                         <div className="flex items-start gap-3">
+                             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg shrink-0">
+                                 <DollarSign size={16} />
+                             </div>
+                             <div>
+                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Presupuesto Máx</p>
+                                 <p className="text-sm font-bold text-gray-700 leading-tight">
+                                     {client.searchParams.currency} {client.searchParams.maxPrice.toLocaleString()}
+                                 </p>
+                             </div>
+                         </div>
 
-                          {/* Row 2: Tag Cloud */}
-                          <div className="flex flex-wrap gap-2 mt-1">
-                             {client.searchParams.environments && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 border border-gray-100 text-[10px] font-semibold text-gray-500 hover:bg-white hover:border-gray-200 transition-colors" title="Ambientes">
-                                   <LayoutGrid size={12} /> {client.searchParams.environments} Amb
-                                </span>
-                             )}
+                         {/* Requirements Tags */}
+                         <div className="flex flex-wrap gap-2 pt-2">
+                             <span className="px-2 py-1 bg-gray-50 text-gray-500 text-[10px] font-bold uppercase rounded-md border border-gray-100 flex items-center gap-1">
+                                 <LayoutGrid size={10} /> {client.searchParams.environments} amb
+                             </span>
                              {client.searchParams.hasGarage && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 border border-gray-100 text-[10px] font-semibold text-gray-500 hover:bg-white hover:border-gray-200 transition-colors" title="Con Cochera">
-                                   <Car size={12} /> Cochera
+                                <span className="px-2 py-1 bg-gray-50 text-gray-500 text-[10px] font-bold uppercase rounded-md border border-gray-100 flex items-center gap-1">
+                                    <Car size={10} /> Cochera
                                 </span>
                              )}
                              {client.searchParams.isCreditSuitable && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 border border-gray-100 text-[10px] font-semibold text-gray-500 hover:bg-white hover:border-gray-200 transition-colors" title="Apto Crédito">
-                                   <CreditCard size={12} /> Crédito
+                                <span className="px-2 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase rounded-md border border-green-100 flex items-center gap-1">
+                                    <CreditCard size={10} /> Apto Crédito
                                 </span>
                              )}
-                             {client.searchParams.isProfessionalSuitable && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 border border-gray-100 text-[10px] font-semibold text-gray-500 hover:bg-white hover:border-gray-200 transition-colors" title="Apto Profesional">
-                                   <Briefcase size={12} /> Prof.
-                                </span>
-                             )}
-                          </div>
-
-                       </div>
+                         </div>
                     </div>
 
-                    {/* Column 3: Actions (Without WhatsApp Button) */}
-                    <div className="md:col-span-2 flex items-center justify-end gap-2">
-                       <button 
-                          onClick={() => setEditingClient(client)}
-                          className="p-2.5 rounded-xl text-primary-600 border border-primary-600 hover:bg-primary-50 transition-all shadow-sm" title="Editar"
-                       >
-                          <Edit2 size={18} />
-                       </button>
-                       <button className="p-2.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all" title="Eliminar">
-                          <Trash2 size={18} />
-                       </button>
+                    {/* Footer Actions - Redesigned */}
+                    <div className="p-4 bg-gray-50/50 border-t border-gray-100 flex justify-between items-center gap-3 group-hover:bg-white transition-colors">
+                        
+                        {/* Full Width Black Detail Button */}
+                        <button 
+                             onClick={() => setEditingClient(client)}
+                             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gray-900 hover:bg-black text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-gray-900/20 active:scale-95 transition-all"
+                        >
+                             Ver Detalle <Edit2 size={14} />
+                        </button>
                     </div>
-                 </div>
-               )
-             })
-          ) : (
-             <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 border-dashed">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
-                   <Search size={32} />
+
                 </div>
-                <h3 className="text-lg font-bold text-gray-900">No se encontraron clientes</h3>
-                <p className="text-gray-500 mt-1">Intenta ajustar los filtros o tu búsqueda.</p>
-                <button 
-                  onClick={clearFilters}
-                  className="mt-4 px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
-                >
-                   Limpiar Filtros
-                </button>
-             </div>
-          )}
-      </div>
+            )})}
+        </div>
+      )}
 
-      {/* Edit Client Modal */}
+      {/* Edit Modal */}
       {editingClient && (
         <EditClientModal 
-           isOpen={true}
-           client={editingClient}
-           onClose={() => setEditingClient(null)}
-           onSave={handleSaveClient}
+          isOpen={true} 
+          onClose={() => setEditingClient(null)} 
+          client={editingClient}
+          onSave={handleSaveClient}
+          onDelete={() => handleDeleteClick(editingClient.id)}
         />
       )}
+
+      {/* Delete Modal */}
+      <DeleteConfirmationModal />
 
     </div>
   );

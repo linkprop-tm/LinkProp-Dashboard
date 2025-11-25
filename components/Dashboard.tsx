@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Building, Users, Heart, TrendingUp, MoreHorizontal, ArrowUpRight, ArrowDownRight, Eye, Clock, BarChart2, GitCompareArrows
+  Building, Users, Heart, TrendingUp, MoreHorizontal, ArrowUpRight, ArrowDownRight, Eye, Clock, BarChart2, GitCompareArrows, Calendar, Mail, MapPin
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend } from 'recharts';
-import { METRICS, CHART_DATA, TOP_PROPERTIES, RECENT_ACTIVITY, CONVERSION_DATA } from '../constants';
+import { METRICS, CHART_DATA, CONVERSION_DATA, CLIENTS_DATA, PROPERTIES_GRID_DATA } from '../constants';
 
 export const Dashboard: React.FC = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -12,6 +12,17 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Generate mock visit requests combining properties and clients for the "Intereses" mini-view
+  const VISIT_REQUESTS = PROPERTIES_GRID_DATA.slice(0, 5).map((prop, index) => {
+     const client = CLIENTS_DATA[index % CLIENTS_DATA.length];
+     return {
+         id: `req-${index}`,
+         property: prop,
+         client: client,
+         time: `${index + 2} horas`
+     };
+  });
 
   return (
     <main className="p-8 max-w-[1600px] mx-auto space-y-8 animate-fade-in">
@@ -67,7 +78,7 @@ export const Dashboard: React.FC = () => {
         })}
       </div>
 
-      {/* Section B & C: Chart and Top Properties */}
+      {/* Section B & C: Chart and Latest Clients */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Chart */}
@@ -134,36 +145,33 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Top Properties */}
+        {/* Latest Clients (Replaced Top Properties) */}
         <div className="lg:col-span-5 bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-6">
-             <h3 className="text-lg font-bold text-gray-900">Top Propiedades</h3>
-             <button className="text-sm text-primary-600 font-medium hover:text-primary-700">Ver todas</button>
+             <h3 className="text-lg font-bold text-gray-900">Últimos Clientes</h3>
+             <button className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1.5 rounded-lg hover:bg-primary-100 transition-colors">
+                Ver Cartera
+             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
-            {TOP_PROPERTIES.map((prop, idx) => (
-              <div key={prop.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors group cursor-pointer">
-                <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden">
-                  <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
-                  <div className="absolute top-0 left-0 bg-black/50 text-white text-[10px] px-1.5 py-0.5 font-bold rounded-br-md">
-                    #{idx + 1}
-                  </div>
+          <div className="flex-1 overflow-y-auto pr-2 space-y-3">
+            {CLIENTS_DATA.slice(0, 5).map((client, idx) => (
+              <div key={client.id} className="flex items-center gap-3 p-3 bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-100 hover:shadow-sm rounded-xl transition-all group cursor-pointer">
+                <div className="relative flex-shrink-0">
+                  <img src={client.avatar} alt={client.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-white" />
+                  <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white rounded-full ${client.status === 'active' ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-semibold text-gray-900 truncate group-hover:text-primary-600 transition-colors">{prop.title}</h4>
-                  <p className="text-xs text-gray-500 truncate">{prop.address}</p>
-                  <p className="text-xs font-medium text-gray-900 mt-1">
-                    {prop.currency === 'USD' ? 'USD' : '$'} {prop.price.toLocaleString()}
-                  </p>
+                  <h4 className="text-sm font-bold text-gray-900 truncate group-hover:text-primary-600 transition-colors">{client.name}</h4>
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                     <Mail size={10} />
+                     <span className="truncate">{client.email}</span>
+                  </div>
                 </div>
-                <div className="text-right min-w-[100px]">
-                  <div className="flex items-center justify-end gap-1.5 text-xs font-semibold text-primary-600 mb-1" title="Clientes con Match">
-                    <GitCompareArrows size={14} /> {prop.matchesCount} Matches
-                  </div>
-                  <div className="flex items-center justify-end gap-1.5 text-xs text-gray-500 font-medium">
-                    <Heart size={12} className="text-rose-500 fill-rose-500" /> {prop.interestedClients} Intereses
-                  </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase bg-white px-2 py-1 rounded border border-gray-100">
+                    {client.date}
+                  </span>
                 </div>
               </div>
             ))}
@@ -171,7 +179,7 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Section D: Conversion Chart & Recent Activity */}
+      {/* Section D: Conversion Chart & Visit Requests */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Conversion Rate Chart */}
@@ -214,42 +222,44 @@ export const Dashboard: React.FC = () => {
            </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Visit Requests (Replaced Recent Activity) */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-            <h3 className="text-lg font-bold text-gray-900">Actividad Reciente</h3>
-            <button className="p-2 hover:bg-gray-50 rounded-full">
-              <MoreHorizontal size={20} className="text-gray-400" />
-            </button>
+            <div className="flex items-center gap-2">
+               <Heart size={20} className="text-rose-500 fill-rose-500" />
+               <h3 className="text-lg font-bold text-gray-900">Solicitudes de Visita</h3>
+            </div>
+            <span className="text-xs font-bold bg-rose-50 text-rose-600 px-2.5 py-1 rounded-full">
+               {VISIT_REQUESTS.length} Pendientes
+            </span>
           </div>
           <div className="divide-y divide-gray-50 flex-1 overflow-y-auto max-h-[300px]">
-            {RECENT_ACTIVITY.map((item) => {
-              let Icon = Clock;
-              let iconBg = 'bg-gray-100';
-              let iconColor = 'text-gray-500';
+            {VISIT_REQUESTS.map((req) => (
+                <div key={req.id} className="p-4 flex items-start gap-4 hover:bg-gray-50 transition-colors group">
+                   {/* Property Thumb */}
+                   <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100">
+                      <img src={req.property.imageUrl} className="w-full h-full object-cover" alt="" />
+                   </div>
+                   
+                   <div className="flex-1 min-w-0 pt-0.5">
+                      <p className="text-sm text-gray-900 leading-snug">
+                         <span className="font-bold">{req.client.name}</span> quiere visitar <span className="font-bold text-primary-600">{req.property.title}</span>
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                         <Clock size={10} /> Hace {req.time}
+                      </p>
+                   </div>
 
-              if (item.type === 'interest') { Icon = Heart; iconBg = 'bg-rose-100'; iconColor = 'text-rose-600'; }
-              if (item.type === 'new_property') { Icon = Building; iconBg = 'bg-blue-100'; iconColor = 'text-blue-600'; }
-              if (item.type === 'match') { Icon = TrendingUp; iconBg = 'bg-amber-100'; iconColor = 'text-amber-600'; }
-
-              return (
-                <div key={item.id} className="p-4 flex items-center gap-4 hover:bg-gray-50 transition-colors">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg} ${iconColor}`}>
-                    <Icon size={18} />
-                  </div>
-                  <div className="flex-1">
-                     <p className="text-sm text-gray-900">{item.description}</p>
-                     <p className="text-xs text-gray-400 mt-0.5">{item.time}</p>
-                  </div>
-                  {item.userAvatar && (
-                    <img src={item.userAvatar} alt="User" className="w-8 h-8 rounded-full object-cover ring-2 ring-white" />
-                  )}
+                   <button className="self-center px-3 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-black transition-colors opacity-0 group-hover:opacity-100">
+                      Agendar
+                   </button>
                 </div>
-              );
-            })}
+            ))}
           </div>
           <div className="p-4 text-center border-t border-gray-100 bg-gray-50/50 mt-auto">
-            <button className="text-sm font-medium text-primary-600 hover:text-primary-700">Ver todo el historial</button>
+            <button className="text-sm font-medium text-rose-600 hover:text-rose-700 flex items-center justify-center gap-1">
+               Ver todos los interesados <ArrowUpRight size={14}/>
+            </button>
           </div>
         </div>
 

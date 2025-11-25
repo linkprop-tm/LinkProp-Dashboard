@@ -59,8 +59,8 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen w-full bg-gray-50 overflow-hidden font-sans">
-      {/* Sidebar - Fixed (Desktop Only) - Updated to XL to support tablet mode */}
-      <div className="hidden xl:block flex-shrink-0">
+      {/* Sidebar - Fixed (Desktop Only) - Updated to LG to support standard desktop/laptop mode */}
+      <div className="hidden lg:block flex-shrink-0">
         <Sidebar 
           currentView={currentView} 
           onNavigate={setCurrentView} 
@@ -70,7 +70,7 @@ const App: React.FC = () => {
       {/* Main Content Area - Single Scrollable Container */}
       {/* Header is now INSIDE this container so sticky + backdrop blur works as content scrolls under it */}
       <div className="flex-1 h-screen overflow-y-auto scroll-smooth relative">
-         <div className="pb-24 xl:pb-0">
+         <div className="pb-24 lg:pb-0">
             <Header onAddProperty={() => setIsAddPropertyModalOpen(true)} />
             
             {renderAgentContent()}
@@ -82,7 +82,7 @@ const App: React.FC = () => {
          </div>
       </div>
 
-      {/* Mobile Bottom Navigation (Agent Only) - Visible on Mobile and Tablet (Hidden on XL+) */}
+      {/* Mobile Bottom Navigation (Agent Only) - Visible on Mobile and Tablet (Hidden on LG+) */}
       <MobileNavbar currentView={currentView} onNavigate={setCurrentView} />
 
       {/* Modal Layer - Conditionally Rendered to ensure clean state on open */}

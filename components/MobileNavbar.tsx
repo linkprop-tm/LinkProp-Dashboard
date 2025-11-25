@@ -19,7 +19,7 @@ export const MobileNavbar: React.FC<MobileNavbarProps> = ({ currentView, onNavig
   ];
 
   return (
-    <nav className="xl:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
       <div className="flex justify-between md:justify-around items-center h-16 px-2 overflow-x-auto no-scrollbar">
         {navItems.map((item) => {
           const isActive = currentView === item.id;

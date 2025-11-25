@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { 
   MapPin, Star, ArrowRight, 
-  Lock, ArrowUp, ArrowDown, Check, Loader2, Quote, Eye
+  Lock, ArrowUp, ArrowDown, Check, Loader2, Quote, Eye,
+  RotateCcw, AlertTriangle
 } from 'lucide-react';
 import { PROPERTIES_GRID_DATA } from '../constants';
 import { Property } from '../types';
@@ -110,6 +111,10 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
   const [savingStatus, setSavingStatus] = useState<Record<string, 'idle' | 'saving' | 'saved'>>({});
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
 
+  // Undo / Unmark State
+  const [showUndoModal, setShowUndoModal] = useState(false);
+  const [visitToUndo, setVisitToUndo] = useState<string | null>(null);
+
   const getProp = (id: string) => PROPERTIES_GRID_DATA.find(p => p.id === id);
 
   // Agent: Private Note Handlers
@@ -131,6 +136,26 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
             setSavingStatus(prev => ({ ...prev, [key]: 'idle' }));
          }, 2000);
       }, 800);
+  };
+
+  // Agent: Undo Visit Handlers
+  const handleUndoClick = (visitId: string) => {
+      setVisitToUndo(visitId);
+      setShowUndoModal(true);
+  };
+
+  const confirmUndo = () => {
+      if (visitToUndo) {
+          // Remove from list to simulate moving back to "Interest"
+          setVisits(prev => prev.filter(v => v.id !== visitToUndo));
+          setShowUndoModal(false);
+          setVisitToUndo(null);
+      }
+  };
+
+  const cancelUndo = () => {
+      setShowUndoModal(false);
+      setVisitToUndo(null);
   };
 
   // Client: Comment Handlers
@@ -189,7 +214,7 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
         >
             {status === 'saving' && <Loader2 size={12} className="animate-spin" />}
             {status === 'saved' && <Check size={12} strokeWidth={3} />}
-            {status === 'saving' ? 'GUARDANDO' : status === 'saved' ? 'GUARDADO' : 'GUARDAR'}
+            {status === 'saving' ? 'GUARDANDO' : status === 'saved' ? 'GUARDADO' : 'GUARDAR NOTA'}
         </button>
       );
   };
@@ -228,6 +253,49 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
     const dateB = new Date(b.isoDate).getTime();
     return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
   });
+
+  // --- COMPONENT: UNDO MODAL ---
+  const UndoVisitModal = () => {
+    if (!showUndoModal) return null;
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity"
+          onClick={cancelUndo}
+        />
+        
+        {/* Modal */}
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative z-10 animate-fade-in-up transform scale-100 origin-center">
+            <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-500 mb-4 ring-4 ring-red-50/50">
+                    <AlertTriangle size={32} />
+                </div>
+                
+                <h3 className="text-xl font-bold text-gray-900 mb-2">¿Deshacer visita?</h3>
+                <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                   La propiedad volverá a la lista de "Intereses en Visitar" como si nunca se hubiera concretado la visita.
+                </p>
+
+                <div className="flex gap-3 w-full">
+                   <button 
+                     onClick={cancelUndo}
+                     className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors"
+                   >
+                      Cancelar
+                   </button>
+                   <button 
+                     onClick={confirmUndo}
+                     className="flex-1 py-2.5 rounded-xl bg-gray-900 text-white font-bold text-sm hover:bg-black shadow-lg shadow-gray-900/20 transition-all active:scale-95"
+                   >
+                      Confirmar
+                   </button>
+                </div>
+            </div>
+        </div>
+      </div>
+    );
+  };
 
   // --- VIEW RENDERER ---
 
@@ -402,8 +470,17 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
                                     />
                                  </div>
 
-                                 {/* Footer Actions - Clean Separation */}
-                                 <div className="px-6 py-4 flex items-center justify-end mt-auto">
+                                 {/* Footer Actions - With Undo Button */}
+                                 <div className="px-6 py-4 flex items-center justify-between mt-auto border-t border-gray-50 bg-gray-50/30">
+                                      <button
+                                        onClick={() => handleUndoClick(visit.id)}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-red-100 text-red-600 shadow-sm hover:bg-red-50 hover:border-red-200 hover:shadow-md transition-all text-[10px] font-bold uppercase tracking-wider group"
+                                      >
+                                        <div className="p-1 bg-red-100 rounded-full group-hover:bg-red-200 transition-colors">
+                                            <RotateCcw size={10} strokeWidth={2.5} />
+                                        </div>
+                                        Deshacer Visita
+                                      </button>
                                       {renderSaveButton(visit.id)}
                                  </div>
                              </div>
@@ -467,6 +544,9 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
           initialData={editingProperty}
         />
       )}
+
+      {/* Undo Confirmation Modal */}
+      <UndoVisitModal />
 
     </div>
   );

@@ -119,6 +119,9 @@ export interface SearchParams {
   hasGarage?: boolean;
   isCreditSuitable?: boolean;
   isProfessionalSuitable?: boolean;
+  
+  // Specifics
+  antiquity?: string[]; // Array of strings e.g. ['A estrenar']
 }
 
 export interface Client {

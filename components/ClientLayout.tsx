@@ -8,7 +8,8 @@ import {
   User, Mail, Phone, Camera, Save, Sparkles, Building, Minus, Plus,
   ArrowUpDown, ArrowDownUp, Layers, AlignLeft, Users, Lock,
   List, Image as ImageIcon, Table as TableIcon, Columns, MoreHorizontal, Send, CheckCircle2,
-  Monitor, Grid, Smartphone, Trash2, AlertCircle, HeartOff, Shield, Key, ArrowUp, ArrowDown, Map
+  Monitor, Grid, Smartphone, Trash2, AlertCircle, HeartOff, Shield, Key, ArrowUp, ArrowDown, Map,
+  FileQuestion, MessageCircle, BookOpen, Cat
 } from 'lucide-react';
 import { PROPERTIES_GRID_DATA } from '../constants';
 import { PropertyDetails } from './PropertyDetails';
@@ -19,7 +20,7 @@ interface ClientLayoutProps {
   onLogout: () => void;
 }
 
-type ClientView = 'explore' | 'interests' | 'visited' | 'compare' | 'settings' | 'help';
+type ClientView = 'explore' | 'interests' | 'visited' | 'compare' | 'settings';
 type SortOption = 'price_asc' | 'price_desc' | 'area_asc' | 'area_desc' | 'neighborhood_group' | 'default';
 
 // --- LOCAL COMPONENTS ---
@@ -200,6 +201,11 @@ const CABA_NEIGHBORHOODS = [
   "Villa Riachuelo", "Villa Lugano", "Villa Soldati"
 ];
 
+const GBA_NEIGHBORHOODS = [
+  "Vicente López", "San Martín", "San Isidro", "San Fernando", 
+  "Tres de Febrero", "San Miguel", "Tigre", "Escobar", "Pilar", "José C. Paz"
+];
+
 // --- MAIN COMPONENT ---
 
 export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
@@ -212,6 +218,9 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   // Unmark Confirmation State
   const [showUnmarkModal, setShowUnmarkModal] = useState(false);
   const [propertyToUnmark, setPropertyToUnmark] = useState<string | null>(null);
+
+  // Help Modal State
+  const [activeHelpModal, setActiveHelpModal] = useState<'faq' | 'tutorial' | null>(null);
 
   // Comparison State
   const [comparisonList, setComparisonList] = useState<string[]>([]);
@@ -230,7 +239,8 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const [settingsSpecifics, setSettingsSpecifics] = useState({
       credit: false,
       professional: false,
-      garage: false
+      garage: false,
+      pets: false
   });
 
   const toggleSpecific = (key: keyof typeof settingsSpecifics) => {
@@ -269,7 +279,10 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const getFilteredNeighborhoods = () => {
       const term = neighborhoodSearchTerm.toLowerCase();
       if (!term) return [];
-      return CABA_NEIGHBORHOODS.filter(hood => 
+      
+      const sourceList = settingsRegion === 'CABA' ? CABA_NEIGHBORHOODS : GBA_NEIGHBORHOODS;
+
+      return sourceList.filter(hood => 
           hood.toLowerCase().includes(term) && 
           !settingsNeighborhoods.includes(hood)
       ).slice(0, 8); // Limit suggestions
@@ -390,16 +403,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
       activeClass: 'bg-gray-800 text-white shadow-lg shadow-gray-800/20',
       mobileTextClass: 'text-gray-900',
       mobileBgClass: 'bg-gray-100'
-    },
-    { 
-      id: 'help', 
-      label: 'Ayuda', 
-      icon: HelpCircle, 
-      // Solid Gray
-      activeClass: 'bg-gray-800 text-white shadow-lg shadow-gray-800/20',
-      mobileTextClass: 'text-gray-900',
-      mobileBgClass: 'bg-gray-100'
-    },
+    }
   ];
 
   // Component for the Unmark Modal
@@ -436,7 +440,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                      onClick={confirmUnmark}
                      className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white font-bold text-sm hover:bg-rose-700 shadow-lg shadow-rose-600/20 transition-all active:scale-95"
                    >
-                      Sí, dejar de seguir
+                      Confirmar
                    </button>
                 </div>
             </div>
@@ -933,6 +937,56 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                         </button>
                     </div>
                  </div>
+
+                  {/* Help Card */}
+                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2.5 bg-gray-50 text-gray-900 rounded-xl">
+                            <HelpCircle size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-bold text-gray-900">Ayuda</h3>
+                            <p className="text-xs text-gray-500">Centro de soporte</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <button 
+                            onClick={() => setActiveHelpModal('faq')}
+                            className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded-xl transition-all group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <FileQuestion size={18} className="text-gray-400 group-hover:text-gray-600" />
+                                <span className="text-sm font-medium text-gray-600 group-hover:text-gray-900">Preguntas Frecuentes</span>
+                            </div>
+                            <ChevronRight size={16} className="text-gray-300" />
+                        </button>
+
+                        <div className="h-px bg-gray-100"></div>
+
+                        <button 
+                            onClick={() => setActiveHelpModal('tutorial')}
+                            className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded-xl transition-all group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <BookOpen size={18} className="text-gray-400 group-hover:text-gray-600" />
+                                <span className="text-sm font-medium text-gray-600 group-hover:text-gray-900">Como usar la plataforma</span>
+                            </div>
+                            <ChevronRight size={16} className="text-gray-300" />
+                        </button>
+                    </div>
+                 </div>
+                 
+                 {/* Legal Links */}
+                 <div className="flex flex-col gap-1 px-4 mt-2">
+                    <button className="text-xs text-gray-400 hover:text-gray-800 font-medium text-left py-1 transition-colors">
+                       Términos y Condiciones
+                    </button>
+                    <button className="text-xs text-gray-400 hover:text-gray-800 font-medium text-left py-1 transition-colors">
+                       Política de Privacidad
+                    </button>
+                 </div>
+
               </div>
 
               {/* Right Column: Preferences (Span 8) */}
@@ -1200,25 +1254,46 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                             
                             {/* Checkbox Cards (Interactive) */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {/* Apto Crédito */}
-                                <div 
-                                    onClick={() => toggleSpecific('credit')}
-                                    className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all group select-none ${
-                                        settingsSpecifics.credit 
-                                        ? 'bg-green-50 border-green-200 shadow-sm' 
-                                        : 'border-gray-200 hover:border-green-200 hover:bg-green-50/30'
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${settingsSpecifics.credit ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'}`}>
-                                            <Check size={16} strokeWidth={3} />
+                                {/* Apto Crédito / Apto Mascotas (Conditional based on Operation Type) */}
+                                {settingsOperation === 'Venta' ? (
+                                    <div 
+                                        onClick={() => toggleSpecific('credit')}
+                                        className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all group select-none ${
+                                            settingsSpecifics.credit 
+                                            ? 'bg-green-50 border-green-200 shadow-sm' 
+                                            : 'border-gray-200 hover:border-green-200 hover:bg-green-50/30'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${settingsSpecifics.credit ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'}`}>
+                                                <CheckCircle2 size={16} strokeWidth={2.5} />
+                                            </div>
+                                            <span className={`text-sm font-bold ${settingsSpecifics.credit ? 'text-green-800' : 'text-gray-700'}`}>Apto Crédito</span>
                                         </div>
-                                        <span className={`text-sm font-bold ${settingsSpecifics.credit ? 'text-green-800' : 'text-gray-700'}`}>Apto Crédito</span>
+                                        <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${settingsSpecifics.credit ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300 bg-white'}`}>
+                                            {settingsSpecifics.credit && <Check size={14} strokeWidth={3}/>}
+                                        </div>
                                     </div>
-                                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${settingsSpecifics.credit ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300 bg-white'}`}>
-                                         {settingsSpecifics.credit && <Check size={14} strokeWidth={3}/>}
+                                ) : (
+                                    <div 
+                                        onClick={() => toggleSpecific('pets')}
+                                        className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all group select-none ${
+                                            settingsSpecifics.pets 
+                                            ? 'bg-green-50 border-green-200 shadow-sm' 
+                                            : 'border-gray-200 hover:border-green-200 hover:bg-green-50/30'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${settingsSpecifics.pets ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'}`}>
+                                                <Cat size={16} strokeWidth={2.5} />
+                                            </div>
+                                            <span className={`text-sm font-bold ${settingsSpecifics.pets ? 'text-green-800' : 'text-gray-700'}`}>Apto Mascotas</span>
+                                        </div>
+                                        <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${settingsSpecifics.pets ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300 bg-white'}`}>
+                                            {settingsSpecifics.pets && <Check size={14} strokeWidth={3}/>}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 {/* Apto Profesional */}
                                 <div 
@@ -1275,9 +1350,6 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
               </div>
             </div>
          );
-      
-      case 'help':
-         return <EmptyState icon={HelpCircle} title="Centro de Ayuda" description="Contacta a soporte o revisa las preguntas frecuentes." />;
 
       default:
         return null;
@@ -1288,7 +1360,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
     <div className="flex h-screen w-full bg-gray-50 font-sans overflow-hidden">
       
       {/* Sidebar (Desktop) */}
-      <aside className="hidden md:flex w-72 bg-white border-r border-gray-100 flex-col h-full flex-shrink-0 z-20">
+      <aside className="hidden lg:flex w-72 bg-white border-r border-gray-100 flex-col h-full flex-shrink-0 z-20">
          <div className="p-8">
             <div className="flex items-center gap-3 text-primary-600 mb-8">
                <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary-600/20">L</div>
@@ -1344,7 +1416,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
          {/* Mobile Header */}
-         <div className="md:hidden h-16 bg-white border-b border-gray-100 flex items-center justify-between px-4 flex-shrink-0 z-10">
+         <div className="lg:hidden h-16 bg-white border-b border-gray-100 flex items-center justify-between px-4 flex-shrink-0 z-10">
             <div className="flex items-center gap-2 text-primary-600">
                <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">L</div>
                <span className="text-lg font-bold text-gray-900">LinkProp</span>
@@ -1352,14 +1424,14 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
             <img src="https://picsum.photos/100/100?random=50" alt="User" className="w-8 h-8 rounded-full object-cover" />
          </div>
 
-         <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 scroll-smooth">
+         <div className="flex-1 overflow-y-auto p-4 lg:p-8 pb-24 lg:pb-8 scroll-smooth">
             <div className={`mx-auto h-full ${currentView === 'explore' || currentView === 'interests' || currentView === 'compare' ? 'max-w-[96%]' : 'max-w-7xl'}`}>
                {renderContent()}
             </div>
          </div>
 
          {/* Mobile Bottom Nav */}
-         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+         <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
             <div className="flex justify-around items-center h-16 px-1">
                {navItems.slice(0, 5).map((item) => { // Show first 5 items only on mobile
                   const isActive = currentView === item.id;
@@ -1391,6 +1463,26 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
          
          {/* Render Unmark Modal at Root Level */}
          <UnmarkConfirmationModal />
+
+         {/* Render Help Modal */}
+         {activeHelpModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+               <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" onClick={() => setActiveHelpModal(null)}></div>
+               <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-fade-in-up">
+                  <div className="flex items-center justify-between mb-4">
+                     <h3 className="text-lg font-bold text-gray-900">
+                        {activeHelpModal === 'faq' ? 'Preguntas Frecuentes' : 'Cómo usar la plataforma'}
+                     </h3>
+                     <button onClick={() => setActiveHelpModal(null)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors">
+                        <X size={20} />
+                     </button>
+                  </div>
+                  <div className="p-8 border border-dashed border-gray-200 rounded-xl bg-gray-50 text-center text-gray-400 text-sm">
+                     Contenido pendiente...
+                  </div>
+               </div>
+            </div>
+         )}
 
       </main>
 

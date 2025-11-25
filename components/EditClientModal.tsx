@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  X, Save, User, Mail, MapPin, DollarSign, LayoutGrid, 
-  Car, Briefcase, CreditCard, Home, CheckSquare, Search, Activity, Sparkles, Building2
+  X, User, Mail, MapPin, DollarSign, 
+  Briefcase, Sparkles, Building2, Trash2
 } from 'lucide-react';
 import { Client, SearchParams } from '../types';
 
@@ -11,9 +11,10 @@ interface EditClientModalProps {
   onClose: () => void;
   client: Client;
   onSave: (updatedClient: Client) => void;
+  onDelete: () => void;
 }
 
-export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClose, client, onSave }) => {
+export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClose, client, onSave, onDelete }) => {
   const [formData, setFormData] = useState<Client>(client);
 
   // Update local state if the client prop changes
@@ -389,7 +390,6 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                             </div>
                          </div>
                    </div>
-
                </div>
             </div>
 
@@ -397,22 +397,36 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Footer Actions */}
-        <div className="px-8 py-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 sticky bottom-0 z-10">
-          <button 
-             type="button"
-             onClick={onClose}
-             className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-white transition-colors"
+        <div className="px-8 py-5 border-t border-gray-100 bg-gray-50 flex justify-between items-center sticky bottom-0 z-10">
+          {/* Delete Button (Left) */}
+          <button
+              type="button"
+              onClick={() => {
+                  onDelete();
+                  onClose();
+              }}
+              className="px-4 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"
           >
-             Cancelar
+              <Trash2 size={16} /> Eliminar
           </button>
-          <button 
-             type="submit"
-             form="edit-client-form"
-             className="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-900/20 hover:bg-black transition-all active:scale-95 flex items-center gap-2"
-          >
-             <Save size={18} />
-             Guardar Cambios
-          </button>
+
+          {/* Right Actions */}
+          <div className="flex gap-3">
+              <button 
+                 type="button"
+                 onClick={onClose}
+                 className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-white transition-colors"
+              >
+                 Cancelar
+              </button>
+              <button 
+                 type="submit"
+                 form="edit-client-form"
+                 className="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-900/20 hover:bg-black transition-all active:scale-95"
+              >
+                 Guardar Cambios
+              </button>
+          </div>
         </div>
 
       </div>
