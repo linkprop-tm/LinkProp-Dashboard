@@ -1,272 +1,356 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Search,
-  LayoutGrid, 
-  List, 
-  SlidersHorizontal,
-  Pencil,
-  Heart,
-  GitCompareArrows,
-  MapPin,
-  Car,
-  Ruler,
-  Bed,
-  Bath
+  Search, MapPin, Eye, EyeOff, LayoutGrid, List, Bed, Bath, Ruler, Edit2
 } from 'lucide-react';
 import { PROPERTIES_GRID_DATA } from '../constants';
 import { AddPropertyModal } from './AddPropertyModal';
 import { Property } from '../types';
 
+// --- HELPER: Status Badge ---
+const getStatusBadge = (status: string) => {
+  if (status === 'pending') {
+     return (
+        <span className="bg-amber-100/90 backdrop-blur-md text-amber-700 px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm border border-amber-200 flex items-center gap-1.5 uppercase tracking-wider">
+           <div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Reservada
+        </span>
+     );
+  }
+  if (status === 'sold') {
+     return (
+        <span className="bg-red-100/90 backdrop-blur-md text-red-700 px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm border border-red-200 uppercase tracking-wider">
+           Vendida
+        </span>
+     );
+  }
+  return (
+     <span className="bg-emerald-100/90 backdrop-blur-md text-emerald-700 px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm border border-emerald-200 flex items-center gap-1.5 uppercase tracking-wider">
+        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Disponible
+     </span>
+  );
+};
+
+// --- RENDERER: IMMERSIVE LANDSCAPE (GRID) ---
+const RenderLandscape: React.FC<{ 
+    prop: Property; 
+    onEdit: (prop: Property) => void;
+    onToggleVisibility: (id: string) => void; 
+}> = ({ prop, onEdit, onToggleVisibility }) => {
+  
+  const isVisible = prop.isVisible;
+
+  return (
+    <div 
+        onClick={() => onEdit(prop)}
+        className={`group relative aspect-video rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 bg-gray-900
+            ${isVisible
+                ? 'shadow-md hover:shadow-2xl' 
+                : 'shadow-inner border border-gray-200 opacity-90'
+            }
+        `}
+    >
+        {/* Image */}
+        <img 
+            src={prop.imageUrl} 
+            className={`w-full h-full object-cover transition-all duration-700 
+                ${isVisible 
+                    ? 'grayscale-0 opacity-100 group-hover:scale-105' 
+                    : 'grayscale opacity-50'
+                }
+            `} 
+            alt={prop.title} 
+        />
+        
+        {/* Gradient Overlay */}
+        <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent transition-opacity
+             ${isVisible ? 'opacity-80 group-hover:opacity-90' : 'opacity-70'}
+        `}></div>
+        
+        {/* Top Section: Status Badge & Toggle Switch */}
+        <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
+            <div>{getStatusBadge(prop.status)}</div>
+            
+            {/* Toggle Switch for Visibility */}
+            <div 
+                className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-2 py-1 rounded-full border border-white/10"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleVisibility(prop.id);
+                }}
+            >
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isVisible ? 'text-white' : 'text-gray-400'}`}>
+                   {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                </span>
+
+                <button 
+                    className={`w-10 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out focus:outline-none shadow-sm
+                        ${isVisible ? 'bg-primary-600' : 'bg-gray-500'}
+                    `}
+                >
+                    <div 
+                        className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ease-in-out
+                            ${isVisible ? 'translate-x-4' : 'translate-x-0'}
+                        `}
+                    />
+                </button>
+            </div>
+        </div>
+
+        {/* Bottom Section: Info */}
+        <div className={`absolute bottom-0 left-0 right-0 p-5 text-white transform transition-all duration-300 ${isVisible ? 'translate-y-2 group-hover:translate-y-0 opacity-100' : 'translate-y-0 opacity-80'}`}>
+            {/* Price Section */}
+            <div className="text-2xl font-bold tracking-tight text-white shadow-black/50 drop-shadow-sm leading-none">
+                {prop.currency} {prop.price.toLocaleString()}
+            </div>
+            
+            {/* Info Row: Address & Type Badge */}
+            <div className="flex justify-between items-center mt-1.5">
+                <p className="text-white/80 text-xs font-bold flex items-center gap-1 tracking-wide truncate max-w-[55%]">
+                    <MapPin size={12} className="flex-shrink-0"/> 
+                    <span className="truncate">{prop.address}, {prop.neighborhood}</span>
+                </p>
+
+                {/* Property Type Badge */}
+                <div className="flex gap-2 text-[10px] font-bold text-black bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg shadow-lg items-center">
+                    <span>{prop.propertyType || 'Propiedad'}</span>
+                    <span className="text-gray-300">•</span>
+                    <span className="uppercase text-primary-700">{prop.operationType || 'Venta'}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+  );
+};
+
+// --- RENDERER: LIST ROW ---
+const RenderRow: React.FC<{ 
+    prop: Property; 
+    onEdit: (prop: Property) => void;
+    onToggleVisibility: (id: string) => void; 
+}> = ({ prop, onEdit, onToggleVisibility }) => {
+    
+    const isVisible = prop.isVisible;
+
+    return (
+        <div 
+            onClick={() => onEdit(prop)}
+            className={`group bg-white p-3 rounded-2xl border border-gray-100 hover:border-primary-100 hover:shadow-lg hover:shadow-primary-900/5 transition-all duration-300 flex items-center gap-6 cursor-pointer
+                ${!isVisible ? 'opacity-70 bg-gray-50' : ''}
+            `}
+        >
+            {/* Image Thumbnail */}
+            <div className="relative w-24 h-20 flex-shrink-0 rounded-xl overflow-hidden shadow-sm">
+                <img 
+                    src={prop.imageUrl} 
+                    className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${!isVisible ? 'grayscale' : ''}`} 
+                    alt={prop.title} 
+                />
+                <div className="absolute top-0 left-0">
+                    {/* Tiny status indicator for list view */}
+                    <div className={`w-3 h-3 rounded-br-lg ${
+                        prop.status === 'active' ? 'bg-emerald-500' :
+                        prop.status === 'pending' ? 'bg-amber-500' : 'bg-red-500'
+                    }`}></div>
+                </div>
+            </div>
+
+            {/* Main Info */}
+            <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                
+                {/* Title & Address (Span 4) */}
+                <div className="md:col-span-4">
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                            {prop.propertyType || 'Propiedad'}
+                        </span>
+                        <span className="text-xs font-bold text-primary-600">{prop.operationType || 'Venta'}</span>
+                    </div>
+                    <h4 className={`font-bold text-gray-900 truncate ${!isVisible ? 'text-gray-500' : ''}`}>{prop.title}</h4>
+                    <p className="text-xs text-gray-500 truncate flex items-center gap-1 mt-0.5">
+                        <MapPin size={12} /> {prop.address}, {prop.neighborhood}
+                    </p>
+                </div>
+
+                {/* Price (Span 3) */}
+                <div className="md:col-span-2">
+                    <p className={`text-lg font-bold tracking-tight ${!isVisible ? 'text-gray-500' : 'text-gray-900'}`}>
+                        {prop.currency} {prop.price.toLocaleString()}
+                    </p>
+                    {prop.expenses && (
+                        <p className="text-[10px] text-gray-400 font-medium">+ ${prop.expenses.toLocaleString()} exp.</p>
+                    )}
+                </div>
+
+                {/* Stats (Span 3) */}
+                <div className="md:col-span-3 flex items-center gap-3">
+                    <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg min-w-[50px]">
+                        <span className="text-gray-400 mb-0.5"><Ruler size={14} /></span>
+                        <span className="text-xs font-bold text-gray-700">{prop.totalArea || prop.area} m²</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg min-w-[50px]">
+                        <span className="text-gray-400 mb-0.5"><LayoutGrid size={14} /></span>
+                        <span className="text-xs font-bold text-gray-700">{prop.environments}</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg min-w-[50px]">
+                        <span className="text-gray-400 mb-0.5"><Bed size={14} /></span>
+                        <span className="text-xs font-bold text-gray-700">{prop.bedrooms}</span>
+                    </div>
+                </div>
+
+                {/* Status & Actions (Span 3) */}
+                <div className="md:col-span-3 flex items-center justify-end gap-4">
+                     <div className="hidden lg:block">{getStatusBadge(prop.status)}</div>
+                     
+                     <div className="h-8 w-px bg-gray-100 hidden lg:block"></div>
+
+                     {/* Visibility Toggle */}
+                     <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleVisibility(prop.id);
+                        }}
+                        className={`p-2 rounded-lg transition-colors border ${
+                            isVisible 
+                            ? 'bg-white text-gray-400 hover:text-primary-600 border-gray-200 hover:border-primary-200' 
+                            : 'bg-gray-100 text-gray-400 border-transparent'
+                        }`}
+                        title={isVisible ? 'Ocultar propiedad' : 'Hacer visible'}
+                     >
+                         {isVisible ? <Eye size={18} /> : <EyeOff size={18} />}
+                     </button>
+
+                     {/* Edit Button */}
+                     <button className="p-2 rounded-lg bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-100 transition-colors">
+                        <Edit2 size={18} />
+                     </button>
+                </div>
+
+            </div>
+        </div>
+    );
+}
+
 export const Properties: React.FC = () => {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Initialize state with data so we can modify it (toggle visibility)
+  const [properties, setProperties] = useState<Property[]>(PROPERTIES_GRID_DATA);
 
-  const handleEditClick = (e: React.MouseEvent, prop: Property) => {
-    e.stopPropagation();
+  // Sync with constants if needed, but for now state rules
+  useEffect(() => {
+     // Optional: If you fetch data, setProperties here
+  }, []);
+
+  const handleEditClick = (prop: Property) => {
     setEditingProperty(prop);
   };
 
-  const closeEditModal = () => {
-    setEditingProperty(null);
+  const handleToggleVisibility = (id: string) => {
+      setProperties(prevProps => 
+          prevProps.map(p => 
+              p.id === id ? { ...p, isVisible: !p.isVisible } : p
+          )
+      );
   };
 
-  const getStatusBadge = (status: string) => {
-    if (status === 'pending') {
-       return (
-          <span className="bg-amber-100/90 backdrop-blur-md text-amber-700 px-3 py-1 rounded-lg text-xs font-bold shadow-sm border border-amber-200 flex items-center gap-1">
-             <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-             Reservada
-          </span>
-       );
-    }
-    if (status === 'sold') {
-       return (
-          <span className="bg-red-100/90 backdrop-blur-md text-red-700 px-3 py-1 rounded-lg text-xs font-bold shadow-sm border border-red-200">
-             Vendida
-          </span>
-       );
-    }
-    // Default: active
-    return (
-       <span className="bg-emerald-100/90 backdrop-blur-md text-emerald-700 px-3 py-1 rounded-lg text-xs font-bold shadow-sm border border-emerald-200 flex items-center gap-1">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          Disponible
-       </span>
-    );
-  };
+  const getFilteredProperties = () => {
+     return properties.filter(p => 
+        p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        p.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.neighborhood?.toLowerCase().includes(searchTerm.toLowerCase())
+     );
+  }
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-8 animate-fade-in">
+    <div className="p-8 max-w-[1920px] mx-auto space-y-8 animate-fade-in pb-24">
       
-      {/* Header Section with Modern Search Pill */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        
-        {/* Title (Hidden on mobile for cleaner look, visible on desktop) */}
-        <div className="hidden md:block min-w-[200px]">
-           <h1 className="text-2xl font-bold text-gray-900">Propiedades</h1>
-           <p className="text-gray-500 text-sm">Gestiona tu inventario ({PROPERTIES_GRID_DATA.length})</p>
-        </div>
+      {/* Header Section */}
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+               <h1 className="text-3xl font-bold text-gray-900">Propiedades</h1>
+               <p className="text-gray-500 mt-1">Gestiona la visibilidad y detalles de tu inventario.</p>
+            </div>
+            
+            <div className="flex items-center gap-3 w-full md:w-auto">
+               
+               {/* View Toggle */}
+               <div className="bg-white border border-gray-200 rounded-lg p-1 flex items-center shadow-sm">
+                  <button 
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-gray-100 text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                  >
+                     <LayoutGrid size={18} strokeWidth={viewMode === 'grid' ? 2.5 : 2}/>
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-gray-100 text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                  >
+                     <List size={18} strokeWidth={viewMode === 'list' ? 2.5 : 2}/>
+                  </button>
+               </div>
 
-        {/* Centered Search Pill */}
-        <div className="w-full max-w-2xl relative group z-20">
-             <div className="absolute inset-0 bg-primary-100/30 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-             <div className="relative bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-gray-100 rounded-full p-1.5 pl-5 flex items-center gap-3 transition-all hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
-                <Search className="text-gray-400 group-focus-within:text-primary-500 transition-colors" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar por dirección, barrio o ciudad..." 
-                  className="flex-1 bg-transparent outline-none text-gray-700 placeholder:text-gray-400 text-sm font-medium h-10"
-                />
-                <div className="h-6 w-px bg-gray-200"></div>
-                <button className="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-gray-50 text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors whitespace-nowrap">
-                  <SlidersHorizontal size={16} /> 
-                  <span>Filtros</span>
-                </button>
-             </div>
-        </div>
-
-        {/* View Toggles */}
-        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 flex-shrink-0">
-           <button 
-             onClick={() => setViewMode('grid')}
-             className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'}`}
-             title="Vista Cuadrícula"
-           >
-             <LayoutGrid size={18} />
-           </button>
-           <button 
-             onClick={() => setViewMode('list')}
-             className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'}`}
-             title="Vista Lista"
-           >
-             <List size={18} />
-           </button>
+               {/* Search Pill */}
+               <div className="flex-1 md:w-80 relative group">
+                  <div className="absolute inset-0 bg-primary-100/30 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="relative bg-white shadow-sm border border-gray-200 rounded-full p-2.5 pl-5 flex items-center gap-3 transition-all focus-within:ring-2 focus-within:ring-primary-100 focus-within:border-primary-300">
+                      <Search className="text-gray-400" size={18} />
+                      <input 
+                        type="text" 
+                        placeholder="Buscar por dirección, barrio..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="flex-1 bg-transparent outline-none text-gray-700 text-sm h-full" 
+                      />
+                  </div>
+               </div>
+            </div>
         </div>
       </div>
 
-      {/* Content Area */}
+      {/* Content Rendering based on ViewMode */}
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {PROPERTIES_GRID_DATA.map((prop) => {
-             const hasGarage = prop.amenities?.some(a => a.toLowerCase().includes('cochera') || a.toLowerCase().includes('garage'));
-
-             return (
-              <div key={prop.id} className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full relative">
-                
-                {/* Image Area */}
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <img 
-                    src={prop.imageUrl} 
-                    alt={prop.title} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute bottom-3 left-3">
-                    {getStatusBadge(prop.status)}
-                  </div>
-                  
-                  {/* Admin Quick Stats Overlay (Top Right) */}
-                  <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
-                     <div className="bg-white/90 backdrop-blur px-2 py-1 rounded-md text-[10px] font-bold text-gray-600 shadow-sm border border-gray-100 flex items-center gap-1">
-                        <GitCompareArrows size={12} /> {prop.matchesCount}
-                     </div>
-                     <div className="bg-white/90 backdrop-blur px-2 py-1 rounded-md text-[10px] font-bold text-rose-600 shadow-sm border border-gray-100 flex items-center gap-1">
-                        <Heart size={12} className="fill-rose-600" /> {prop.interestedClients}
-                     </div>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-5 flex-1 flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-bold text-gray-900 tracking-tight">{prop.currency} {prop.price.toLocaleString()}</h3>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                          prop.operationType === 'Alquiler' 
-                              ? 'bg-orange-50 text-orange-600 border-orange-100' 
-                              : 'bg-blue-50 text-blue-600 border-blue-100'
-                      }`}>
-                          {prop.operationType || 'Venta'}
-                      </span>
-                  </div>
-                  
-                  <h4 className="font-medium text-base text-gray-900 line-clamp-1 group-hover:text-primary-600 transition-colors leading-snug">{prop.title}</h4>
-                  
-                  <p className="text-gray-500 text-sm flex items-center gap-1 line-clamp-1">
-                      <MapPin size={16} className="flex-shrink-0" /> {prop.address}, {prop.neighborhood}
-                  </p>
-
-                  {/* Metrics Strip */}
-                  <div className="flex items-center gap-3 text-sm text-gray-500 border-t border-gray-100 pt-3 mt-auto overflow-x-auto no-scrollbar">
-                      <span className="flex items-center gap-1 whitespace-nowrap"><b className="text-gray-900">{prop.totalArea || prop.area}</b> m²</span>
-                      <span className="w-1 h-1 bg-gray-300 rounded-full flex-shrink-0"></span>
-                      <span className="flex items-center gap-1 whitespace-nowrap"><b className="text-gray-900">{prop.environments}</b> Amb</span>
-                      <span className="w-1 h-1 bg-gray-300 rounded-full flex-shrink-0"></span>
-                      <span className="flex items-center gap-1 whitespace-nowrap"><b className="text-gray-900">{prop.bedrooms || 1}</b> Dorm</span>
-                      
-                      {hasGarage && (
-                        <>
-                            <span className="w-1 h-1 bg-gray-300 rounded-full flex-shrink-0"></span>
-                            <span className="flex items-center gap-1 whitespace-nowrap" title="Cochera Incluida">
-                              <Car size={14} className="text-gray-500" />
-                            </span>
-                        </>
-                      )}
-                  </div>
-                </div>
-
-                {/* Admin Action Button */}
-                <button 
-                  onClick={(e) => handleEditClick(e, prop)}
-                  className="w-full py-4 bg-gray-50 text-gray-500 hover:bg-primary-50 hover:text-primary-600 border-t border-gray-100 font-bold text-sm uppercase tracking-wide transition-all duration-300 ease-out flex items-center justify-center gap-2"
-                >
-                  <Pencil size={16} />
-                  Editar Propiedad
-                </button>
-
-              </div>
-             );
-          })}
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+             {getFilteredProperties().map(prop => (
+                <RenderLandscape 
+                    key={prop.id} 
+                    prop={prop} 
+                    onEdit={handleEditClick} 
+                    onToggleVisibility={handleToggleVisibility}
+                />
+             ))}
+          </div>
       ) : (
-        <div className="space-y-4">
-          {PROPERTIES_GRID_DATA.map((prop) => (
-            <div 
-               key={prop.id} 
-               className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary-100 transition-all p-4 flex flex-col sm:flex-row gap-6 group cursor-pointer relative overflow-hidden"
-               onClick={(e) => handleEditClick(e, prop)}
-            >
-                {/* Image */}
-                <div className="w-full sm:w-48 h-48 sm:h-32 rounded-lg overflow-hidden relative flex-shrink-0">
-                    <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute top-2 left-2">
-                        {getStatusBadge(prop.status)}
-                    </div>
-                </div>
-
-                {/* Details */}
-                <div className="flex-1 flex flex-col justify-center min-w-0">
-                    <div className="flex items-start justify-between mb-2">
-                        <div className="min-w-0">
-                            <h3 className="font-bold text-gray-900 text-lg truncate pr-4">{prop.title}</h3>
-                            <p className="text-gray-500 text-sm flex items-center gap-1">
-                                <MapPin size={14} /> {prop.address}, {prop.neighborhood}
-                            </p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                            <div className="flex items-center justify-end gap-2">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                                    prop.operationType === 'Alquiler' 
-                                        ? 'bg-orange-50 text-orange-600 border-orange-100' 
-                                        : 'bg-blue-50 text-blue-600 border-blue-100'
-                                }`}>
-                                    {prop.operationType || 'Venta'}
-                                </span>
-                                <div className="text-xl font-bold text-primary-600">{prop.currency} {prop.price.toLocaleString()}</div>
-                            </div>
-                            {prop.expenses > 0 && <div className="text-xs text-gray-400">+ ${prop.expenses} exp</div>}
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                        <span className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                            <Ruler size={14} /> {prop.totalArea} m²
-                        </span>
-                        <span className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                            <Bed size={14} /> {prop.bedrooms || 1}
-                        </span>
-                        <span className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                            <Bath size={14} /> {prop.bathrooms || 1}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Actions / Stats */}
-                <div className="flex flex-row sm:flex-col items-center sm:justify-center gap-3 border-t sm:border-t-0 sm:border-l border-gray-100 pt-4 sm:pt-0 sm:pl-6 min-w-[140px]">
-                    <div className="flex flex-col items-end gap-1 w-full">
-                        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:block">Matches</div>
-                        <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                             <GitCompareArrows size={14} className="text-gray-400" /> {prop.matchesCount} matches
-                        </div>
-                        <div className="flex items-center gap-2 text-sm font-medium text-rose-600">
-                             <Heart size={14} className="fill-rose-600" /> {prop.interestedClients} intereses
-                        </div>
-                    </div>
-                    <button className="w-full py-2 bg-gray-50 text-gray-600 hover:bg-primary-50 hover:text-primary-700 font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-2 mt-auto">
-                        <Pencil size={14} /> <span className="sm:hidden xl:inline">Editar</span>
-                    </button>
-                </div>
-            </div>
-          ))}
-        </div>
+          <div className="flex flex-col gap-3">
+             {/* Optional List Header */}
+             <div className="hidden md:grid grid-cols-12 gap-6 px-6 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                <div className="col-span-5">Propiedad</div>
+                <div className="col-span-2">Precio</div>
+                <div className="col-span-3">Características</div>
+                <div className="col-span-2 text-right">Acciones</div>
+             </div>
+             
+             {getFilteredProperties().map(prop => (
+                <RenderRow 
+                    key={prop.id} 
+                    prop={prop} 
+                    onEdit={handleEditClick} 
+                    onToggleVisibility={handleToggleVisibility}
+                />
+             ))}
+          </div>
       )}
 
-      {/* Edit Modal Instance */}
-      <AddPropertyModal 
-        isOpen={!!editingProperty} 
-        onClose={closeEditModal}
-        initialData={editingProperty}
-      />
-
+      {/* Edit Property Modal - Conditionally Rendered to force remount and clean state init */}
+      {editingProperty && (
+        <AddPropertyModal 
+          isOpen={true} 
+          onClose={() => setEditingProperty(null)}
+          initialData={editingProperty}
+        />
+      )}
     </div>
   );
 };

@@ -8,6 +8,7 @@ import { Properties } from './components/Properties';
 import { Interests } from './components/Interests';
 import { Visited } from './components/Visited';
 import { Settings } from './components/Settings';
+import { Matching } from './components/Matching';
 import { AddPropertyModal } from './components/AddPropertyModal';
 import { UnderConstruction } from './components/UnderConstruction';
 import { Welcome } from './components/Welcome';
@@ -43,6 +44,8 @@ const App: React.FC = () => {
         return <Properties />;
       case 'clients':
         return <Clients />;
+      case 'matching':
+        return <Matching />;
       case 'interests':
         return <Interests />;
       case 'visited':
@@ -82,12 +85,14 @@ const App: React.FC = () => {
       {/* Mobile Bottom Navigation (Agent Only) - Visible on Mobile and Tablet (Hidden on XL+) */}
       <MobileNavbar currentView={currentView} onNavigate={setCurrentView} />
 
-      {/* Modal Layer */}
-      <AddPropertyModal 
-        isOpen={isAddPropertyModalOpen} 
-        onClose={() => setIsAddPropertyModalOpen(false)}
-        initialData={null} 
-      />
+      {/* Modal Layer - Conditionally Rendered to ensure clean state on open */}
+      {isAddPropertyModalOpen && (
+        <AddPropertyModal 
+          isOpen={true} 
+          onClose={() => setIsAddPropertyModalOpen(false)}
+          initialData={null} 
+        />
+      )}
     </div>
   );
 };

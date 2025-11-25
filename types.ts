@@ -10,6 +10,7 @@ export interface Property {
   matchesCount: number;
   interestedClients: number;
   status: 'active' | 'pending' | 'sold';
+  isVisible: boolean; // New field for visibility
   addedAt: string;
   
   // Basic Details
@@ -96,11 +97,25 @@ export interface ScrapedData {
 }
 
 export interface SearchParams {
-  type: string;
+  type: string; // Deprecated in UI but kept for compatibility, prefer 'propertyType' below
   maxPrice: number;
   currency: string;
   environments: string | number; // '2' or '3+'
   location: string;
+  
+  // Extended fields for new UI
+  operationType?: 'Venta' | 'Alquiler';
+  minPrice?: number;
+  propertyTypes?: string[]; // Array for multiple selection if needed, or single
+  amenities?: string[];
+  
+  // Dimensions
+  minArea?: number;
+  maxArea?: number;
+  bedrooms?: string;
+  bathrooms?: string;
+  
+  // Legacy booleans (can still be used or mapped to amenities)
   hasGarage?: boolean;
   isCreditSuitable?: boolean;
   isProfessionalSuitable?: boolean;

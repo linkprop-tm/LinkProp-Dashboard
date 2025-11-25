@@ -4,14 +4,21 @@ import {
   Search, Filter, Plus, 
   Edit2, 
   Car, CreditCard, LayoutGrid, Briefcase, MapPin, 
-  MessageCircle, UserCheck, Clock,
-  Home, XCircle, Trash2, Users, ChevronDown, ChevronUp, X, RefreshCcw
+  UserCheck, Clock,
+  Home, XCircle, Trash2, Users, ChevronDown, ChevronUp, X, RefreshCcw, DollarSign
 } from 'lucide-react';
 import { CLIENTS_DATA } from '../constants';
+import { EditClientModal } from './EditClientModal';
+import { Client } from '../types';
 
 export const Clients: React.FC = () => {
+  // Use state for clients to allow updates
+  const [clients, setClients] = useState<Client[]>(CLIENTS_DATA);
   const [selectedClients, setSelectedClients] = useState<string[]>([]); 
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  
+  // Edit Modal State
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
   
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,9 +51,17 @@ export const Clients: React.FC = () => {
     setSearchTerm('');
   };
 
+  // Handler for saving edits from the modal
+  const handleSaveClient = (updatedClient: Client) => {
+    setClients(prevClients => 
+      prevClients.map(c => c.id === updatedClient.id ? updatedClient : c)
+    );
+    setEditingClient(null);
+  };
+
   // Filter Logic
   const filteredClients = useMemo(() => {
-    return CLIENTS_DATA.filter(client => {
+    return clients.filter(client => {
       // 1. Text Search (Name, Email, Location)
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = 
@@ -70,15 +85,15 @@ export const Clients: React.FC = () => {
 
       return matchesSearch && matchesStatus && matchesType && matchesLocation && matchesBudget;
     });
-  }, [searchTerm, filters]);
+  }, [searchTerm, filters, clients]);
 
   // Stats (Global, not filtered)
-  const totalClients = CLIENTS_DATA.length;
-  const activeClientsCount = CLIENTS_DATA.filter(c => c.status === 'active').length;
-  const inactiveClientsCount = CLIENTS_DATA.filter(c => c.status === 'inactive').length;
+  const totalClients = clients.length;
+  const activeClientsCount = clients.filter(c => c.status === 'active').length;
+  const inactiveClientsCount = clients.filter(c => c.status === 'inactive').length;
 
   // Unique types for the filter dropdown
-  const availableTypes = Array.from(new Set(CLIENTS_DATA.map(c => c.searchParams.type)));
+  const availableTypes = Array.from(new Set(clients.map(c => c.searchParams.type)));
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8 animate-fade-in pb-24">
@@ -322,50 +337,51 @@ export const Clients: React.FC = () => {
                        </div>
                     </div>
 
-                    {/* Column 2: Expanded Search Parameters */}
-                    <div className="md:col-span-6">
-                       <div className="bg-gray-50/50 rounded-xl border border-gray-100 p-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    {/* Column 2: CLEANER SEARCH PARAMS */}
+                    <div className="md:col-span-6 px-2">
+                       <div className="flex flex-col gap-2">
                           
-                          {/* Main Criteria */}
-                          <div className="flex items-center gap-4 flex-1 border-r border-gray-200 pr-4 border-dashed w-full sm:w-auto">
-                             <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-2 text-gray-900 font-bold text-sm">
+                          {/* Row 1: Primary Info (Type, Location, Budget) */}
+                          <div className="flex flex-wrap items-center gap-y-2 gap-x-3">
+                              <div className="flex items-center gap-2 text-gray-900 font-bold text-sm">
                                    <Home size={16} className="text-primary-500" />
                                    {client.searchParams.type}
-                                </div>
-                                <div className="flex items-center gap-2 text-gray-500 text-xs font-medium">
-                                   <MapPin size={14} />
+                              </div>
+                              
+                              <span className="text-gray-300 hidden sm:inline">•</span>
+                              
+                              <div className="flex items-center gap-1.5 text-gray-600 text-sm font-medium">
+                                   <MapPin size={14} className="text-gray-400" />
                                    {client.searchParams.location}
-                                </div>
-                             </div>
-                             <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
-                             <div className="flex flex-col gap-1">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase">Presupuesto</span>
-                                <div className="flex items-center gap-1 text-emerald-700 font-bold text-sm bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                              </div>
+
+                              <span className="text-gray-300 hidden sm:inline">•</span>
+
+                              <div className="flex items-center gap-1 text-emerald-700 font-bold text-sm bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                                   <DollarSign size={12} strokeWidth={2.5} />
                                    {client.searchParams.currency} {client.searchParams.maxPrice.toLocaleString()}
-                                </div>
-                             </div>
+                              </div>
                           </div>
 
-                          {/* Features Grid */}
-                          <div className="flex flex-wrap gap-2 justify-end max-w-[220px]">
+                          {/* Row 2: Tag Cloud */}
+                          <div className="flex flex-wrap gap-2 mt-1">
                              {client.searchParams.environments && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-gray-200 text-[10px] font-medium text-gray-600 shadow-sm" title="Ambientes">
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 border border-gray-100 text-[10px] font-semibold text-gray-500 hover:bg-white hover:border-gray-200 transition-colors" title="Ambientes">
                                    <LayoutGrid size={12} /> {client.searchParams.environments} Amb
                                 </span>
                              )}
                              {client.searchParams.hasGarage && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-gray-200 text-[10px] font-medium text-gray-600 shadow-sm" title="Con Cochera">
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 border border-gray-100 text-[10px] font-semibold text-gray-500 hover:bg-white hover:border-gray-200 transition-colors" title="Con Cochera">
                                    <Car size={12} /> Cochera
                                 </span>
                              )}
                              {client.searchParams.isCreditSuitable && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-gray-200 text-[10px] font-medium text-gray-600 shadow-sm" title="Apto Crédito">
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 border border-gray-100 text-[10px] font-semibold text-gray-500 hover:bg-white hover:border-gray-200 transition-colors" title="Apto Crédito">
                                    <CreditCard size={12} /> Crédito
                                 </span>
                              )}
                              {client.searchParams.isProfessionalSuitable && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-gray-200 text-[10px] font-medium text-gray-600 shadow-sm" title="Apto Profesional">
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 border border-gray-100 text-[10px] font-semibold text-gray-500 hover:bg-white hover:border-gray-200 transition-colors" title="Apto Profesional">
                                    <Briefcase size={12} /> Prof.
                                 </span>
                              )}
@@ -374,15 +390,12 @@ export const Clients: React.FC = () => {
                        </div>
                     </div>
 
-                    {/* Column 3: Actions */}
+                    {/* Column 3: Actions (Without WhatsApp Button) */}
                     <div className="md:col-span-2 flex items-center justify-end gap-2">
                        <button 
-                          className="p-2.5 rounded-xl text-white bg-[#25D366] hover:bg-[#20bd5a] shadow-sm hover:shadow-green-200/50 transition-all active:scale-95"
-                          title="Contactar por WhatsApp"
+                          onClick={() => setEditingClient(client)}
+                          className="p-2.5 rounded-xl text-primary-600 border border-primary-600 hover:bg-primary-50 transition-all shadow-sm" title="Editar"
                        >
-                          <MessageCircle size={18} />
-                       </button>
-                       <button className="p-2.5 rounded-xl text-gray-400 hover:text-primary-600 hover:bg-primary-50 border border-transparent hover:border-primary-100 transition-all" title="Editar">
                           <Edit2 size={18} />
                        </button>
                        <button className="p-2.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all" title="Eliminar">
@@ -408,6 +421,17 @@ export const Clients: React.FC = () => {
              </div>
           )}
       </div>
+
+      {/* Edit Client Modal */}
+      {editingClient && (
+        <EditClientModal 
+           isOpen={true}
+           client={editingClient}
+           onClose={() => setEditingClient(null)}
+           onSave={handleSaveClient}
+        />
+      )}
+
     </div>
   );
 };

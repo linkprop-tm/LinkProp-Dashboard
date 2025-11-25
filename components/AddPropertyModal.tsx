@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Link, CheckCircle2, MapPin, Image as ImageIcon, Home, Bath, Bed, Save, Calendar, 
   DollarSign, Ruler, Briefcase, CheckSquare, LayoutGrid, Trash2, Car, Compass, ShieldCheck,
-  Upload, GripVertical, Plus, Globe, ExternalLink, Sparkles, Loader2
+  Upload, GripVertical, Plus, Globe, ExternalLink, Sparkles, Loader2, Eye, EyeOff
 } from 'lucide-react';
 import { ScrapedData, Property } from '../types';
 
@@ -14,64 +14,52 @@ interface AddPropertyModalProps {
 }
 
 export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, initialData }) => {
-  const [step, setStep] = useState<'input' | 'scraping' | 'preview'>('input');
-  const [url, setUrl] = useState('');
+  
+  // --- DATA MAPPING HELPER (Synchronous) ---
+  const getInitialScrapedData = (data: Property | null | undefined): ScrapedData | null => {
+    if (!data) return null;
+    return {
+        title: data.title,
+        price: data.price.toString(),
+        address: data.address,
+        description: data.description || "Descripción de la propiedad...",
+        features: {
+          beds: data.bedrooms || 1,
+          baths: data.bathrooms || 1,
+          area: data.totalArea || data.area || 0,
+          coveredArea: data.coveredArea || 0,
+          environments: data.environments || 1
+        },
+        details: {
+          antiquity: data.antiquity || 0,
+          expenses: data.expenses || 0,
+          isCreditSuitable: data.isCreditSuitable || false,
+          isProfessionalSuitable: data.isProfessionalSuitable || false,
+          operationType: data.operationType || 'Venta',
+          propertyType: data.propertyType || 'Departamento'
+        },
+        location: {
+          neighborhood: data.neighborhood || '',
+          province: data.province || 'Buenos Aires'
+        },
+        amenities: data.amenities || ['Agua Corriente', 'Luz', 'Gas Natural'],
+        images: data.images && data.images.length > 0 
+          ? data.images 
+          : [data.imageUrl, 'https://picsum.photos/300/200?random=102', 'https://picsum.photos/300/200?random=103']
+    };
+  };
+
+  // --- STATE INITIALIZATION (Lazy) ---
+  // Initialize state based on props synchronously to avoid visual flash
+  const [step, setStep] = useState<'input' | 'scraping' | 'preview'>(() => initialData ? 'preview' : 'input');
+  const [url, setUrl] = useState(() => initialData ? 'https://www.zonaprop.com.ar/propiedades/clasificado-demo.html' : '');
   const [progress, setProgress] = useState(0);
-  const [scrapedData, setScrapedData] = useState<ScrapedData | null>(null);
-  const [status, setStatus] = useState<'active' | 'pending' | 'sold'>('active');
+  const [scrapedData, setScrapedData] = useState<ScrapedData | null>(() => getInitialScrapedData(initialData));
+  const [status, setStatus] = useState<'active' | 'pending' | 'sold'>(() => initialData?.status || 'active');
+  const [isVisible, setIsVisible] = useState(() => initialData?.isVisible !== undefined ? initialData.isVisible : true);
   
   // Drag and Drop State
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-
-  // Reset state or Load data when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      if (initialData) {
-        // Edit Mode: Pre-fill data and jump to preview
-        setStep('preview');
-        setStatus(initialData.status);
-        // Mock URL for edit mode demonstration if it doesn't exist
-        if (!url) setUrl('https://www.zonaprop.com.ar/propiedades/clasificado-departamento-palermo-12345.html');
-        
-        setScrapedData({
-          title: initialData.title,
-          price: initialData.price.toString(), // keep as number in internal logic, convert for input
-          address: initialData.address,
-          description: initialData.description || "Descripción de la propiedad...",
-          features: {
-            beds: initialData.bedrooms || 1,
-            baths: initialData.bathrooms || 1,
-            area: initialData.totalArea || initialData.area || 0,
-            coveredArea: initialData.coveredArea || 0,
-            environments: initialData.environments || 1
-          },
-          details: {
-            antiquity: initialData.antiquity || 0,
-            expenses: initialData.expenses || 0,
-            isCreditSuitable: initialData.isCreditSuitable || false,
-            isProfessionalSuitable: initialData.isProfessionalSuitable || false,
-            operationType: initialData.operationType || 'Venta',
-            propertyType: initialData.propertyType || 'Departamento'
-          },
-          location: {
-            neighborhood: initialData.neighborhood || '',
-            province: initialData.province || 'Buenos Aires'
-          },
-          amenities: initialData.amenities || ['Agua Corriente', 'Luz', 'Gas Natural'],
-          images: initialData.images && initialData.images.length > 0 
-            ? initialData.images 
-            : [initialData.imageUrl, 'https://picsum.photos/300/200?random=102', 'https://picsum.photos/300/200?random=103']
-        });
-      } else {
-        // Add Mode: Reset
-        setStep('input');
-        setUrl('');
-        setProgress(0);
-        setScrapedData(null);
-        setStatus('active');
-      }
-    }
-  }, [isOpen, initialData]);
 
   const handleScrape = () => {
     if (!url) return;
@@ -112,6 +100,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
           images: Array.from({length: 32}, (_, i) => `https://picsum.photos/600/400?random=${100+i}`) // Generating lots of images for demo
         });
         setStatus('active');
+        setIsVisible(true);
         setTimeout(() => setStep('preview'), 800);
       }
       setProgress(Math.min(currentProgress, 100));
@@ -168,6 +157,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
      return 'Web Directa';
   };
 
+  // If !isOpen is handled by parent conditional rendering, this check is redundant but safe
   if (!isOpen) return null;
 
   const getStatusColor = () => {
@@ -179,8 +169,15 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
       }
   };
 
+  const getOperationColor = () => {
+     if (scrapedData?.details?.operationType === 'Alquiler') {
+         return 'bg-violet-50 text-violet-700 border-violet-100 focus:ring-violet-200';
+     }
+     return 'bg-blue-50 text-blue-700 border-blue-100 focus:ring-blue-200';
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity"
@@ -368,12 +365,28 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                     {/* Header Info */}
                     <div>
                        <div className="flex items-center gap-2 mb-3">
-                          <select className="px-3 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-bold uppercase tracking-wider border border-blue-100 outline-none focus:ring-2 focus:ring-blue-200" defaultValue={scrapedData.details?.operationType}>
+                          {/* 1. Operation Type */}
+                          <select 
+                            className={`px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider border outline-none focus:ring-2 ${getOperationColor()}`} 
+                            value={scrapedData.details?.operationType}
+                            onChange={(e) => setScrapedData({...scrapedData, details: {...scrapedData.details, operationType: e.target.value as any}})}
+                          >
                               <option value="Venta">Venta</option>
                               <option value="Alquiler">Alquiler</option>
                           </select>
                           
-                          {/* Status Selector */}
+                          {/* 2. Property Type */}
+                          <select className="px-3 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-bold uppercase tracking-wider border border-gray-200 outline-none focus:ring-2 focus:ring-gray-200" defaultValue={scrapedData.details?.propertyType}>
+                              <option value="Departamento">Departamento</option>
+                              <option value="Casa">Casa</option>
+                              <option value="PH">PH</option>
+                              <option value="Terreno">Terreno</option>
+                              <option value="Local">Local</option>
+                              <option value="Oficina">Oficina</option>
+                              <option value="Galpón">Galpón</option>
+                          </select>
+
+                          {/* 3. Status Selector */}
                           <select 
                              value={status}
                              onChange={(e) => setStatus(e.target.value as any)}
@@ -382,13 +395,6 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                               <option value="active">Disponible</option>
                               <option value="pending">Reservada</option>
                               <option value="sold">Vendida</option>
-                          </select>
-
-                          <select className="px-3 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-bold uppercase tracking-wider border border-gray-200 outline-none focus:ring-2 focus:ring-gray-200" defaultValue={scrapedData.details?.propertyType}>
-                              <option value="Departamento">Departamento</option>
-                              <option value="Casa">Casa</option>
-                              <option value="PH">PH</option>
-                              <option value="Oficina">Oficina</option>
                           </select>
                        </div>
                        <input 
@@ -551,6 +557,37 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                               <div className="mt-2 flex items-center gap-1 text-gray-600 text-xs font-bold">
                                  + $ <input type="number" defaultValue={scrapedData.details?.expenses} className="w-20 bg-gray-100 px-1 rounded border-none" /> expensas
                               </div>
+                           </div>
+                           
+                           {/* Visibility Control (Added as requested) */}
+                           <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                              <div className="flex items-center justify-between mb-2">
+                                  <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                      {isVisible ? <Eye size={16}/> : <EyeOff size={16}/>}
+                                      Visibilidad
+                                  </span>
+                                  <div 
+                                      className="flex items-center cursor-pointer"
+                                      onClick={() => setIsVisible(!isVisible)}
+                                  >
+                                      <button 
+                                          className={`w-10 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out focus:outline-none shadow-sm
+                                              ${isVisible ? 'bg-primary-600' : 'bg-gray-400'}
+                                          `}
+                                      >
+                                          <div 
+                                              className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ease-in-out
+                                                  ${isVisible ? 'translate-x-4' : 'translate-x-0'}
+                                              `}
+                                          />
+                                      </button>
+                                  </div>
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                  {isVisible 
+                                    ? 'La propiedad es visible para todos los clientes y en portales.' 
+                                    : 'La propiedad está oculta. Solo visible para el equipo interno.'}
+                              </p>
                            </div>
 
                            {/* Agent Info */}

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, Building2, Users, Heart, Settings, History } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, Heart, Settings, History, Zap } from 'lucide-react';
 
 interface MobileNavbarProps {
   currentView: string;
@@ -12,21 +12,22 @@ export const MobileNavbar: React.FC<MobileNavbarProps> = ({ currentView, onNavig
     { id: 'dashboard', icon: LayoutDashboard, label: 'Inicio' },
     { id: 'properties', icon: Building2, label: 'Prop.' },
     { id: 'clients', icon: Users, label: 'Clientes' },
-    { id: 'interests', icon: Heart, label: 'Intereses' },
+    { id: 'matching', icon: Zap, label: 'Match' },
+    { id: 'interests', icon: Heart, label: 'Interés' },
     { id: 'visited', icon: History, label: 'Visitas' },
     { id: 'settings', icon: Settings, label: 'Config' },
   ];
 
   return (
     <nav className="xl:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-      <div className="flex justify-around items-center h-16 px-1">
+      <div className="flex justify-between md:justify-around items-center h-16 px-2 overflow-x-auto no-scrollbar">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           return (
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors duration-200 ${
+              className={`flex flex-col items-center justify-center min-w-[48px] flex-1 h-full space-y-1 transition-colors duration-200 ${
                 isActive ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'
               }`}
             >

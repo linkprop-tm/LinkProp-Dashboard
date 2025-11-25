@@ -15,11 +15,12 @@ export const TOP_PROPERTIES: Property[] = [
     address: 'Av. Santa Fe 3200, Palermo',
     price: 125000,
     currency: 'USD',
-    imageUrl: 'https://picsum.photos/400/300?random=1',
+    imageUrl: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=800',
     views: 1240,
     matchesCount: 85,
     interestedClients: 18,
     status: 'active',
+    isVisible: true,
     addedAt: '2023-10-15',
     orientation: 'Norte'
   },
@@ -35,13 +36,13 @@ export const PROPERTIES_GRID_DATA: Property[] = [
     address: 'Medrano al 1200',
     price: 156700,
     currency: 'USD',
-    imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=600',
+    imageUrl: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1200&auto=format&fit=crop', // Modern Living
     images: [
-      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=600',
+      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1200&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=600',
       'https://images.unsplash.com/photo-1484154218962-a1c002085d2f?auto=format&fit=crop&q=80&w=600'
     ],
-    views: 340, matchesCount: 15, interestedClients: 4, status: 'active', addedAt: '2024-01-01',
+    views: 340, matchesCount: 15, interestedClients: 4, status: 'active', isVisible: true, addedAt: '2024-01-01',
     
     propertyType: 'Departamento',
     operationType: 'Venta',
@@ -73,12 +74,12 @@ export const PROPERTIES_GRID_DATA: Property[] = [
     address: 'Av. Libertador 2400',
     price: 420000,
     currency: 'USD',
-    imageUrl: 'https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&q=80&w=600',
+    imageUrl: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1200&auto=format&fit=crop', // Modern White House/Apt
     images: [
-        'https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=600'
+        'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1200&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&q=80&w=600'
     ],
-    views: 850, matchesCount: 42, interestedClients: 12, status: 'active', addedAt: '2024-01-01',
+    views: 850, matchesCount: 42, interestedClients: 12, status: 'active', isVisible: true, addedAt: '2024-01-01',
     
     propertyType: 'Piso',
     operationType: 'Venta',
@@ -110,9 +111,9 @@ export const PROPERTIES_GRID_DATA: Property[] = [
     address: 'Thames 1500',
     price: 185000,
     currency: 'USD',
-    imageUrl: 'https://images.unsplash.com/photo-1523819472616-1d83505f5383?auto=format&fit=crop&q=80&w=600',
-    images: ['https://images.unsplash.com/photo-1523819472616-1d83505f5383?auto=format&fit=crop&q=80&w=600'],
-    views: 210, matchesCount: 28, interestedClients: 8, status: 'pending', addedAt: '2024-01-01',
+    imageUrl: 'https://images.unsplash.com/photo-1600210492493-0946911123ea?q=80&w=1200&auto=format&fit=crop', // Cozy living
+    images: ['https://images.unsplash.com/photo-1600210492493-0946911123ea?q=80&w=1200&auto=format&fit=crop'],
+    views: 210, matchesCount: 28, interestedClients: 8, status: 'pending', isVisible: true, addedAt: '2024-01-01',
     
     propertyType: 'PH',
     operationType: 'Venta',
@@ -144,9 +145,9 @@ export const PROPERTIES_GRID_DATA: Property[] = [
     address: 'Olazábal 4800',
     price: 290000,
     currency: 'USD',
-    imageUrl: 'https://images.unsplash.com/photo-1512633618428-0a178f8f5e1c?auto=format&fit=crop&q=80&w=600',
-    images: ['https://images.unsplash.com/photo-1512633618428-0a178f8f5e1c?auto=format&fit=crop&q=80&w=600'],
-    views: 150, matchesCount: 9, interestedClients: 2, status: 'active', addedAt: '2024-01-01',
+    imageUrl: 'https://images.unsplash.com/photo-1600607687644-c7171b42498b?q=80&w=1200&auto=format&fit=crop', // Glass window view
+    images: ['https://images.unsplash.com/photo-1600607687644-c7171b42498b?q=80&w=1200&auto=format&fit=crop'],
+    views: 150, matchesCount: 9, interestedClients: 2, status: 'active', isVisible: true, addedAt: '2024-01-01',
     
     propertyType: 'Departamento',
     operationType: 'Venta',
@@ -178,9 +179,9 @@ export const PROPERTIES_GRID_DATA: Property[] = [
     address: 'Lavalle 900',
     price: 78000,
     currency: 'USD',
-    imageUrl: 'https://images.unsplash.com/photo-1488998287214-1e668a8e0dc4?auto=format&fit=crop&q=80&w=600',
-    images: ['https://images.unsplash.com/photo-1488998287214-1e668a8e0dc4?auto=format&fit=crop&q=80&w=600'],
-    views: 95, matchesCount: 5, interestedClients: 0, status: 'pending', addedAt: '2024-01-01',
+    imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop', // Office
+    images: ['https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop'],
+    views: 95, matchesCount: 5, interestedClients: 0, status: 'pending', isVisible: false, addedAt: '2024-01-01',
     
     propertyType: 'Oficina',
     operationType: 'Venta',
@@ -212,9 +213,9 @@ export const PROPERTIES_GRID_DATA: Property[] = [
     address: 'Soler 3400',
     price: 95000,
     currency: 'USD',
-    imageUrl: 'https://images.unsplash.com/photo-1451976426598-a7593bd6d0b1?auto=format&fit=crop&q=80&w=600',
-    images: ['https://images.unsplash.com/photo-1451976426598-a7593bd6d0b1?auto=format&fit=crop&q=80&w=600'],
-    views: 410, matchesCount: 35, interestedClients: 11, status: 'active', addedAt: '2024-01-01',
+    imageUrl: 'https://images.unsplash.com/photo-1556020685-ae41abfc9365?q=80&w=1200&auto=format&fit=crop', // Studio
+    images: ['https://images.unsplash.com/photo-1556020685-ae41abfc9365?q=80&w=1200&auto=format&fit=crop'],
+    views: 410, matchesCount: 35, interestedClients: 11, status: 'active', isVisible: true, addedAt: '2024-01-01',
     
     propertyType: 'Departamento',
     operationType: 'Venta',
@@ -246,9 +247,9 @@ export const PROPERTIES_GRID_DATA: Property[] = [
     address: 'Melincué 3000',
     price: 310000,
     currency: 'USD',
-    imageUrl: 'https://images.unsplash.com/photo-1464146072230-91cabc968266?auto=format&fit=crop&q=80&w=600',
-    images: ['https://images.unsplash.com/photo-1464146072230-91cabc968266?auto=format&fit=crop&q=80&w=600'],
-    views: 65, matchesCount: 8, interestedClients: 3, status: 'active', addedAt: '2024-01-01',
+    imageUrl: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1200&auto=format&fit=crop', // House Exterior
+    images: ['https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1200&auto=format&fit=crop'],
+    views: 65, matchesCount: 8, interestedClients: 3, status: 'active', isVisible: true, addedAt: '2024-01-01',
     
     propertyType: 'Casa',
     operationType: 'Venta',
@@ -280,9 +281,9 @@ export const PROPERTIES_GRID_DATA: Property[] = [
     address: 'Cramer 2100',
     price: 235000,
     currency: 'USD',
-    imageUrl: 'https://images.unsplash.com/photo-1512918760513-95f1b292ca28?auto=format&fit=crop&q=80&w=600',
-    images: ['https://images.unsplash.com/photo-1512918760513-95f1b292ca28?auto=format&fit=crop&q=80&w=600'],
-    views: 180, matchesCount: 16, interestedClients: 5, status: 'active', addedAt: '2024-01-01',
+    imageUrl: 'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?q=80&w=1200&auto=format&fit=crop', // Modern Living 2
+    images: ['https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?q=80&w=1200&auto=format&fit=crop'],
+    views: 180, matchesCount: 16, interestedClients: 5, status: 'active', isVisible: true, addedAt: '2024-01-01',
     
     propertyType: 'PH',
     operationType: 'Venta',

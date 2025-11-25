@@ -24,8 +24,12 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, onBa
 
   // Ensure we have at least images for the grid layout
   const rawImages = property.images && property.images.length > 0 ? property.images : [property.imageUrl];
-  const images = [...rawImages, ...rawImages, ...rawImages].slice(0, 8); 
-  const totalImagesCount = rawImages.length; // Use actual count for display
+  // Create a robust list of images for the gallery
+  const images = property.images && property.images.length > 0 
+    ? property.images 
+    : [property.imageUrl, property.imageUrl, property.imageUrl, property.imageUrl, property.imageUrl]; 
+    
+  const totalImagesCount = images.length;
 
   const openLightbox = (index: number) => {
     setCurrentImageIndex(index);
@@ -140,16 +144,16 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, onBa
 
              {/* Side Images */}
              <div className="hidden md:block relative cursor-pointer overflow-hidden" onClick={() => openLightbox(1)}>
-               <img src={images[1]} alt="Side 1" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
+               <img src={images[1] || images[0]} alt="Side 1" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
              </div>
              <div className="hidden md:block relative cursor-pointer overflow-hidden" onClick={() => openLightbox(2)}>
-               <img src={images[2]} alt="Side 2" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
+               <img src={images[2] || images[0]} alt="Side 2" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
              </div>
              <div className="hidden md:block relative cursor-pointer overflow-hidden" onClick={() => openLightbox(3)}>
-               <img src={images[3]} alt="Side 3" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
+               <img src={images[3] || images[0]} alt="Side 3" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
              </div>
              <div className="hidden md:block relative cursor-pointer overflow-hidden" onClick={() => openLightbox(4)}>
-               <img src={images[4]} alt="Side 4" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
+               <img src={images[4] || images[0]} alt="Side 4" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
                {/* Overlay for "More photos" */}
                <div className="absolute inset-0 bg-black/40 hover:bg-black/50 transition-colors flex flex-col items-center justify-center text-white font-medium">
                   <ImageIcon size={24} className="mb-1" />
@@ -165,14 +169,22 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, onBa
                 {/* Header Info */}
                 <div>
                    <div className="flex items-center gap-2 mb-3">
-                      <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-bold uppercase tracking-wider">
+                      {/* 1. Operation Type */}
+                      <span className={`px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${
+                           property.operationType === 'Alquiler' 
+                               ? 'bg-violet-50 text-violet-700' 
+                               : 'bg-blue-50 text-blue-700'
+                      }`}>
                         {property.operationType || 'Venta'}
                       </span>
-                      {/* Status Badge inserted here */}
-                      {renderStatusBadge()}
+                      
+                      {/* 2. Property Type */}
                       <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-bold uppercase tracking-wider">
                         {property.propertyType || 'Departamento'}
                       </span>
+
+                      {/* 3. Status Badge */}
+                      {renderStatusBadge()}
                    </div>
                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
                      {property.title}
@@ -356,22 +368,23 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, onBa
 
        {/* Lightbox Overlay */}
        {isLightboxOpen && (
-          <div className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center backdrop-blur-sm">
+          <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center backdrop-blur-sm">
              <button 
-               className="absolute top-4 right-4 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition-colors"
+               className="absolute top-4 right-4 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition-colors z-[70]"
                onClick={closeLightbox}
              >
                 <X size={32} />
              </button>
              
              <button 
-               className="absolute left-4 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition-colors hidden md:block"
+               className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-3 hover:bg-white/10 rounded-full transition-colors hidden md:block z-[70]"
                onClick={prevImage}
              >
                 <ChevronLeft size={48} />
              </button>
 
-             <div className="w-full h-full flex items-center justify-center p-4 md:p-20">
+             {/* Main Image Container */}
+             <div className="flex-1 w-full h-full flex items-center justify-center p-4 md:p-10 pb-28 animate-fade-in relative">
                 <img 
                   src={images[currentImageIndex]} 
                   alt={`View ${currentImageIndex + 1}`} 
@@ -380,13 +393,35 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, onBa
              </div>
 
              <button 
-               className="absolute right-4 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition-colors hidden md:block"
+               className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-3 hover:bg-white/10 rounded-full transition-colors hidden md:block z-[70]"
                onClick={nextImage}
              >
                 <ChevronRight size={48} />
              </button>
 
-             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 font-medium bg-black/50 px-4 py-2 rounded-full">
+             {/* Thumbnail Strip (Bottom) */}
+             <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 flex justify-center z-[70] bg-gradient-to-t from-black via-black/80 to-transparent">
+                 <div className="flex gap-2 overflow-x-auto max-w-full custom-scrollbar p-2 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10">
+                     {images.map((img, idx) => (
+                        <button
+                          key={idx}
+                          onClick={(e) => {
+                             e.stopPropagation();
+                             setCurrentImageIndex(idx);
+                          }}
+                          className={`relative w-14 h-14 md:w-20 md:h-20 flex-shrink-0 rounded-lg overflow-hidden transition-all duration-300 ease-out border-2 ${
+                             currentImageIndex === idx 
+                             ? 'border-white opacity-100 scale-105' 
+                             : 'border-transparent opacity-40 hover:opacity-80 hover:scale-105'
+                          }`}
+                        >
+                           <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                        </button>
+                     ))}
+                 </div>
+             </div>
+
+             <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/80 font-medium bg-black/50 px-4 py-2 rounded-full backdrop-blur-md text-sm">
                 {currentImageIndex + 1} / {images.length}
              </div>
           </div>

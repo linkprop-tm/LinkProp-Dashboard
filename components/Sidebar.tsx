@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, Building2, Users, Heart, Settings, LogOut, History } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, Heart, Settings, LogOut, History, Zap } from 'lucide-react';
 
 interface SidebarProps {
   currentView: string;
@@ -26,6 +26,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
       icon: Users, 
       label: 'Clientes',
       activeClass: 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+    },
+    { 
+      id: 'matching', 
+      icon: Zap, 
+      label: 'Matching',
+      activeClass: 'bg-violet-600 text-white shadow-md shadow-violet-600/20'
     },
     { 
       id: 'interests', 

@@ -1,17 +1,19 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   LogOut, Search, Heart, MapPin, Home, Filter, ArrowRight, 
-  Compass, History, GitCompare, Settings, HelpCircle, Menu,
+  Compass, History, Scale, Settings, HelpCircle, Menu,
   ChevronRight, Calendar, Check, X, PlusCircle, DollarSign, Ruler, LayoutGrid,
   Car, Briefcase, Bed, Bath, PenTool, Quote, StickyNote, Star,
   User, Mail, Phone, Camera, Save, Sparkles, Building, Minus, Plus,
   ArrowUpDown, ArrowDownUp, Layers, AlignLeft, Users, Lock,
-  List, Image as ImageIcon, Table as TableIcon, Columns, MoreHorizontal, Send, CheckCircle2
+  List, Image as ImageIcon, Table as TableIcon, Columns, MoreHorizontal, Send, CheckCircle2,
+  Monitor, Grid, Smartphone, Trash2, AlertCircle, HeartOff, Shield, Key, ArrowUp, ArrowDown, Map
 } from 'lucide-react';
 import { PROPERTIES_GRID_DATA } from '../constants';
 import { PropertyDetails } from './PropertyDetails';
 import { Property } from '../types';
+import { Visited } from './Visited';
 
 interface ClientLayoutProps {
   onLogout: () => void;
@@ -20,6 +22,186 @@ interface ClientLayoutProps {
 type ClientView = 'explore' | 'interests' | 'visited' | 'compare' | 'settings' | 'help';
 type SortOption = 'price_asc' | 'price_desc' | 'area_asc' | 'area_desc' | 'neighborhood_group' | 'default';
 
+// --- LOCAL COMPONENTS ---
+
+const EmptyState: React.FC<{ icon: React.ElementType, title: string, description: string }> = ({ icon: Icon, title, description }) => (
+  <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-6">
+       <Icon size={40} strokeWidth={1.5} />
+    </div>
+    <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
+    <p className="text-gray-500 max-w-md mx-auto">{description}</p>
+  </div>
+);
+
+const PropertyCardVariant3: React.FC<{ 
+    prop: Property; 
+    isFavorite: boolean; 
+    onToggleFavorite: (id: string, e: React.MouseEvent) => void;
+    onClick: () => void;
+    isInComparison: boolean;
+    onToggleCompare: (id: string, e: React.MouseEvent) => void;
+}> = ({ prop, isFavorite, onToggleFavorite, onClick, isInComparison, onToggleCompare }) => {
+    
+    const getStatusBadge = () => {
+         if (prop.status === 'pending') {
+            return (
+               <span className="bg-amber-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm border border-white/20">
+                  Reservada
+               </span>
+            );
+         }
+         if (prop.status === 'sold') {
+            return (
+               <span className="bg-red-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm border border-white/20">
+                  Vendida
+               </span>
+            );
+         }
+         return (
+            <span className="bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm flex items-center gap-1.5 border border-white/20">
+               <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Disponible
+            </span>
+         );
+    };
+
+    return (
+        <div 
+            onClick={onClick}
+            className="group flex flex-col gap-3 h-full cursor-pointer"
+        >
+            {/* Image Section - Standalone rounded card */}
+            <div className="relative aspect-video rounded-3xl overflow-hidden shadow-sm group-hover:shadow-xl group-hover:shadow-gray-200/50 transition-all duration-300 border border-gray-100 bg-gray-100">
+                <img 
+                    src={prop.imageUrl} 
+                    alt={prop.title} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90"></div>
+                
+                {/* Top Left: Status */}
+                <div className="absolute top-4 left-4 z-10">
+                    {getStatusBadge()}
+                </div>
+
+                {/* Bottom Left: Price & Location */}
+                <div className="absolute bottom-4 left-4 text-white z-10 max-w-[60%]">
+                    <div className="text-2xl font-bold tracking-tight shadow-sm leading-tight mb-1">
+                        {prop.currency} {prop.price.toLocaleString()}
+                    </div>
+                    <p className="text-xs font-medium text-white/90 flex items-center gap-1 truncate drop-shadow-md">
+                        <MapPin size={12} className="flex-shrink-0" />
+                        <span className="truncate">{prop.address}</span>
+                    </p>
+                </div>
+
+                {/* Bottom Right: Specs (Area & Ambients) */}
+                <div className="absolute bottom-4 right-4 z-10">
+                     <div className="flex items-center gap-2 text-white text-xs font-bold bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm">
+                        <span>{prop.totalArea || prop.area} m²</span>
+                        <span className="w-0.5 h-3 bg-white/40 rounded-full"></span>
+                        <span>{prop.environments} Amb</span>
+                     </div>
+                </div>
+            </div>
+
+            {/* Actions Section (Floating Separate Buttons) */}
+            <div className="flex gap-3 px-1 mt-auto">
+                 <button 
+                    onClick={(e) => onToggleFavorite(prop.id, e)}
+                    className={`flex-1 py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all border shadow-sm ${
+                        isFavorite 
+                        ? 'bg-rose-50 text-rose-600 border-rose-200' 
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700 hover:shadow-md'
+                    }`}
+                 >
+                    <Heart size={18} className={isFavorite ? 'fill-current' : ''} />
+                    {isFavorite ? 'Me interesa' : 'Me interesa'}
+                 </button>
+
+                 <button 
+                    onClick={(e) => onToggleCompare(prop.id, e)}
+                    className={`flex-1 py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all border shadow-sm ${
+                        isInComparison 
+                        ? 'bg-orange-50 text-orange-600 border-orange-200' 
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700 hover:shadow-md'
+                    }`}
+                 >
+                    <Scale size={18} />
+                    {isInComparison ? 'Comparando' : 'Comparar'}
+                 </button>
+            </div>
+        </div>
+    );
+};
+
+const SortPanel: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    selectedOption: SortOption;
+    onSelectOption: (opt: SortOption) => void;
+}> = ({ isOpen, onClose, selectedOption, onSelectOption }) => {
+    if (!isOpen) return null;
+    
+    const options: { id: SortOption, label: string, icon: any }[] = [
+        { id: 'default', label: 'Relevancia', icon: Star },
+        { id: 'price_asc', label: 'Menor Precio', icon: ArrowDown },
+        { id: 'price_desc', label: 'Mayor Precio', icon: ArrowUp },
+        { id: 'area_desc', label: 'Mayor Superficie', icon: Ruler },
+        { id: 'neighborhood_group', label: 'Agrupar por Barrio', icon: Layers },
+    ];
+
+    return (
+        <div className="fixed inset-0 z-[100] flex justify-end">
+            <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
+            <div className="relative w-80 bg-white h-full shadow-2xl p-6 animate-fade-in-right">
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-lg font-bold text-gray-900">Ordenar por</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-500"><X size={20}/></button>
+                </div>
+                
+                <div className="space-y-2">
+                    {options.map((opt) => (
+                        <button
+                            key={opt.id}
+                            onClick={() => {
+                                onSelectOption(opt.id);
+                                onClose();
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                                selectedOption === opt.id 
+                                ? 'bg-primary-50 text-primary-600 border border-primary-100' 
+                                : 'text-gray-600 hover:bg-gray-50 border border-transparent'
+                            }`}
+                        >
+                            <opt.icon size={18} />
+                            {opt.label}
+                            {selectedOption === opt.id && <Check size={16} className="ml-auto" />}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- CONSTANTS FOR NEIGHBORHOODS ---
+const CABA_NEIGHBORHOODS = [
+  "Puerto Madero", "Palermo Chico", "Recoleta", "Palermo Botánico", "Las Cañitas", 
+  "Palermo Alto", "Palermo Nuevo", "Palermo Soho", "Palermo Hollywood", "Belgrano", 
+  "Núñez", "Colegiales", "Villa Devoto", "Villa Urquiza", "Retiro", "Saavedra", 
+  "Coghlan", "Chacarita", "Villa Crespo", "Villa Pueyrredón", "Caballito", 
+  "Villa del Parque", "Parque Chas", "Agronomía", "Villa Ortúzar", "Versalles", 
+  "Villa Real", "Flores", "Floresta", "Villa Luro", "Monte Castro", 
+  "Villa Santa Rita", "Villa General Mitre", "Boedo", "San Telmo", "Monserrat", 
+  "San Nicolás", "Balvanera", "Almagro", "Barracas", "Parque Patricios", 
+  "Constitución", "San Cristóbal", "La Paternal", "Parque Chacabuco", 
+  "Nueva Pompeya", "Parque Avellaneda", "Mataderos", "Liniers", "La Boca", 
+  "Villa Riachuelo", "Villa Lugano", "Villa Soldati"
+];
+
+// --- MAIN COMPONENT ---
+
 export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const [currentView, setCurrentView] = useState<ClientView>('explore');
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,25 +209,109 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const [favorites, setFavorites] = useState<string[]>(['101', '102', '103', '104', '106', '108']);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   
+  // Unmark Confirmation State
+  const [showUnmarkModal, setShowUnmarkModal] = useState(false);
+  const [propertyToUnmark, setPropertyToUnmark] = useState<string | null>(null);
+
+  // Comparison State
+  const [comparisonList, setComparisonList] = useState<string[]>([]);
+
   // Sort State
   const [isSortPanelOpen, setIsSortPanelOpen] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>('default');
   
   // Settings State
   const [settingsPropertyTypes, setSettingsPropertyTypes] = useState<string[]>(['Departamento']);
-  const [settingsAmenities, setSettingsAmenities] = useState<string[]>([]);
+  const [settingsAmenities, setSettingsAmenities] = useState<string[]>(['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Lavadero']);
   const [settingsAntiquity, setSettingsAntiquity] = useState<string[]>(['Hasta 5 años']);
   const [settingsOperation, setSettingsOperation] = useState('Venta');
   
-  // Mock data for "Visitadas"
-  const visitedIds = ['103', '108'];
+  // Settings - Specific Features State
+  const [settingsSpecifics, setSettingsSpecifics] = useState({
+      credit: false,
+      professional: false,
+      garage: false
+  });
+
+  const toggleSpecific = (key: keyof typeof settingsSpecifics) => {
+      setSettingsSpecifics(prev => ({...prev, [key]: !prev[key]}));
+  };
+  
+  // Settings - Location State
+  const [settingsRegion, setSettingsRegion] = useState<'CABA' | 'GBA'>('CABA');
+  const [settingsNeighborhoods, setSettingsNeighborhoods] = useState<string[]>(['Palermo Soho', 'Belgrano']);
+  const [neighborhoodSearchTerm, setNeighborhoodSearchTerm] = useState('');
+  const [isHoodDropdownOpen, setIsHoodDropdownOpen] = useState(false);
+  const hoodInputRef = useRef<HTMLInputElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (hoodInputRef.current && !hoodInputRef.current.parentElement?.contains(event.target as Node)) {
+        setIsHoodDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+
+  const toggleSettingsNeighborhood = (hood: string) => {
+      if (settingsNeighborhoods.includes(hood)) {
+          setSettingsNeighborhoods(settingsNeighborhoods.filter(h => h !== hood));
+      } else {
+          setSettingsNeighborhoods([...settingsNeighborhoods, hood]);
+      }
+      setNeighborhoodSearchTerm('');
+      setIsHoodDropdownOpen(false);
+  };
+  
+  const getFilteredNeighborhoods = () => {
+      const term = neighborhoodSearchTerm.toLowerCase();
+      if (!term) return [];
+      return CABA_NEIGHBORHOODS.filter(hood => 
+          hood.toLowerCase().includes(term) && 
+          !settingsNeighborhoods.includes(hood)
+      ).slice(0, 8); // Limit suggestions
+  };
+
 
   const toggleFavorite = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (favorites.includes(id)) {
-      setFavorites(favorites.filter(fid => fid !== id));
+      // If already favorite, ask for confirmation
+      setPropertyToUnmark(id);
+      setShowUnmarkModal(true);
     } else {
+      // If not favorite, add immediately
       setFavorites([...favorites, id]);
+    }
+  };
+
+  const confirmUnmark = () => {
+    if (propertyToUnmark) {
+      setFavorites(favorites.filter(fid => fid !== propertyToUnmark));
+      setShowUnmarkModal(false);
+      setPropertyToUnmark(null);
+    }
+  };
+
+  const cancelUnmark = () => {
+    setShowUnmarkModal(false);
+    setPropertyToUnmark(null);
+  };
+
+  const toggleCompare = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (comparisonList.includes(id)) {
+      setComparisonList(comparisonList.filter(cid => cid !== id));
+    } else {
+      if (comparisonList.length >= 3) {
+        // Simple visual feedback or toast could go here
+        alert("Solo puedes comparar hasta 3 propiedades a la vez.");
+        return;
+      }
+      setComparisonList([...comparisonList, id]);
     }
   };
 
@@ -70,9 +336,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   };
 
   const toggleSettingsAntiquity = (val: string) => {
-     // Single selection logic:
-     // If clicking the one already selected, deselect it (optional, or keep it).
-     // If clicking a new one, replace the entire array with the new value.
+     // Single selection logic for Antiquity
      if (settingsAntiquity.includes(val)) {
         setSettingsAntiquity([]); 
      } else {
@@ -112,7 +376,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
     { 
       id: 'compare', 
       label: 'Comparar', 
-      icon: GitCompare, 
+      icon: Scale, 
       // Solid Orange (requested change from Amber)
       activeClass: 'bg-orange-500 text-white shadow-lg shadow-orange-500/20',
       mobileTextClass: 'text-orange-600',
@@ -138,15 +402,61 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
     },
   ];
 
+  // Component for the Unmark Modal
+  const UnmarkConfirmationModal = () => {
+    if (!showUnmarkModal) return null;
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity"
+          onClick={cancelUnmark}
+        />
+        
+        {/* Modal */}
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative z-10 animate-fade-in-up transform scale-100 origin-center">
+            <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center text-rose-500 mb-4 ring-4 ring-rose-50/50">
+                    <HeartOff size={32} />
+                </div>
+                
+                <h3 className="text-xl font-bold text-gray-900 mb-2">¿Ya no te interesa?</h3>
+                <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                   Al desmarcar esta propiedad, le indicas a tu agente que ya no deseas visitarla ni recibir actualizaciones sobre ella.
+                </p>
+
+                <div className="flex gap-3 w-full">
+                   <button 
+                     onClick={cancelUnmark}
+                     className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors"
+                   >
+                      Cancelar
+                   </button>
+                   <button 
+                     onClick={confirmUnmark}
+                     className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white font-bold text-sm hover:bg-rose-700 shadow-lg shadow-rose-600/20 transition-all active:scale-95"
+                   >
+                      Sí, dejar de seguir
+                   </button>
+                </div>
+            </div>
+        </div>
+      </div>
+    );
+  };
+
   // If a property is selected, show the details view completely overlaying the content
   if (selectedProperty) {
     return (
-      <PropertyDetails 
-        property={selectedProperty} 
-        onBack={() => setSelectedProperty(null)} 
-        isFavorite={favorites.includes(selectedProperty.id)}
-        onToggleFavorite={(e) => toggleFavorite(selectedProperty.id, e)}
-      />
+      <>
+        <PropertyDetails 
+          property={selectedProperty} 
+          onBack={() => setSelectedProperty(null)} 
+          isFavorite={favorites.includes(selectedProperty.id)}
+          onToggleFavorite={(e) => toggleFavorite(selectedProperty.id, e)}
+        />
+        <UnmarkConfirmationModal />
+      </>
     );
   }
 
@@ -184,7 +494,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
           <div className="space-y-8 animate-fade-in pb-24">
             
             {/* Minimalist Symmetric Header */}
-            <div className="flex flex-col items-center justify-center pt-4 pb-2">
+            <div className="flex flex-col items-center justify-center pt-4">
                <div className="w-full max-w-3xl relative group z-20">
                   <div className="absolute inset-0 bg-primary-100/30 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <div className="relative bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 rounded-full p-2 pl-6 flex items-center gap-4 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
@@ -207,6 +517,33 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                   </div>
                </div>
             </div>
+               
+            {/* Comparison Bar (Sticky) */}
+            {comparisonList.length > 0 && (
+                <div className="sticky top-6 z-40 flex justify-center pointer-events-none">
+                    <div className="animate-fade-in-up flex items-center gap-3 pointer-events-auto">
+                        <div className="bg-gray-900/95 backdrop-blur-md text-white px-5 py-2.5 rounded-full shadow-2xl flex items-center gap-4 text-xs font-bold border border-white/10 ring-1 ring-black/5">
+                            <span className="flex items-center gap-2">
+                            <span className="bg-orange-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">{comparisonList.length}</span>
+                            <span>seleccionadas para comparar</span>
+                            </span>
+                            <div className="h-4 w-px bg-white/20"></div>
+                            <button 
+                            onClick={() => setCurrentView('compare')}
+                            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-full transition-all flex items-center gap-1.5 shadow-lg shadow-orange-500/20 active:scale-95"
+                            >
+                            Ver Comparación <ArrowRight size={14} strokeWidth={2.5}/>
+                            </button>
+                            <button 
+                            onClick={() => setComparisonList([])}
+                            className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
+                            >
+                            <X size={14}/>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Grid Content */}
             {processedProps.length === 0 ? (
@@ -223,14 +560,16 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                               <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-bold text-gray-500">{hoodProps.length}</span>
                               <div className="h-px flex-1 bg-gray-100"></div>
                            </div>
-                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                               {hoodProps.map(prop => (
-                                 <PropertyCard 
+                                 <PropertyCardVariant3 
                                     key={prop.id} 
                                     prop={prop} 
                                     isFavorite={favorites.includes(prop.id)} 
                                     onToggleFavorite={toggleFavorite}
                                     onClick={() => handlePropertyClick(prop)}
+                                    isInComparison={comparisonList.includes(prop.id)}
+                                    onToggleCompare={toggleCompare}
                                  />
                               ))}
                            </div>
@@ -239,15 +578,17 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                   })}
                </div>
             ) : (
-               // Standard Grid View
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+               // Standard Grid View - Now 2 columns max for larger cards
+               <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
                  {processedProps.map(prop => (
-                   <PropertyCard 
+                   <PropertyCardVariant3 
                      key={prop.id} 
                      prop={prop} 
                      isFavorite={favorites.includes(prop.id)} 
                      onToggleFavorite={toggleFavorite}
                      onClick={() => handlePropertyClick(prop)}
+                     isInComparison={comparisonList.includes(prop.id)}
+                     onToggleCompare={toggleCompare}
                    />
                  ))}
                </div>
@@ -257,11 +598,8 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
 
       case 'interests':
         const interestedProps = PROPERTIES_GRID_DATA.filter(p => favorites.includes(p.id));
-        
         return (
-          <div className="space-y-8 animate-fade-in pb-24 max-w-[1600px] mx-auto">
-            
-            {/* Header */}
+          <div className="space-y-8 animate-fade-in pb-24">
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
               <div>
                 <h2 className="text-3xl font-bold text-gray-900">Favoritos e Intereses</h2>
@@ -270,44 +608,20 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                 </p>
               </div>
             </div>
-
-            {/* Content Views - GALLERY ONLY */}
             {interestedProps.length === 0 ? (
                <EmptyState icon={Heart} title="Aún no tienes favoritos" description="Marca propiedades con 'Me interesa' para verlas aquí." />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
                   {interestedProps.map(prop => (
-                    <div 
+                    <PropertyCardVariant3 
                         key={prop.id}
+                        prop={prop}
+                        isFavorite={true}
+                        onToggleFavorite={toggleFavorite}
                         onClick={() => handlePropertyClick(prop)}
-                        className="group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all"
-                    >
-                        <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                        {/* Gradient Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
-                        
-                        {/* Top Actions */}
-                        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 duration-300">
-                          <button onClick={(e) => toggleFavorite(prop.id, e)} className="p-2 bg-white/20 backdrop-blur hover:bg-white rounded-full text-white hover:text-red-600 transition-colors">
-                              <Heart size={18} className="fill-white hover:fill-red-600" />
-                          </button>
-                          <button className="p-2 bg-white/20 backdrop-blur hover:bg-white rounded-full text-white hover:text-primary-600 transition-colors">
-                              <ArrowRight size={18} />
-                          </button>
-                        </div>
-
-                        {/* Bottom Info */}
-                        <div className="absolute bottom-0 left-0 right-0 p-6 text-white transform transition-transform duration-300 group-hover:-translate-y-2">
-                          <p className="text-xs font-bold uppercase tracking-widest mb-1 text-primary-300">{prop.neighborhood}</p>
-                          <h3 className="text-xl font-bold leading-tight mb-2">{prop.title}</h3>
-                          <div className="flex items-center justify-between border-t border-white/20 pt-3 mt-2">
-                              <span className="text-2xl font-bold">{prop.currency} {prop.price.toLocaleString()}</span>
-                              <div className="flex gap-2 text-xs font-medium text-gray-300">
-                                <span>{prop.totalArea} m²</span> • <span>{prop.environments} Amb</span>
-                              </div>
-                          </div>
-                        </div>
-                    </div>
+                        isInComparison={comparisonList.includes(prop.id)}
+                        onToggleCompare={toggleCompare}
+                    />
                   ))}
               </div>
             )}
@@ -315,557 +629,650 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
         );
 
       case 'visited':
-        const visitedProps = PROPERTIES_GRID_DATA.filter(p => visitedIds.includes(p.id));
+        return <Visited onPropertyClick={handlePropertyClick} />;
+
+      case 'compare':
+        const compareProps = PROPERTIES_GRID_DATA.filter(p => comparisonList.includes(p.id));
         
-        if (visitedProps.length === 0) {
-           return <EmptyState icon={History} title="Sin visitas registradas" description="Cuando agendes citas, aparecerán aquí." />;
+        if (compareProps.length === 0) {
+           return (
+             <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in text-center p-6">
+                <div className="w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mb-6 relative">
+                   <Scale size={40} strokeWidth={1.5} />
+                   <div className="absolute top-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm text-xs font-bold text-gray-400 border border-gray-100">0</div>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Compara Propiedades</h2>
+                <p className="text-gray-500 max-w-md mb-8">
+                   Selecciona hasta 3 propiedades en la sección Explorar o Favoritos usando el botón de comparar <Scale className="inline mx-1" size={14} /> para ver sus características lado a lado.
+                </p>
+                <button 
+                  onClick={() => setCurrentView('explore')}
+                  className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-primary-600/20 active:scale-95 transition-all"
+                >
+                   Ir a Explorar
+                </button>
+             </div>
+           )
         }
 
         return (
-          <div className="space-y-10 animate-fade-in pb-24 max-w-[1400px] mx-auto">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Visitadas anteriormente</h2>
-              <p className="text-gray-500 mt-2">Historial de propiedades recorridas y tus notas personales.</p>
-            </div>
-            
-            <div className="space-y-8">
-               {visitedProps.map((prop, idx) => (
-                 <div key={prop.id} className="group bg-white rounded-3xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col xl:flex-row h-auto xl:h-80">
+           <div className="animate-fade-in pb-24">
+              <div className="flex items-center justify-between mb-8">
+                 <div>
+                    <h2 className="text-3xl font-bold text-gray-900">Comparativa</h2>
+                    <p className="text-gray-500 mt-2">Analizando {compareProps.length} propiedades seleccionadas.</p>
+                 </div>
+                 <button 
+                    onClick={() => setComparisonList([])}
+                    className="group flex items-center gap-2.5 px-6 py-3 bg-white hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-full transition-all duration-300 shadow-sm border border-gray-100 hover:border-red-200 hover:shadow-lg hover:shadow-red-500/10 active:scale-95"
+                 >
+                    <Trash2 size={18} strokeWidth={2} className="transition-transform duration-300 group-hover:rotate-12" />
+                    <span className="text-sm font-bold tracking-wide">Limpiar Comparación</span>
+                 </button>
+              </div>
+
+              {/* Comparison Table Container */}
+              <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
+                 <div className="min-w-[800px]">
                     
-                    {/* 1. Image Column */}
-                    <div className="relative w-full xl:w-72 h-48 xl:h-full flex-shrink-0 bg-gray-100">
-                        <img src={prop.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={prop.title} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90"></div>
-                        <div className="absolute bottom-5 left-5 text-white">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border border-white/30">
-                                    Visitada
-                                </span>
-                            </div>
-                            <p className="text-2xl font-bold tracking-tight">{idx === 0 ? '15 Ene' : '12 Ene'}</p>
-                            {/* Time Removed here */}
-                        </div>
+                    {/* Header Row: Images & Titles */}
+                    <div className="grid grid-cols-4 border-b border-gray-100">
+                       <div className="p-6 bg-gray-50/50 flex items-center text-gray-400 font-bold text-xs uppercase tracking-wider">
+                          Características
+                       </div>
+                       {compareProps.map(prop => (
+                          <div key={prop.id} className="p-6 border-l border-gray-100 relative group">
+                             <button 
+                               onClick={(e) => toggleCompare(prop.id, e)}
+                               className="absolute top-4 right-4 p-2 bg-white/80 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors z-10 opacity-0 group-hover:opacity-100"
+                             >
+                                <Trash2 size={16} />
+                             </button>
+                             <div 
+                                className="aspect-[4/3] rounded-xl overflow-hidden mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => handlePropertyClick(prop)}
+                             >
+                                <img src={prop.imageUrl} className="w-full h-full object-cover" alt={prop.title} />
+                             </div>
+                             <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1">{prop.title}</h3>
+                             <p className="text-sm text-gray-500 mb-3 truncate">{prop.address}</p>
+                             <div className="text-2xl font-bold text-primary-600">{prop.currency} {prop.price.toLocaleString()}</div>
+                          </div>
+                       ))}
+                       {/* Empty Slots Fillers */}
+                       {[...Array(3 - compareProps.length)].map((_, i) => (
+                          <div key={i} className="p-6 border-l border-gray-100 flex flex-col items-center justify-center text-center bg-gray-50/30">
+                             <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-gray-300 mb-4">
+                                <PlusCircle size={32} />
+                             </div>
+                             <p className="text-sm font-bold text-gray-400">Espacio Disponible</p>
+                             <button onClick={() => setCurrentView('explore')} className="mt-2 text-xs font-bold text-primary-600 hover:underline">Agregar Propiedad</button>
+                          </div>
+                       ))}
                     </div>
 
-                    {/* 2. Details Column */}
-                    <div className="flex-1 p-6 xl:p-8 flex flex-col justify-between bg-white relative">
-                        <div>
-                            <div className="flex items-center gap-2 mb-4">
-                                <span className="text-[10px] font-bold text-primary-700 bg-primary-50 px-2.5 py-1 rounded-md border border-primary-100 uppercase tracking-wider">
-                                    {prop.propertyType}
-                                </span>
-                                {prop.status === 'pending' ? (
-                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-100 uppercase tracking-wider flex items-center gap-1">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Reservada
-                                    </span>
-                                ) : (
-                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100 uppercase tracking-wider flex items-center gap-1">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Disponible
-                                    </span>
-                                )}
-                            </div>
-                            
-                            <h3 className="text-2xl font-bold text-gray-900 mb-2 leading-tight group-hover:text-primary-600 transition-colors">
-                                {prop.title}
-                            </h3>
-                            
-                            <p className="text-gray-500 text-sm flex items-center gap-2 mb-6">
-                                <MapPin size={16} className="text-gray-400 flex-shrink-0" /> 
-                                <span className="truncate">{prop.address}, {prop.neighborhood}</span>
-                            </p>
+                    {/* Data Rows */}
+                    
+                    {/* Row: Location */}
+                    <div className="grid grid-cols-4 border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                       <div className="p-4 px-6 flex items-center gap-2 font-bold text-gray-600 text-sm">
+                          <MapPin size={16} className="text-gray-400" /> Ubicación
+                       </div>
+                       {compareProps.map(prop => (
+                          <div key={prop.id} className="p-4 px-6 border-l border-gray-100 text-sm text-gray-700 font-medium">
+                             {prop.neighborhood}, {prop.province}
+                          </div>
+                       ))}
+                       {[...Array(3 - compareProps.length)].map((_, i) => <div key={i} className="border-l border-gray-100"></div>)}
+                    </div>
 
-                            <div className="flex flex-wrap gap-3">
-                                <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 text-xs font-bold text-gray-600">
-                                    <Ruler size={14} className="text-gray-400"/> {prop.totalArea} m²
-                                </div>
-                                <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 text-xs font-bold text-gray-600">
-                                    <LayoutGrid size={14} className="text-gray-400"/> {prop.environments} Amb
-                                </div>
-                            </div>
-                        </div>
+                    {/* Row: Expenses */}
+                    <div className="grid grid-cols-4 border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                       <div className="p-4 px-6 flex items-center gap-2 font-bold text-gray-600 text-sm">
+                          <DollarSign size={16} className="text-gray-400" /> Expensas
+                       </div>
+                       {compareProps.map(prop => (
+                          <div key={prop.id} className="p-4 px-6 border-l border-gray-100 text-sm text-gray-700 font-medium">
+                             $ {prop.expenses?.toLocaleString() || '-'}
+                          </div>
+                       ))}
+                       {[...Array(3 - compareProps.length)].map((_, i) => <div key={i} className="border-l border-gray-100"></div>)}
+                    </div>
 
-                        <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
-                            <div className="flex flex-col">
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Precio</span>
-                                <span className="text-2xl font-bold text-gray-900 tracking-tight">{prop.currency} {prop.price.toLocaleString()}</span>
+                    {/* Row: Total Area */}
+                    <div className="grid grid-cols-4 border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                       <div className="p-4 px-6 flex items-center gap-2 font-bold text-gray-600 text-sm">
+                          <Ruler size={16} className="text-gray-400" /> Superficie Total
+                       </div>
+                       {compareProps.map(prop => (
+                          <div key={prop.id} className="p-4 px-6 border-l border-gray-100 text-sm text-gray-700 font-medium">
+                             {prop.totalArea || prop.area} m²
+                          </div>
+                       ))}
+                       {[...Array(3 - compareProps.length)].map((_, i) => <div key={i} className="border-l border-gray-100"></div>)}
+                    </div>
+
+                    {/* Row: Covered Area */}
+                    <div className="grid grid-cols-4 border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                       <div className="p-4 px-6 flex items-center gap-2 font-bold text-gray-600 text-sm">
+                          <Home size={16} className="text-gray-400" /> Superficie Cubierta
+                       </div>
+                       {compareProps.map(prop => (
+                          <div key={prop.id} className="p-4 px-6 border-l border-gray-100 text-sm text-gray-700 font-medium">
+                             {prop.coveredArea} m²
+                          </div>
+                       ))}
+                       {[...Array(3 - compareProps.length)].map((_, i) => <div key={i} className="border-l border-gray-100"></div>)}
+                    </div>
+
+                    {/* Row: Environments */}
+                    <div className="grid grid-cols-4 border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                       <div className="p-4 px-6 flex items-center gap-2 font-bold text-gray-600 text-sm">
+                          <LayoutGrid size={16} className="text-gray-400" /> Ambientes
+                       </div>
+                       {compareProps.map(prop => (
+                          <div key={prop.id} className="p-4 px-6 border-l border-gray-100 text-sm text-gray-700 font-medium">
+                             {prop.environments}
+                          </div>
+                       ))}
+                       {[...Array(3 - compareProps.length)].map((_, i) => <div key={i} className="border-l border-gray-100"></div>)}
+                    </div>
+                     
+                     {/* Row: Bedrooms & Bathrooms */}
+                    <div className="grid grid-cols-4 border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                       <div className="p-4 px-6 flex items-center gap-2 font-bold text-gray-600 text-sm">
+                          <Bed size={16} className="text-gray-400" /> Dorms / Baños
+                       </div>
+                       {compareProps.map(prop => (
+                          <div key={prop.id} className="p-4 px-6 border-l border-gray-100 text-sm text-gray-700 font-medium">
+                             {prop.bedrooms} Dorms • {prop.bathrooms} Baños
+                          </div>
+                       ))}
+                       {[...Array(3 - compareProps.length)].map((_, i) => <div key={i} className="border-l border-gray-100"></div>)}
+                    </div>
+
+                    {/* Row: Antiquity */}
+                    <div className="grid grid-cols-4 border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                       <div className="p-4 px-6 flex items-center gap-2 font-bold text-gray-600 text-sm">
+                          <Calendar size={16} className="text-gray-400" /> Antigüedad
+                       </div>
+                       {compareProps.map(prop => (
+                          <div key={prop.id} className="p-4 px-6 border-l border-gray-100 text-sm text-gray-700 font-medium">
+                             {prop.antiquity} años
+                          </div>
+                       ))}
+                       {[...Array(3 - compareProps.length)].map((_, i) => <div key={i} className="border-l border-gray-100"></div>)}
+                    </div>
+
+                    {/* Row: Features (Booleans) */}
+                    <div className="grid grid-cols-4 border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                       <div className="p-4 px-6 flex items-center gap-2 font-bold text-gray-600 text-sm">
+                          <CheckCircle2 size={16} className="text-gray-400" /> Características
+                       </div>
+                       {compareProps.map(prop => {
+                           const hasGarage = prop.amenities?.some(a => a.toLowerCase().includes('cochera') || a.toLowerCase().includes('garage'));
+                           return (
+                              <div key={prop.id} className="p-4 px-6 border-l border-gray-100 text-xs space-y-2">
+                                  <div className={`flex items-center gap-2 ${hasGarage ? 'text-gray-900 font-bold' : 'text-gray-400'}`}>
+                                      {hasGarage ? <Check size={14} className="text-emerald-500"/> : <X size={14}/>} Cochera
+                                  </div>
+                                  <div className={`flex items-center gap-2 ${prop.isProfessionalSuitable ? 'text-gray-900 font-bold' : 'text-gray-400'}`}>
+                                      {prop.isProfessionalSuitable ? <Check size={14} className="text-emerald-500"/> : <X size={14}/>} Apto Prof.
+                                  </div>
+                                  <div className={`flex items-center gap-2 ${prop.isCreditSuitable ? 'text-gray-900 font-bold' : 'text-gray-400'}`}>
+                                      {prop.isCreditSuitable ? <Check size={14} className="text-emerald-500"/> : <X size={14}/>} Apto Crédito
+                                  </div>
+                              </div>
+                           )
+                       })}
+                       {[...Array(3 - compareProps.length)].map((_, i) => <div key={i} className="border-l border-gray-100"></div>)}
+                    </div>
+                     
+                    {/* Row: Amenities */}
+                    <div className="grid grid-cols-4 hover:bg-gray-50/50 transition-colors">
+                       <div className="p-4 px-6 flex items-center gap-2 font-bold text-gray-600 text-sm align-top">
+                          <Sparkles size={16} className="text-gray-400" /> Amenities
+                       </div>
+                       {compareProps.map(prop => (
+                          <div key={prop.id} className="p-4 px-6 border-l border-gray-100 text-xs text-gray-600 leading-relaxed">
+                             {prop.amenities?.join(' • ')}
+                          </div>
+                       ))}
+                       {[...Array(3 - compareProps.length)].map((_, i) => <div key={i} className="border-l border-gray-100"></div>)}
+                    </div>
+
+                 </div>
+              </div>
+           </div>
+        );
+
+      case 'settings':
+         return (
+            <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in pb-24">
+              {/* Left Column: Profile (Span 4) */}
+              <div className="lg:col-span-4 space-y-6">
+                 <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Perfil</h2>
+                    <p className="text-gray-500 text-sm mt-1">Gestiona tu información personal.</p>
+                 </div>
+                 
+                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                    <div className="flex justify-center mb-6">
+                        <div className="relative">
+                            <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-gray-50">
+                                <img src="https://picsum.photos/200/200?random=50" className="w-full h-full object-cover" />
                             </div>
-                            <button onClick={() => handlePropertyClick(prop)} className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-900 hover:text-white transition-all group/btn">
-                                <ArrowRight size={20} className="group-hover/btn:-rotate-45 transition-transform duration-300" />
+                            <button className="absolute bottom-0 right-0 p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors shadow-sm">
+                                <Camera size={14} />
                             </button>
                         </div>
                     </div>
+                    
+                    <div className="space-y-4">
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre Completo</label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                <input type="text" defaultValue="Ana García" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none" />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Correo Electrónico</label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                <input type="email" defaultValue="ana.garcia@gmail.com" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none" />
+                            </div>
+                        </div>
+                         <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Teléfono</label>
+                            <div className="relative">
+                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                <input type="tel" defaultValue="+54 9 11 1234 5678" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none" />
+                            </div>
+                        </div>
+                    </div>
 
-                    {/* 3. Interaction Column */}
-                    <div className="w-full xl:w-[380px] bg-gray-50/50 border-t xl:border-t-0 xl:border-l border-gray-100 p-6 xl:p-8 flex flex-col gap-5">
-                        
-                        {/* Rating */}
-                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
-                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tu Calificación</span>
-                            <div className="flex gap-1">
-                                {[1,2,3,4,5].map(star => (
-                                    <Star 
-                                        key={star} 
-                                        size={18} 
-                                        className={`cursor-pointer transition-all ${
-                                            star <= (idx === 0 ? 4 : 0) 
-                                            ? 'fill-amber-400 text-amber-400' 
-                                            : 'fill-gray-200 text-gray-200 hover:fill-amber-200 hover:scale-110'
-                                        }`} 
-                                    />
+                    <button className="w-full mt-6 bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold py-3 rounded-xl shadow-lg shadow-gray-900/10 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm">
+                       <Save size={16} />
+                       Guardar Perfil
+                    </button>
+                 </div>
+
+                 {/* Security Card */}
+                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2.5 bg-gray-50 text-gray-900 rounded-xl">
+                            <Shield size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-bold text-gray-900">Seguridad</h3>
+                            <p className="text-xs text-gray-500">Opciones de cuenta</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <button className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded-xl transition-all group">
+                            <div className="flex items-center gap-3">
+                                <Key size={18} className="text-gray-400 group-hover:text-gray-600" />
+                                <span className="text-sm font-medium text-gray-600 group-hover:text-gray-900">Cambiar Contraseña</span>
+                            </div>
+                            <ChevronRight size={16} className="text-gray-300" />
+                        </button>
+
+                        <div className="h-px bg-gray-100"></div>
+
+                        <button 
+                            onClick={onLogout}
+                            className="w-full flex items-center justify-between p-3 bg-red-50 hover:bg-red-100 rounded-xl transition-all group border border-transparent hover:border-red-200"
+                        >
+                            <div className="flex items-center gap-3">
+                                <LogOut size={18} className="text-red-600" />
+                                <span className="text-sm font-bold text-red-700">Cerrar Sesión</span>
+                            </div>
+                            <ChevronRight size={16} className="text-red-400 group-hover:text-red-500" />
+                        </button>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Right Column: Preferences (Span 8) */}
+              <div className="lg:col-span-8 space-y-6">
+                 <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Preferencias de Búsqueda</h2>
+                    <p className="text-gray-500 text-sm mt-1">Personaliza qué tipo de propiedades te interesan.</p>
+                 </div>
+
+                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 space-y-8">
+                    
+                    {/* Row 1: Operation & Property Type */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Operation Type */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-3 text-gray-700 font-bold text-sm">
+                                <Briefcase size={18} className="text-gray-400" /> Tipo de Operación
+                            </div>
+                            <div className="bg-gray-50 p-1 rounded-xl flex border border-gray-100">
+                                {['Venta', 'Alquiler'].map(op => (
+                                    <button 
+                                        key={op}
+                                        onClick={() => setSettingsOperation(op)}
+                                        className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
+                                            settingsOperation === op 
+                                            ? 'bg-white text-primary-600 shadow-sm border border-gray-100' 
+                                            : 'text-gray-500 hover:text-gray-900'
+                                        }`}
+                                    >
+                                        {op}
+                                    </button>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Feedback Agente */}
-                        <div className="relative">
-                            <div className="absolute -top-2.5 left-3">
-                                <span className="bg-white px-2 py-0.5 rounded text-[10px] font-bold text-blue-600 uppercase tracking-wider border border-blue-100 shadow-sm flex items-center gap-1">
-                                    <Users size={10} /> Feedback Agente
-                                </span>
+                        {/* Property Type */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-3 text-gray-700 font-bold text-sm">
+                                <Building size={18} className="text-gray-400" /> Tipo de Propiedad
                             </div>
-                            <div className="w-full bg-blue-50/30 border border-blue-100/50 rounded-xl p-4 pt-5 text-sm text-gray-600 leading-relaxed min-h-[80px] italic">
-                                {idx === 0 ? "Me gustó mucho la luz del living. La cocina es un poco chica pero..." : "Sin comentarios registrados."}
-                            </div>
-                        </div>
-
-                        {/* Private Note */}
-                        <div className="relative flex-1">
-                            <div className="absolute -top-2.5 left-3 z-10">
-                                <span className="bg-white px-2 py-0.5 rounded text-[10px] font-bold text-gray-500 uppercase tracking-wider border border-gray-200 shadow-sm flex items-center gap-1">
-                                    <Lock size={10} /> Nota Privada
-                                </span>
-                            </div>
-                            <textarea 
-                                className="w-full h-full min-h-[80px] bg-white border border-gray-200 hover:border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl p-4 pt-5 text-sm text-gray-700 resize-none outline-none transition-all placeholder:text-gray-400"
-                                placeholder="Escribe aquí..."
-                                defaultValue={idx === 0 ? "Consultar si aceptan mascota." : ""}
-                            ></textarea>
-                        </div>
-
-                    </div>
-
-                 </div>
-               ))}
-            </div>
-          </div>
-        );
-      
-      case 'compare':
-         // Using the first 3 properties for demo comparison, as requested "maximo 3"
-         const compareProps = PROPERTIES_GRID_DATA.slice(0, 3); 
-
-         return (
-            <div className="space-y-6 animate-fade-in h-full flex flex-col">
-               <div className="flex items-center justify-between">
-                 <div>
-                   <h2 className="text-2xl font-bold text-gray-900">Comparar Propiedades</h2>
-                   <p className="text-gray-500 text-sm mt-1">Analiza las diferencias y encuentra la mejor opción.</p>
-                 </div>
-                 <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-lg">
-                   {compareProps.length} propiedades seleccionadas
-                 </div>
-               </div>
-
-               <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col relative">
-                  <div className="overflow-x-auto custom-scrollbar pb-4 flex-1">
-                    <table className="w-full border-collapse text-left">
-                      <thead>
-                        <tr>
-                          {/* Sticky First Column Header */}
-                          <th className="sticky left-0 z-20 bg-white p-6 min-w-[200px] border-b border-gray-100 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] align-top">
-                            <div className="h-full flex flex-col justify-end pb-4">
-                               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Atributos</span>
-                            </div>
-                          </th>
-                          
-                          {/* Property Headers */}
-                          {compareProps.map(prop => (
-                            <th key={prop.id} className="p-6 min-w-[320px] border-b border-gray-100 align-top group">
-                               <div className="relative">
-                                  <div className="aspect-[16/10] w-full rounded-xl overflow-hidden mb-4 relative">
-                                    <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                                    <button className="absolute top-2 right-2 p-1.5 bg-white/90 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors backdrop-blur-sm">
-                                       <X size={16} />
-                                    </button>
-                                  </div>
-                                  <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1">{prop.title}</h3>
-                                  <p className="text-sm text-gray-500 font-medium mb-3">{prop.address}</p>
-                               </div>
-                            </th>
-                          ))}
-                          
-                          {/* Add Slot Header */}
-                          {compareProps.length < 3 && (
-                              <th className="p-6 min-w-[200px] border-b border-gray-100 align-middle">
-                                 <button className="w-full aspect-[3/4] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50/30 transition-all group">
-                                    <div className="p-3 bg-gray-50 group-hover:bg-white rounded-full shadow-sm transition-colors">
-                                      <PlusCircle size={24} />
-                                    </div>
-                                    <span className="text-sm font-medium">Agregar otra</span>
-                                 </button>
-                              </th>
-                          )}
-                        </tr>
-                      </thead>
-                      
-                      <tbody className="text-gray-600 text-sm">
-                        {/* Feature Rows - Reordered as requested */}
-                        {[
-                          { label: 'Precio', icon: DollarSign, key: 'price', format: (v: any, p: any) => <span className="font-bold text-lg text-gray-900">{p.currency} {v.toLocaleString()}</span> },
-                          { label: 'Expensas', icon: DollarSign, key: 'expenses', format: (v: any) => v ? `$ ${v.toLocaleString()}` : '-' },
-                          { label: 'Superficie Total', icon: Ruler, key: 'totalArea', format: (v: any) => <span className="font-semibold text-gray-900">{v} m²</span> },
-                          { label: 'Superficie Cubierta', icon: Home, key: 'coveredArea', format: (v: any) => `${v} m²` },
-                          { label: 'Ambientes', icon: LayoutGrid, key: 'environments', format: (v: any) => <span className="font-semibold text-gray-900">{v}</span> },
-                          { label: 'Dormitorios', icon: Bed, key: 'bedrooms', format: (v: any) => v },
-                          { label: 'Baños', icon: Bath, key: 'bathrooms', format: (v: any) => v },
-                          { label: 'Cochera', icon: Car, key: 'amenities', format: (v: string[]) => v?.some(a => a.toLowerCase().includes('cochera') || a.toLowerCase().includes('garage')) ? <span className="text-emerald-600 font-medium flex items-center gap-1"><Check size={14}/> Sí</span> : <span className="text-gray-400">No</span> },
-                          { label: 'Apto Profesional', icon: Briefcase, key: 'isProfessionalSuitable', format: (v: any) => v ? <span className="text-emerald-600 font-medium flex items-center gap-1"><Check size={14}/> Sí</span> : <span className="text-gray-400">No</span> },
-                          { label: 'Apto Crédito', icon: Check, key: 'isCreditSuitable', format: (v: any) => v ? <span className="text-emerald-600 font-medium flex items-center gap-1"><Check size={14}/> Sí</span> : <span className="text-gray-400">No</span> },
-                          { label: 'Antigüedad', icon: Calendar, key: 'antiquity', format: (v: any) => `${v} años` },
-                          { label: 'Barrio', icon: MapPin, key: 'neighborhood', format: (v: any) => v },
-                        ].map((row, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
-                             <td className="sticky left-0 bg-white z-10 p-6 border-b border-gray-50 font-medium text-gray-500 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)]">
-                                <div className="flex items-center gap-2">
-                                  {row.icon && <row.icon size={16} className="text-primary-300" />}
-                                  {row.label}
-                                </div>
-                             </td>
-                             {compareProps.map(prop => (
-                               <td key={prop.id} className="p-6 border-b border-gray-50 align-middle">
-                                  {/* @ts-ignore */}
-                                  {row.format ? row.format(prop[row.key], prop) : prop[row.key] || '-'}
-                               </td>
-                             ))}
-                             {compareProps.length < 3 && <td className="p-6 border-b border-gray-50"></td>}
-                          </tr>
-                        ))}
-                        
-                        {/* Action Row */}
-                        <tr>
-                           <td className="sticky left-0 bg-white z-10 p-6 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)]"></td>
-                           {compareProps.map(prop => {
-                              const isFavorite = favorites.includes(prop.id);
-                              return (
-                                <td key={prop.id} className="p-6 align-middle">
-                                   <button 
-                                     onClick={(e) => toggleFavorite(prop.id, e)}
-                                     className={`w-full py-3 font-bold text-sm uppercase tracking-wide transition-all duration-300 ease-out flex items-center justify-center gap-2 rounded-xl border
-                                         ${isFavorite 
-                                           ? 'bg-red-600 text-white border-red-600 hover:bg-red-700 shadow-md' 
-                                           : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-primary-600 hover:border-primary-200'
-                                         }`}
-                                   >
-                                      <Heart 
-                                         size={18} 
-                                         className={`transition-transform duration-300 ease-out ${isFavorite ? 'fill-white scale-110' : 'fill-transparent scale-100'}`} 
-                                      />
-                                      ME INTERESA VISITAR
-                                   </button>
-                                </td>
-                              );
-                           })}
-                           {compareProps.length < 3 && <td></td>}
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-               </div>
-            </div>
-         );
-
-      case 'settings':
-         return (
-            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in pb-24">
-              
-              {/* Left Column: Profile */}
-              <div className="lg:col-span-1 space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Perfil</h2>
-                  <p className="text-gray-500 text-sm mt-1">Gestiona tu información personal.</p>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden p-6 flex flex-col items-center">
-                   <div className="relative group mb-6">
-                      <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg ring-1 ring-gray-100">
-                        <img src="https://picsum.photos/100/100?random=50" alt="Profile" className="w-full h-full object-cover" />
-                      </div>
-                      <button className="absolute bottom-0 right-0 p-2.5 bg-primary-600 text-white rounded-full shadow-md hover:bg-primary-700 hover:scale-105 transition-all">
-                        <Camera size={16} />
-                      </button>
-                   </div>
-                   
-                   <div className="w-full space-y-4">
-                      <div className="space-y-1.5">
-                         <label className="text-xs font-bold text-gray-500 uppercase ml-1">Nombre Completo</label>
-                         <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                            <input type="text" defaultValue="Ana García" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 focus:border-primary-300 outline-none transition-all" />
-                         </div>
-                      </div>
-                      
-                      <div className="space-y-1.5">
-                         <label className="text-xs font-bold text-gray-500 uppercase ml-1">Correo Electrónico</label>
-                         <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                            <input type="email" defaultValue="ana.garcia@gmail.com" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 focus:border-primary-300 outline-none transition-all" />
-                         </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                         <label className="text-xs font-bold text-gray-500 uppercase ml-1">Teléfono</label>
-                         <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                            <input type="tel" defaultValue="+54 9 11 1234 5678" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 focus:border-primary-300 outline-none transition-all" />
-                         </div>
-                      </div>
-
-                      <div className="pt-4">
-                         <button className="w-full py-2.5 bg-gray-900 text-white font-medium rounded-xl shadow-lg shadow-gray-900/10 hover:bg-gray-800 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm">
-                           <Save size={16} /> Guardar Perfil
-                         </button>
-                      </div>
-                   </div>
-                </div>
-
-                {/* Logout Button - Separated from Save */}
-                <button 
-                    onClick={onLogout}
-                    className="w-full py-3 rounded-xl border border-gray-200 bg-white text-red-600 font-bold text-sm shadow-sm hover:bg-red-50 hover:border-red-200 transition-all flex items-center justify-center gap-2"
-                >
-                    <LogOut size={16} /> Cerrar Sesión
-                </button>
-
-              </div>
-
-              {/* Right Column: Search Preferences */}
-              <div className="lg:col-span-2 space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Preferencias de Búsqueda</h2>
-                  <p className="text-gray-500 text-sm mt-1">Personaliza qué tipo de propiedades te interesan.</p>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 lg:p-8 space-y-8">
-                   
-                   {/* Section 1: Basic Operation & Price */}
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                         <label className="text-sm font-bold text-gray-700 flex items-center gap-2"><Briefcase size={16} /> Tipo de Operación</label>
-                         <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-200">
-                            <button 
-                                onClick={() => setSettingsOperation('Venta')}
-                                className={`flex-1 py-2 text-sm font-medium rounded-lg shadow-sm border transition-all ${settingsOperation === 'Venta' ? 'bg-white text-primary-600 border-gray-100' : 'bg-transparent text-gray-500 border-transparent hover:text-gray-700'}`}
-                            >
-                                Venta
-                            </button>
-                            <button 
-                                onClick={() => setSettingsOperation('Alquiler')}
-                                className={`flex-1 py-2 text-sm font-medium rounded-lg shadow-sm border transition-all ${settingsOperation === 'Alquiler' ? 'bg-white text-primary-600 border-gray-100' : 'bg-transparent text-gray-500 border-transparent hover:text-gray-700'}`}
-                            >
-                                Alquiler
-                            </button>
-                         </div>
-                      </div>
-                      
-                      <div className="space-y-4">
-                         <label className="text-sm font-bold text-gray-700 flex items-center gap-2"><Building size={16} /> Tipo de Propiedad</label>
-                         <div className="flex flex-wrap gap-2">
-                            {['Departamento', 'Casa', 'PH', 'Terreno', 'Local', 'Oficina', 'Galpón'].map(type => {
-                                const isSelected = settingsPropertyTypes.includes(type);
-                                return (
-                                    <button 
-                                        key={type} 
+                            <div className="flex flex-wrap gap-2">
+                                {['Departamento', 'Casa', 'PH', 'Terreno', 'Local', 'Oficina', 'Galpón'].map(type => (
+                                    <button
+                                        key={type}
                                         onClick={() => toggleSettingsPropertyType(type)}
                                         className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-                                            isSelected 
-                                            ? 'bg-primary-50 text-primary-700 border-primary-200' 
-                                            : 'bg-white text-gray-600 border-gray-200 hover:border-primary-200 hover:text-primary-600'
+                                            settingsPropertyTypes.includes(type)
+                                            ? 'bg-primary-50 text-primary-600 border-primary-200'
+                                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                                         }`}
                                     >
                                         {type}
                                     </button>
-                                )
-                            })}
-                         </div>
-                      </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
 
-                      {/* AMENITIES SECTION */}
-                      {settingsPropertyTypes.includes('Departamento') && (
-                        <div className="md:col-span-2 space-y-3 animate-fade-in">
-                            <div className="bg-white p-4 rounded-2xl border-2 border-primary-100/50 shadow-sm">
-                                <label className="text-sm font-bold text-primary-700 flex items-center gap-2 mb-3">
-                                    <Sparkles size={16} /> Amenities Deseados
-                                </label>
-                                <div className="flex flex-wrap gap-2">
-                                    {['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Seguridad 24hs', 'Lavadero', 'Balcón Terraza'].map(tag => {
-                                        const isSelected = settingsAmenities.includes(tag);
-                                        return (
-                                            <button 
-                                                key={tag} 
-                                                onClick={() => toggleSettingsAmenities(tag)}
-                                                className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all shadow-sm flex items-center gap-1.5 ${
-                                                    isSelected 
-                                                    ? 'bg-primary-50 border-primary-200 text-primary-700' 
-                                                    : 'bg-white border-gray-200 text-gray-600 hover:border-primary-300 hover:text-primary-600'
-                                                }`}
-                                            >
-                                                {isSelected && <Check size={14} strokeWidth={2.5} />}
-                                                {tag}
-                                            </button>
-                                        );
-                                    })}
+                    {/* Amenities - Conditionally rendered if 'Departamento' is selected */}
+                    {settingsPropertyTypes.includes('Departamento') && (
+                        <div className="p-6 bg-white rounded-xl border border-primary-100 shadow-[0_0_15px_rgba(37,99,235,0.05)]">
+                            <div className="flex items-center gap-2 mb-4 text-primary-700 font-bold text-sm">
+                                <Sparkles size={18} /> Amenities Deseados
+                            </div>
+                             <div className="flex flex-wrap gap-2">
+                                {['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Lavadero', 'Balcón Terraza'].map(item => (
+                                    <button
+                                        key={item}
+                                        onClick={() => toggleSettingsAmenities(item)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                                            settingsAmenities.includes(item)
+                                            ? 'bg-white text-primary-600 border-primary-200 shadow-sm'
+                                            : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        {item}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Neighborhoods (Redesigned with Region) */}
+                    <div>
+                         <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2 text-gray-700 font-bold text-sm">
+                                <MapPin size={18} className="text-gray-400" /> Barrios de Preferencia
+                            </div>
+                         </div>
+                         
+                         {/* Region Selector */}
+                         <div className="bg-gray-50 p-1 rounded-xl flex border border-gray-200 mb-4 max-w-md">
+                            <button
+                                onClick={() => setSettingsRegion('CABA')}
+                                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
+                                    settingsRegion === 'CABA' 
+                                    ? 'bg-white text-primary-600 shadow-sm border border-gray-100' 
+                                    : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                            >
+                                Capital Federal (CABA)
+                            </button>
+                            <button
+                                onClick={() => setSettingsRegion('GBA')}
+                                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
+                                    settingsRegion === 'GBA' 
+                                    ? 'bg-white text-primary-600 shadow-sm border border-gray-100' 
+                                    : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                            >
+                                GBA / Provincia
+                            </button>
+                         </div>
+
+                         <div className="space-y-4">
+                            {/* Selected / Tag Input + Autocomplete Search */}
+                            <div 
+                                className="relative flex flex-wrap items-center gap-2 p-3 bg-white border border-gray-200 rounded-xl focus-within:ring-2 focus-within:ring-primary-100 focus-within:border-primary-300 transition-all"
+                            >
+                                {settingsNeighborhoods.map(hood => (
+                                    <span key={hood} className="flex items-center gap-1 pl-3 pr-2 py-1.5 bg-gray-100 rounded-lg text-sm font-bold text-gray-700 border border-gray-200">
+                                        {hood} <button onClick={() => toggleSettingsNeighborhood(hood)} className="hover:text-red-500 text-gray-400 transition-colors"><X size={14}/></button>
+                                    </span>
+                                ))}
+                                <input 
+                                    ref={hoodInputRef}
+                                    type="text" 
+                                    value={neighborhoodSearchTerm}
+                                    onChange={(e) => {
+                                        setNeighborhoodSearchTerm(e.target.value);
+                                        setIsHoodDropdownOpen(true);
+                                    }}
+                                    onFocus={() => setIsHoodDropdownOpen(true)}
+                                    placeholder={`Buscar en ${settingsRegion === 'CABA' ? 'Capital' : 'Provincia'}...`} 
+                                    className="flex-1 bg-transparent border-none outline-none text-sm px-2 py-1 min-w-[140px] placeholder:text-gray-400" 
+                                />
+                                
+                                {/* Autocomplete Dropdown */}
+                                {isHoodDropdownOpen && neighborhoodSearchTerm && (
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden max-h-60 overflow-y-auto">
+                                        {getFilteredNeighborhoods().length > 0 ? (
+                                            getFilteredNeighborhoods().map(hood => (
+                                                <button
+                                                    key={hood}
+                                                    onClick={() => toggleSettingsNeighborhood(hood)}
+                                                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors flex items-center justify-between group"
+                                                >
+                                                    {hood}
+                                                    <PlusCircle size={14} className="opacity-0 group-hover:opacity-100 transition-opacity text-primary-500" />
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <div className="px-4 py-3 text-sm text-gray-400 italic">No se encontraron resultados</div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                         </div>
+                    </div>
+
+                    {/* Price Range */}
+                    <div>
+                        <div className="flex items-center gap-2 mb-3 text-gray-700 font-bold text-sm">
+                            <DollarSign size={18} className="text-gray-400" /> Rango de Precios (USD)
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="relative flex-1">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Min</span>
+                                <input type="number" placeholder="0" className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all" />
+                            </div>
+                            <span className="text-gray-300 font-medium">-</span>
+                            <div className="relative flex-1">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Max</span>
+                                <input type="number" placeholder="Sin límite" className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Dimensions & Distribution Section */}
+                    <div className="pt-8 border-t border-gray-100 mt-8">
+                         <h3 className="text-sm font-bold text-primary-600 uppercase tracking-wider mb-6">Dimensiones y Distribución</h3>
+                         
+                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-12 gap-y-8">
+                            {/* Area */}
+                            <div className="space-y-3">
+                                <label className="text-sm font-medium text-gray-700 block">Metros Cuadrados (m²)</label>
+                                <div className="flex gap-3 items-center">
+                                    <div className="relative flex-1">
+                                        <input type="number" placeholder="Min" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all" />
+                                    </div>
+                                    <span className="text-gray-300 font-medium">-</span>
+                                     <div className="relative flex-1">
+                                        <input type="number" placeholder="Max" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all" />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Ambientes - Segmented Control */}
+                            <div className="space-y-3">
+                                <label className="text-sm font-medium text-gray-700 block">Ambientes</label>
+                                <div className="flex gap-1 bg-gray-50 rounded-xl p-1.5 border border-gray-200">
+                                    {['1', '2', '3', '4', '5+'].map(val => (
+                                        <button 
+                                          key={val}
+                                          className="flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-900 hover:bg-white rounded-lg transition-all focus:bg-white focus:shadow-sm focus:text-primary-600"
+                                        >{val}</button>
+                                    ))}
+                                </div>
+                            </div>
+
+                             {/* Dormitorios */}
+                            <div className="space-y-3">
+                                <label className="text-sm font-medium text-gray-700 block">Dormitorios</label>
+                                <div className="flex gap-1 bg-gray-50 rounded-xl p-1.5 border border-gray-200">
+                                    {['1', '2', '3', '4', '5+'].map(val => (
+                                        <button 
+                                          key={val}
+                                          className="flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-900 hover:bg-white rounded-lg transition-all focus:bg-white focus:shadow-sm focus:text-primary-600"
+                                        >{val}</button>
+                                    ))}
+                                </div>
+                            </div>
+
+                             {/* Baños */}
+                            <div className="space-y-3">
+                                <label className="text-sm font-medium text-gray-700 block">Baños</label>
+                                <div className="flex gap-1 bg-gray-50 rounded-xl p-1.5 border border-gray-200">
+                                    {['1', '2', '3', '4+'].map(val => (
+                                        <button 
+                                          key={val}
+                                          className="flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-900 hover:bg-white rounded-lg transition-all focus:bg-white focus:shadow-sm focus:text-primary-600"
+                                        >{val}</button>
+                                    ))}
+                                </div>
+                            </div>
+                         </div>
+                    </div>
+
+                    <div className="h-px bg-gray-100"></div>
+
+                    {/* Specifics */}
+                    <div>
+                        <h3 className="text-sm font-bold text-primary-600 uppercase tracking-wider mb-6">Características Específicas</h3>
+                        
+                        <div className="space-y-6">
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase mb-3 block">Antigüedad</label>
+                                <div className="flex flex-wrap gap-3">
+                                    {['Indiferente', 'A estrenar', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Más de 20 años'].map(val => (
+                                         <button
+                                            key={val}
+                                            onClick={() => toggleSettingsAntiquity(val)}
+                                            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                                                settingsAntiquity.includes(val)
+                                                ? 'bg-primary-50 text-primary-600 border-primary-200'
+                                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                                            }`}
+                                        >
+                                            {val}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            {/* Checkbox Cards (Interactive) */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Apto Crédito */}
+                                <div 
+                                    onClick={() => toggleSpecific('credit')}
+                                    className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all group select-none ${
+                                        settingsSpecifics.credit 
+                                        ? 'bg-green-50 border-green-200 shadow-sm' 
+                                        : 'border-gray-200 hover:border-green-200 hover:bg-green-50/30'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${settingsSpecifics.credit ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'}`}>
+                                            <Check size={16} strokeWidth={3} />
+                                        </div>
+                                        <span className={`text-sm font-bold ${settingsSpecifics.credit ? 'text-green-800' : 'text-gray-700'}`}>Apto Crédito</span>
+                                    </div>
+                                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${settingsSpecifics.credit ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300 bg-white'}`}>
+                                         {settingsSpecifics.credit && <Check size={14} strokeWidth={3}/>}
+                                    </div>
+                                </div>
+
+                                {/* Apto Profesional */}
+                                <div 
+                                    onClick={() => toggleSpecific('professional')}
+                                    className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all group select-none ${
+                                        settingsSpecifics.professional 
+                                        ? 'bg-blue-50 border-blue-200 shadow-sm' 
+                                        : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/30'
+                                    }`}
+                                >
+                                     <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${settingsSpecifics.professional ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-600'}`}>
+                                            <Briefcase size={16} strokeWidth={2.5} />
+                                        </div>
+                                        <span className={`text-sm font-bold ${settingsSpecifics.professional ? 'text-blue-800' : 'text-gray-700'}`}>Apto Profesional</span>
+                                     </div>
+                                     <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${settingsSpecifics.professional ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-300 bg-white'}`}>
+                                         {settingsSpecifics.professional && <Check size={14} strokeWidth={3}/>}
+                                     </div>
+                                </div>
+
+                                {/* Cochera */}
+                                <div 
+                                    onClick={() => toggleSpecific('garage')}
+                                    className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all group select-none ${
+                                        settingsSpecifics.garage 
+                                        ? 'bg-orange-50 border-orange-200 shadow-sm' 
+                                        : 'border-gray-200 hover:border-orange-200 hover:bg-orange-50/30'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${settingsSpecifics.garage ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-600'}`}>
+                                            <Car size={16} strokeWidth={2.5} />
+                                        </div>
+                                        <span className={`text-sm font-bold ${settingsSpecifics.garage ? 'text-orange-800' : 'text-gray-700'}`}>Cochera</span>
+                                    </div>
+                                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${settingsSpecifics.garage ? 'border-orange-500 bg-orange-500 text-white' : 'border-gray-300 bg-white'}`}>
+                                         {settingsSpecifics.garage && <Check size={14} strokeWidth={3}/>}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                      )}
+                    </div>
 
-                      <div className="md:col-span-2 space-y-4">
-                          <label className="text-sm font-bold text-gray-700 flex items-center gap-2"><DollarSign size={16} /> Rango de Precios (USD)</label>
-                          <div className="flex items-center gap-4">
-                             <div className="relative flex-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">Min</span>
-                                <input type="number" placeholder="0" className="w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 focus:border-primary-300 outline-none transition-all" />
-                             </div>
-                             <span className="text-gray-300">-</span>
-                             <div className="relative flex-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">Max</span>
-                                <input type="number" placeholder="Sin límite" className="w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 focus:border-primary-300 outline-none transition-all" />
-                             </div>
-                          </div>
-                      </div>
-                   </div>
+                    {/* Footer Save */}
+                    <div className="pt-6 flex justify-end">
+                        <button className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-primary-600/20 active:scale-95 transition-all flex items-center gap-2">
+                           <Save size={20} />
+                           Guardar Preferencias
+                        </button>
+                    </div>
 
-                   <hr className="border-gray-100" />
-
-                   {/* Section 2: Dimensions & Distribution */}
-                   <div>
-                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 text-primary-600">Dimensiones y Distribución</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                         <div className="space-y-2">
-                            <label className="text-xs font-semibold text-gray-500">Metros Cuadrados (m²)</label>
-                            <div className="flex items-center gap-3">
-                               <input type="number" placeholder="Min" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center focus:border-primary-300 outline-none transition-all" />
-                               <span className="text-gray-300">-</span>
-                               <input type="number" placeholder="Max" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center focus:border-primary-300 outline-none transition-all" />
-                            </div>
-                         </div>
-                         <div className="space-y-2">
-                            <label className="text-xs font-semibold text-gray-500">Ambientes</label>
-                            <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-200">
-                               {[1, 2, 3, 4, '5+'].map((num) => (
-                                  <button key={num} className="flex-1 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white transition-all border border-transparent hover:border-gray-100">
-                                     {num}
-                                  </button>
-                               ))}
-                            </div>
-                         </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         <div className="space-y-2">
-                            <label className="text-xs font-semibold text-gray-500">Dormitorios</label>
-                            <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-200">
-                               {[1, 2, 3, 4, '5+'].map((num) => (
-                                  <button key={num} className="flex-1 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white transition-all border border-transparent hover:border-gray-100">
-                                     {num}
-                                  </button>
-                               ))}
-                            </div>
-                         </div>
-                         <div className="space-y-2">
-                            <label className="text-xs font-semibold text-gray-500">Baños</label>
-                            <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-200">
-                               {[1, 2, 3, '4+'].map((num) => (
-                                  <button key={num} className="flex-1 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white transition-all border border-transparent hover:border-gray-100">
-                                     {num}
-                                  </button>
-                               ))}
-                            </div>
-                         </div>
-                      </div>
-                   </div>
-
-                   <hr className="border-gray-100" />
-
-                   {/* Section 3: Features & Specifics */}
-                   <div>
-                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 text-primary-600">Características Específicas</h3>
-                      
-                      <div className="mb-8">
-                         <h4 className="text-xs font-bold text-gray-500 mb-3 uppercase">Antigüedad</h4>
-                         <div className="flex flex-wrap gap-2">
-                            {['A estrenar', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Más de 20 años'].map(range => {
-                                const isSelected = settingsAntiquity.includes(range);
-                                return (
-                                    <button 
-                                        key={range}
-                                        onClick={() => toggleSettingsAntiquity(range)}
-                                        className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-                                            isSelected 
-                                            ? 'bg-primary-50 text-primary-700 border-primary-200' 
-                                            : 'bg-white text-gray-600 border-gray-200 hover:border-primary-200 hover:text-primary-600'
-                                        }`}
-                                    >
-                                        {range}
-                                    </button>
-                                )
-                            })}
-                         </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <label className="flex items-center justify-between p-3 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors group">
-                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-green-50 text-green-600 rounded-lg group-hover:bg-white transition-colors"><Check size={16} /></div>
-                                <span className="text-sm font-medium text-gray-700">Apto Crédito</span>
-                             </div>
-                             <input type="checkbox" className="w-5 h-5 text-primary-600 rounded border-gray-300 focus:ring-primary-500" />
-                          </label>
-                          <label className="flex items-center justify-between p-3 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors group">
-                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-white transition-colors"><Briefcase size={16} /></div>
-                                <span className="text-sm font-medium text-gray-700">Apto Profesional</span>
-                             </div>
-                             <input type="checkbox" className="w-5 h-5 text-primary-600 rounded border-gray-300 focus:ring-primary-500" />
-                          </label>
-                          <label className="flex items-center justify-between p-3 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors group">
-                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-orange-50 text-orange-600 rounded-lg group-hover:bg-white transition-colors"><Car size={16} /></div>
-                                <span className="text-sm font-medium text-gray-700">Cochera</span>
-                             </div>
-                             <input type="checkbox" className="w-5 h-5 text-primary-600 rounded border-gray-300 focus:ring-primary-500" />
-                          </label>
-                      </div>
-                   </div>
-
-                   <hr className="border-gray-100" />
-
-                   {/* Section 4: Location */}
-                   <div className="space-y-6">
-                      
-                      <div className="space-y-3">
-                         <label className="text-sm font-bold text-gray-700 flex items-center gap-2"><MapPin size={16} /> Barrios de Preferencia</label>
-                         <div className="bg-gray-50 p-2 rounded-xl border border-gray-200 flex flex-wrap gap-2 min-h-[50px]">
-                            <span className="bg-white border border-gray-200 px-3 py-1 rounded-lg text-sm font-medium text-gray-800 flex items-center gap-2 shadow-sm">
-                               Palermo <button className="text-gray-400 hover:text-red-500"><X size={14}/></button>
-                            </span>
-                            <span className="bg-white border border-gray-200 px-3 py-1 rounded-lg text-sm font-medium text-gray-800 flex items-center gap-2 shadow-sm">
-                               Belgrano <button className="text-gray-400 hover:text-red-500"><X size={14}/></button>
-                            </span>
-                            <input type="text" placeholder="Agregar barrio..." className="bg-transparent text-sm p-1 outline-none flex-1 min-w-[120px]" />
-                         </div>
-                      </div>
-                   </div>
-
-                   <div className="pt-4 flex justify-end">
-                      <button className="px-8 py-3 bg-primary-600 text-white font-bold rounded-xl shadow-lg shadow-primary-600/20 hover:bg-primary-700 transition-all active:scale-95 flex items-center gap-2">
-                        <Save size={18} /> Guardar Preferencias
-                      </button>
-                   </div>
-
-                </div>
+                 </div>
               </div>
-
             </div>
          );
       
@@ -908,6 +1315,13 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                            {favorites.length}
                         </span>
                      )}
+                     {item.id === 'compare' && comparisonList.length > 0 && (
+                        <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          currentView === 'compare' ? 'bg-white text-orange-600' : 'bg-orange-100 text-orange-600'
+                        }`}>
+                           {comparisonList.length}
+                        </span>
+                     )}
                   </button>
                ))}
             </nav>
@@ -939,7 +1353,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
          </div>
 
          <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 scroll-smooth">
-            <div className="max-w-7xl mx-auto h-full">
+            <div className={`mx-auto h-full ${currentView === 'explore' || currentView === 'interests' || currentView === 'compare' ? 'max-w-[96%]' : 'max-w-7xl'}`}>
                {renderContent()}
             </div>
          </div>
@@ -975,195 +1389,11 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
             onSelectOption={setSortOption}
          />
          
+         {/* Render Unmark Modal at Root Level */}
+         <UnmarkConfirmationModal />
+
       </main>
 
     </div>
   );
 };
-
-// --- Sub Components ---
-
-interface SortPanelProps {
-   isOpen: boolean;
-   onClose: () => void;
-   selectedOption: SortOption;
-   onSelectOption: (opt: SortOption) => void;
-}
-
-const SortPanel = ({ isOpen, onClose, selectedOption, onSelectOption }: SortPanelProps) => {
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => { document.body.style.overflow = 'auto'; };
-  }, [isOpen]);
-
-  const handleSelect = (opt: SortOption) => {
-     onSelectOption(opt);
-     onClose(); // Close panel after selection
-  };
-
-  const options: { id: SortOption; label: string; icon: any; desc: string }[] = [
-    { id: 'default', label: 'Relevancia', icon: Star, desc: 'Orden predeterminado por LinkProp' },
-    { id: 'price_asc', label: 'Menor Precio', icon: ArrowDownUp, desc: 'De más barato a más caro' },
-    { id: 'price_desc', label: 'Mayor Precio', icon: ArrowUpDown, desc: 'De más caro a más barato' },
-    { id: 'area_desc', label: 'Mayor Superficie', icon: Ruler, desc: 'Ordenado por metros cuadrados totales' },
-    { id: 'neighborhood_group', label: 'Agrupar por Barrio', icon: Layers, desc: 'Organiza las propiedades en secciones' },
-  ];
-
-  return (
-    <>
-      {/* Backdrop */}
-      <div 
-        className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-50 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        onClick={onClose}
-      />
-      
-      {/* Panel */}
-      <div className={`fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white flex-shrink-0">
-          <h3 className="text-xl font-bold text-gray-900">Ordenar Por</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <X size={20} className="text-gray-500" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-2">
-           {options.map((opt) => {
-              const isSelected = selectedOption === opt.id;
-              return (
-                 <button
-                    key={opt.id}
-                    onClick={() => handleSelect(opt.id)}
-                    className={`w-full p-4 rounded-xl border text-left transition-all duration-200 flex items-start gap-4 group ${
-                       isSelected 
-                       ? 'bg-primary-50 border-primary-200 shadow-sm' 
-                       : 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-sm'
-                    }`}
-                 >
-                    <div className={`p-2.5 rounded-full shrink-0 ${isSelected ? 'bg-white text-primary-600' : 'bg-gray-50 text-gray-500 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors'}`}>
-                       <opt.icon size={20} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                       <div className="flex items-center justify-between">
-                          <span className={`font-bold text-sm ${isSelected ? 'text-primary-900' : 'text-gray-900'}`}>{opt.label}</span>
-                          {isSelected && <Check size={16} className="text-primary-600" />}
-                       </div>
-                       <p className={`text-xs mt-1 truncate ${isSelected ? 'text-primary-700' : 'text-gray-500'}`}>
-                          {opt.desc}
-                       </p>
-                    </div>
-                 </button>
-              );
-           })}
-        </div>
-
-      </div>
-    </>
-  );
-};
-
-const PropertyCard = ({ prop, isFavorite, onToggleFavorite, onClick }: any) => {
-  const getStatusBadge = (status: string) => {
-    if (status === 'pending') {
-       return (
-          <span className="bg-amber-100/90 backdrop-blur-md text-amber-700 px-3 py-1 rounded-lg text-xs font-bold shadow-sm border border-amber-200 flex items-center gap-1">
-             <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-             Reservada
-          </span>
-       );
-    }
-    if (status === 'sold') {
-       return (
-          <span className="bg-red-100/90 backdrop-blur-md text-red-700 px-3 py-1 rounded-lg text-xs font-bold shadow-sm border border-red-200">
-             Vendida
-          </span>
-       );
-    }
-    // Default: active
-    return (
-       <span className="bg-emerald-100/90 backdrop-blur-md text-emerald-700 px-3 py-1 rounded-lg text-xs font-bold shadow-sm border border-emerald-200 flex items-center gap-1">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          Disponible
-       </span>
-    );
-  };
-
-  // Check if property has Garage/Cochera in amenities
-  const hasGarage = prop.amenities?.some((a: string) => a.toLowerCase().includes('cochera') || a.toLowerCase().includes('garage'));
-
-  return (
-   <div 
-     onClick={onClick}
-     className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full"
-   >
-      <div className="relative aspect-[4/3] overflow-hidden">
-         <img 
-            src={prop.imageUrl} 
-            alt={prop.title} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-         />
-         <div className="absolute bottom-3 left-3">
-            {getStatusBadge(prop.status)}
-         </div>
-      </div>
-      
-      <div className="p-5 flex-1 flex flex-col gap-3">
-         <div className="flex justify-between items-start">
-            <h3 className="text-xl font-bold text-gray-900 tracking-tight">{prop.currency} {prop.price.toLocaleString()}</h3>
-         </div>
-         <h4 className="font-medium text-base text-gray-900 line-clamp-1 group-hover:text-primary-600 transition-colors leading-snug">{prop.title}</h4>
-         <p className="text-gray-500 text-sm flex items-center gap-1 line-clamp-1">
-            <MapPin size={16} className="flex-shrink-0" /> {prop.address}, {prop.neighborhood}
-         </p>
-         
-         <div className="flex items-center gap-3 text-sm text-gray-500 border-t border-gray-100 pt-3 mt-auto overflow-x-auto no-scrollbar">
-            <span className="flex items-center gap-1 whitespace-nowrap"><b className="text-gray-900">{prop.area}</b> m²</span>
-            <span className="w-1 h-1 bg-gray-300 rounded-full flex-shrink-0"></span>
-            <span className="flex items-center gap-1 whitespace-nowrap"><b className="text-gray-900">{prop.environments}</b> Amb</span>
-            <span className="w-1 h-1 bg-gray-300 rounded-full flex-shrink-0"></span>
-            <span className="flex items-center gap-1 whitespace-nowrap"><b className="text-gray-900">{prop.bedrooms || 1}</b> Dorm</span>
-            
-            {/* New Cochera Indicator */}
-            {hasGarage && (
-               <>
-                  <span className="w-1 h-1 bg-gray-300 rounded-full flex-shrink-0"></span>
-                  <span className="flex items-center gap-1 whitespace-nowrap" title="Cochera Incluida">
-                     <Car size={14} className="text-gray-500" />
-                  </span>
-               </>
-            )}
-         </div>
-      </div>
-
-      {/* Attached Footer Button */}
-      <button 
-        onClick={(e) => onToggleFavorite(prop.id, e)}
-        className={`w-full py-4 font-bold text-sm uppercase tracking-wide transition-all duration-300 ease-out flex items-center justify-center gap-2
-            ${isFavorite 
-              ? 'bg-red-600 text-white hover:bg-red-700 shadow-md' 
-              : 'bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-primary-600 border-t border-gray-100'
-            }`}
-      >
-         <Heart 
-            size={18} 
-            className={`transition-transform duration-300 ease-out ${isFavorite ? 'fill-white scale-110' : 'fill-transparent scale-100'}`} 
-         />
-         ME INTERESA VISITAR
-      </button>
-   </div>
-  );
-};
-
-const EmptyState = ({ icon: Icon, title, description }: { icon: any, title: string, description: string }) => (
-   <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 mb-6">
-         <Icon size={40} strokeWidth={1.5} />
-      </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-500 max-w-md">{description}</p>
-   </div>
-);

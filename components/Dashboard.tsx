@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Building, Users, Heart, TrendingUp, MoreHorizontal, ArrowUpRight, ArrowDownRight, Eye, Clock, BarChart2, GitCompareArrows
 } from 'lucide-react';
@@ -7,10 +7,16 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { METRICS, CHART_DATA, TOP_PROPERTIES, RECENT_ACTIVITY, CONVERSION_DATA } from '../constants';
 
 export const Dashboard: React.FC = () => {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   return (
-    <main className="p-8 max-w-[1600px] mx-auto space-y-8">
+    <main className="p-8 max-w-[1600px] mx-auto space-y-8 animate-fade-in">
       
-      {/* Section A: Metrics Cards */}
+      {/* Section A: Metrics Cards (Modern Redesign) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {METRICS.map((metric, index) => {
           const Icon = 
@@ -18,27 +24,43 @@ export const Dashboard: React.FC = () => {
             metric.iconType === 'users' ? Users :
             metric.iconType === 'heart' ? Heart : TrendingUp;
           
-          const iconColors = [
-            'text-blue-600 bg-blue-50',
-            'text-purple-600 bg-purple-50',
-            'text-rose-600 bg-rose-50',
-            'text-emerald-600 bg-emerald-50',
+          // Color themes based on index/type
+          const themes = [
+            { bg: 'bg-blue-50', text: 'text-blue-600', shadow: 'shadow-blue-200', gradient: 'from-blue-500/10 to-transparent' },
+            { bg: 'bg-violet-50', text: 'text-violet-600', shadow: 'shadow-violet-200', gradient: 'from-violet-500/10 to-transparent' },
+            { bg: 'bg-rose-50', text: 'text-rose-600', shadow: 'shadow-rose-200', gradient: 'from-rose-500/10 to-transparent' },
+            { bg: 'bg-emerald-50', text: 'text-emerald-600', shadow: 'shadow-emerald-200', gradient: 'from-emerald-500/10 to-transparent' },
           ];
+          
+          const t = themes[index % themes.length];
+          const isUp = metric.trendDirection === 'up';
 
           return (
-            <div key={index} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group">
-              <div className="flex items-start justify-between">
-                <div className={`p-3 rounded-lg ${iconColors[index]}`}>
-                  <Icon size={22} />
-                </div>
-                <div className={`flex items-center gap-1 text-xs font-medium ${metric.trendDirection === 'up' ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {metric.trendDirection === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                  {metric.trend}%
-                </div>
-              </div>
-              <div className="mt-4">
-                <h3 className="text-3xl font-bold text-gray-900 tracking-tight group-hover:scale-105 transition-transform origin-left">{metric.value}</h3>
-                <p className="text-sm text-gray-500 font-medium mt-1">{metric.label}</p>
+            <div 
+              key={index} 
+              className="relative overflow-hidden bg-white p-6 rounded-3xl border border-gray-100 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 group cursor-default"
+            >
+              {/* Decorative Background Blob */}
+              <div className={`absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gradient-to-br ${t.gradient} blur-3xl group-hover:scale-150 transition-transform duration-700 ease-out`}></div>
+
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                 {/* Header: Icon & Trend */}
+                 <div className="flex justify-between items-start mb-4">
+                    <div className={`p-3.5 rounded-2xl ${t.bg} ${t.text} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
+                       <Icon size={24} strokeWidth={2.5} />
+                    </div>
+                    
+                    <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${isUp ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+                       {isUp ? <ArrowUpRight size={12} strokeWidth={3} /> : <ArrowDownRight size={12} strokeWidth={3} />}
+                       {metric.trend}%
+                    </div>
+                 </div>
+
+                 {/* Content: Value & Label */}
+                 <div>
+                    <h3 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-1">{metric.value}</h3>
+                    <p className="text-sm font-medium text-gray-400 group-hover:text-gray-500 transition-colors">{metric.label}</p>
+                 </div>
               </div>
             </div>
           );
@@ -61,42 +83,44 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
           
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorInterests" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#e11d48" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#e11d48" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} />
-                <Tooltip 
-                  contentStyle={{backgroundColor: '#fff', border: 'none', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                  itemStyle={{fontSize: '12px', fontWeight: 600}}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="interests" 
-                  stroke="#e11d48" 
-                  strokeWidth={3} 
-                  fillOpacity={1} 
-                  fill="url(#colorInterests)" 
-                  name="Intereses"
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="props" 
-                  stroke="#94a3b8" 
-                  strokeWidth={2} 
-                  strokeDasharray="5 5"
-                  fill="none" 
-                  name="Propiedades"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-64 w-full min-w-0">
+            {isMounted && (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorInterests" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#e11d48" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#e11d48" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} />
+                  <Tooltip 
+                    contentStyle={{backgroundColor: '#fff', border: 'none', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                    itemStyle={{fontSize: '12px', fontWeight: 600}}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="interests" 
+                    stroke="#e11d48" 
+                    strokeWidth={3} 
+                    fillOpacity={1} 
+                    fill="url(#colorInterests)" 
+                    name="Intereses"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="props" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2} 
+                    strokeDasharray="5 5"
+                    fill="none" 
+                    name="Propiedades"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
           <div className="flex justify-center gap-6 mt-4 text-xs text-gray-500">
             <div className="flex items-center gap-2">
@@ -104,7 +128,7 @@ export const Dashboard: React.FC = () => {
               <span>Intereses Generados</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
               <span>Propiedades Subidas</span>
             </div>
           </div>
@@ -170,21 +194,23 @@ export const Dashboard: React.FC = () => {
               </div>
            </div>
 
-           <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={CONVERSION_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} />
-                <Tooltip 
-                  cursor={{fill: '#f8fafc'}}
-                  contentStyle={{backgroundColor: '#fff', border: 'none', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} />
-                <Bar dataKey="visitas" name="Visitas Agendadas" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={30} />
-                <Bar dataKey="compras" name="Cierres (Venta/Alquiler)" fill="#059669" radius={[4, 4, 0, 0]} barSize={30} />
-              </BarChart>
-            </ResponsiveContainer>
+           <div className="h-64 w-full min-w-0">
+            {isMounted && (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={CONVERSION_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} />
+                  <Tooltip 
+                    cursor={{fill: '#f8fafc'}}
+                    contentStyle={{backgroundColor: '#fff', border: 'none', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} />
+                  <Bar dataKey="visitas" name="Visitas Agendadas" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={30} />
+                  <Bar dataKey="compras" name="Cierres (Venta/Alquiler)" fill="#059669" radius={[4, 4, 0, 0]} barSize={30} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
            </div>
         </div>
 
