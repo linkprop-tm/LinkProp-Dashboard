@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { 
-  Building, Users, Heart, TrendingUp, MoreHorizontal, ArrowUpRight, ArrowDownRight, Eye, Clock, BarChart2, GitCompareArrows, Calendar, Mail, MapPin
+  Building, Users, Heart, TrendingUp, MoreHorizontal, ArrowUpRight, ArrowDownRight, Eye, Clock, BarChart2, GitCompareArrows, Calendar, Mail, MapPin, Activity
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend } from 'recharts';
 import { METRICS, CHART_DATA, CONVERSION_DATA, CLIENTS_DATA, PROPERTIES_GRID_DATA } from '../constants';
@@ -84,9 +85,14 @@ export const Dashboard: React.FC = () => {
         {/* Chart */}
         <div className="lg:col-span-7 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-bold text-gray-900">Actividad Mensual</h3>
-              <p className="text-sm text-gray-500">Propiedades vs Intereses</p>
+            <div className="flex items-center gap-3">
+               <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                   <Activity size={20} />
+               </div>
+               <div>
+                 <h3 className="text-lg font-bold text-gray-900">Actividad Mensual</h3>
+                 <p className="text-sm text-gray-500">Propiedades vs Intereses</p>
+               </div>
             </div>
             <div className="bg-gray-100 p-1 rounded-lg flex text-xs font-medium">
                <button className="px-3 py-1 bg-white rounded shadow-sm text-gray-900">30 días</button>
@@ -148,7 +154,12 @@ export const Dashboard: React.FC = () => {
         {/* Latest Clients (Replaced Top Properties) */}
         <div className="lg:col-span-5 bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-6">
-             <h3 className="text-lg font-bold text-gray-900">Últimos Clientes</h3>
+             <div className="flex items-center gap-3">
+                 <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                    <Users size={20} />
+                 </div>
+                 <h3 className="text-lg font-bold text-gray-900">Últimos Clientes</h3>
+             </div>
              <button className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1.5 rounded-lg hover:bg-primary-100 transition-colors">
                 Ver Cartera
              </button>
@@ -222,43 +233,51 @@ export const Dashboard: React.FC = () => {
            </div>
         </div>
 
-        {/* Visit Requests (Replaced Recent Activity) */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-               <Heart size={20} className="text-rose-500 fill-rose-500" />
-               <h3 className="text-lg font-bold text-gray-900">Solicitudes de Visita</h3>
+        {/* Visit Requests (Replaced Recent Activity) -> Interés en visitar reciente */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-full">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+            <div className="flex items-center gap-3">
+               <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+                  <Heart size={20} className="fill-rose-600" />
+               </div>
+               <div>
+                  <h3 className="text-lg font-bold text-gray-900">Interés en visitar reciente</h3>
+                  <p className="text-xs text-gray-500">Solicitudes de clientes potenciales</p>
+               </div>
             </div>
-            <span className="text-xs font-bold bg-rose-50 text-rose-600 px-2.5 py-1 rounded-full">
-               {VISIT_REQUESTS.length} Pendientes
-            </span>
           </div>
-          <div className="divide-y divide-gray-50 flex-1 overflow-y-auto max-h-[300px]">
-            {VISIT_REQUESTS.map((req) => (
-                <div key={req.id} className="p-4 flex items-start gap-4 hover:bg-gray-50 transition-colors group">
-                   {/* Property Thumb */}
-                   <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100">
-                      <img src={req.property.imageUrl} className="w-full h-full object-cover" alt="" />
-                   </div>
-                   
-                   <div className="flex-1 min-w-0 pt-0.5">
-                      <p className="text-sm text-gray-900 leading-snug">
-                         <span className="font-bold">{req.client.name}</span> quiere visitar <span className="font-bold text-primary-600">{req.property.title}</span>
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                         <Clock size={10} /> Hace {req.time}
-                      </p>
-                   </div>
-
-                   <button className="self-center px-3 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-black transition-colors opacity-0 group-hover:opacity-100">
-                      Agendar
-                   </button>
-                </div>
-            ))}
+          
+          <div className="flex-1 overflow-y-auto max-h-[350px] p-0">
+            <div className="divide-y divide-gray-50">
+                {VISIT_REQUESTS.map((req) => (
+                    <div key={req.id} className="p-4 hover:bg-gray-50 transition-colors flex items-center gap-4 group cursor-default">
+                       {/* Visual Connection: Client + Property */}
+                       <div className="relative flex-shrink-0">
+                          <img src={req.property.imageUrl} className="w-12 h-12 rounded-lg object-cover shadow-sm ring-1 ring-gray-100" alt="" />
+                          <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full ring-2 ring-white overflow-hidden shadow-sm">
+                              <img src={req.client.avatar} className="w-full h-full object-cover" alt="" />
+                          </div>
+                       </div>
+                       
+                       <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-center mb-0.5">
+                             <h4 className="text-sm font-bold text-gray-900 truncate">{req.client.name}</h4>
+                             <span className="text-[10px] font-medium text-gray-400">
+                                {req.time}
+                             </span>
+                          </div>
+                          <p className="text-xs text-gray-500 truncate">
+                             Interesado en <span className="font-semibold text-gray-700">{req.property.title}</span>
+                          </p>
+                       </div>
+                    </div>
+                ))}
+            </div>
           </div>
-          <div className="p-4 text-center border-t border-gray-100 bg-gray-50/50 mt-auto">
-            <button className="text-sm font-medium text-rose-600 hover:text-rose-700 flex items-center justify-center gap-1">
-               Ver todos los interesados <ArrowUpRight size={14}/>
+          
+          <div className="p-4 text-center border-t border-gray-100 bg-white mt-auto">
+            <button className="w-full py-2 text-sm font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all flex items-center justify-center gap-2">
+               Ver todos los interesados <ArrowUpRight size={16}/>
             </button>
           </div>
         </div>
