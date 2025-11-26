@@ -1,11 +1,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Eye, EyeOff, Mail, Lock, ArrowRight, User, Briefcase, 
+import {
+  Eye, EyeOff, Mail, Lock, ArrowRight, User, Briefcase,
   Building2, Sparkles, MapPin, DollarSign, PlusCircle, X,
-  Phone, Check, CheckCircle2, Car, Cat, Camera, ChevronRight
+  Phone, Check, CheckCircle2, Car, Cat, Camera, ChevronRight, Loader2, AlertCircle
 } from 'lucide-react';
 import { UserRole } from '../App';
+import { signIn, signUp, getUserRole } from '../lib/api/auth';
 
 interface WelcomeProps {
   onLogin: (role: UserRole) => void;
@@ -23,12 +24,19 @@ const GBA_NEIGHBORHOODS = [
 ];
 
 export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
-  const [selectedRole, setSelectedRole] = useState<UserRole>('agent');
   const [showPassword, setShowPassword] = useState(false);
+
+  // Login state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   // --- REGISTRATION STATE ---
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registerError, setRegisterError] = useState('');
   
   // Registration Form Data
   const [regData, setRegData] = useState({
@@ -114,10 +122,63 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
       setCurrentStep(1);
   };
 
-  const handleFinishRegistration = () => {
-      // Logic to actually register would go here
-      setIsRegisterOpen(false);
-      onLogin('client'); // Auto-login as client for demo
+  const handleFinishRegistration = async () => {
+      setRegisterError('');
+
+      // Validations
+      if (!regData.email || !regData.password || !regData.nombre || !regData.phone) {
+          setRegisterError('Por favor completa todos los campos obligatorios');
+          return;
+      }
+
+      if (!regData.email.includes('@')) {
+          setRegisterError('Por favor ingresa un email válido');
+          return;
+      }
+
+      if (regData.password.length < 6) {
+          setRegisterError('La contraseña debe tener al menos 6 caracteres');
+          return;
+      }
+
+      setIsRegistering(true);
+
+      // Convert price strings to numbers
+      const minPrice = regData.minPrice ? parseFloat(regData.minPrice) : null;
+      const maxPrice = regData.maxPrice ? parseFloat(regData.maxPrice) : null;
+      const minArea = regData.minArea ? parseFloat(regData.minArea) : null;
+      const maxArea = regData.maxArea ? parseFloat(regData.maxArea) : null;
+      const environments = regData.environments ? parseInt(regData.environments.replace('+', '')) : null;
+      const bedrooms = regData.bedrooms ? parseInt(regData.bedrooms.replace('+', '')) : null;
+      const bathrooms = regData.bathrooms ? parseInt(regData.bathrooms.replace('+', '')) : null;
+
+      const result = await signUp({
+          email: regData.email,
+          password: regData.password,
+          nombre: regData.nombre,
+          telefono: regData.phone,
+          preferencias_tipo: regData.propertyTypes,
+          preferencias_operacion: regData.operationType,
+          preferencias_precio_min: minPrice,
+          preferencias_precio_max: maxPrice,
+          preferencias_ubicacion: regData.neighborhoods,
+          preferencias_dormitorios_min: bedrooms,
+          preferencias_banos_min: bathrooms,
+      });
+
+      setIsRegistering(false);
+
+      if (result.success) {
+          // Auto-login after successful registration
+          const loginResult = await signIn(regData.email, regData.password);
+          if (loginResult.success) {
+              const role = await getUserRole();
+              setIsRegisterOpen(false);
+              onLogin(role);
+          }
+      } else {
+          setRegisterError(result.error?.message || 'Error al registrar');
+      }
   };
 
   // --- RENDER REGISTRATION MODAL ---
@@ -131,7 +192,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
             <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-fade-in-up">
                 
                 {/* Modal Header */}
-                <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-white z-10">
+                <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-white z-10 flex-shrink-0">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Crear Cuenta</h2>
                         <div className="flex items-center gap-2 mt-1">
@@ -144,6 +205,14 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                         <X size={20} />
                     </button>
                 </div>
+
+                {/* Registration Error Message */}
+                {registerError && (
+                    <div className="mx-8 mt-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                        <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-red-800 font-medium">{registerError}</p>
+                    </div>
+                )}
 
                 {/* Modal Body */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-8 bg-gray-50/50">
@@ -429,8 +498,21 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                 Siguiente <ArrowRight size={16} />
                             </button>
                         ) : (
-                            <button onClick={handleFinishRegistration} className="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-900/20 hover:bg-black transition-all active:scale-95 flex items-center gap-2">
-                                <Check size={16} /> Finalizar
+                            <button
+                                onClick={handleFinishRegistration}
+                                disabled={isRegistering}
+                                className="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-900/20 hover:bg-black transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isRegistering ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        Registrando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check size={16} /> Finalizar
+                                    </>
+                                )}
                             </button>
                         )}
                     </div>
@@ -498,21 +580,13 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                <p className="text-gray-500 text-base">Ingresa tus datos para acceder al panel.</p>
             </div>
 
-            {/* Role Selector (Subtle) */}
-            <div className="flex p-1 bg-gray-50 rounded-xl mb-8 border border-gray-100">
-               <button 
-                  onClick={() => setSelectedRole('agent')}
-                  className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${selectedRole === 'agent' ? 'bg-white text-gray-900 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
-               >
-                  <Briefcase size={16} /> Agente
-               </button>
-               <button 
-                  onClick={() => setSelectedRole('client')}
-                  className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${selectedRole === 'client' ? 'bg-white text-gray-900 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
-               >
-                  <User size={16} /> Cliente
-               </button>
-            </div>
+            {/* Login Error Message */}
+            {loginError && (
+               <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                  <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-800 font-medium">{loginError}</p>
+               </div>
+            )}
 
             {/* Form Fields (Login) */}
             <div className="space-y-5">
@@ -520,11 +594,13 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                   <label className="text-xs font-bold text-gray-900 uppercase tracking-wide ml-1">Correo Electrónico</label>
                   <div className="relative group">
                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-500 transition-colors" size={20} />
-                     <input 
-                        type="email" 
-                        value={selectedRole === 'agent' ? 'roberto.diaz@linkprop.com' : 'ana.garcia@gmail.com'}
-                        readOnly
-                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-gray-900 font-medium placeholder:text-gray-400 focus:bg-white focus:border-red-500 focus:ring-4 focus:ring-red-500/10 outline-none transition-all"
+                     <input
+                        type="email"
+                        value={loginEmail}
+                        onChange={(e) => { setLoginEmail(e.target.value); setLoginError(''); }}
+                        placeholder="tu@email.com"
+                        disabled={isLoggingIn}
+                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-gray-900 font-medium placeholder:text-gray-400 focus:bg-white focus:border-red-500 focus:ring-4 focus:ring-red-500/10 outline-none transition-all disabled:opacity-50"
                      />
                   </div>
                </div>
@@ -536,16 +612,19 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                   </div>
                   <div className="relative group">
                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-500 transition-colors" size={20} />
-                     <input 
-                        type={showPassword ? "text" : "password"} 
-                        value="password123"
-                        readOnly
-                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-gray-900 font-medium placeholder:text-gray-400 focus:bg-white focus:border-red-500 focus:ring-4 focus:ring-red-500/10 outline-none transition-all"
+                     <input
+                        type={showPassword ? "text" : "password"}
+                        value={loginPassword}
+                        onChange={(e) => { setLoginPassword(e.target.value); setLoginError(''); }}
+                        placeholder="••••••••"
+                        disabled={isLoggingIn}
+                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-gray-900 font-medium placeholder:text-gray-400 focus:bg-white focus:border-red-500 focus:ring-4 focus:ring-red-500/10 outline-none transition-all disabled:opacity-50"
                      />
-                     <button 
+                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                        disabled={isLoggingIn}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 disabled:opacity-50"
                      >
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                      </button>
@@ -555,12 +634,45 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-4 mt-8">
-               <button 
-                  onClick={() => onLogin(selectedRole)}
-                  className="group w-full bg-gray-900 hover:bg-black text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-gray-900/20 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
+               <button
+                  onClick={async () => {
+                     setLoginError('');
+
+                     if (!loginEmail || !loginPassword) {
+                        setLoginError('Por favor completa todos los campos');
+                        return;
+                     }
+
+                     if (!loginEmail.includes('@')) {
+                        setLoginError('Por favor ingresa un email válido');
+                        return;
+                     }
+
+                     setIsLoggingIn(true);
+                     const result = await signIn(loginEmail, loginPassword);
+
+                     if (result.success) {
+                        const role = await getUserRole();
+                        onLogin(role);
+                     } else {
+                        setIsLoggingIn(false);
+                        setLoginError(result.error?.message || 'Error al iniciar sesión');
+                     }
+                  }}
+                  disabled={isLoggingIn}
+                  className="group w-full bg-gray-900 hover:bg-black text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-gray-900/20 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                >
-                  Iniciar Sesión
-                  <ArrowRight size={20} className="opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+                  {isLoggingIn ? (
+                     <>
+                        <Loader2 size={20} className="animate-spin" />
+                        Iniciando...
+                     </>
+                  ) : (
+                     <>
+                        Iniciar Sesión
+                        <ArrowRight size={20} className="opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+                     </>
+                  )}
                </button>
 
                <button 

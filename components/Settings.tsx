@@ -1,12 +1,17 @@
 
 import React from 'react';
 import { User, Mail, Phone, Camera, Save, LogOut, Shield, Key, ChevronRight } from 'lucide-react';
+import { signOut } from '../lib/api/auth';
 
 interface SettingsProps {
   onLogout: () => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
+  const handleLogout = async () => {
+    await signOut();
+    onLogout();
+  };
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-fade-in pb-24">
@@ -126,8 +131,8 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
              </div>
 
              {/* Card: Logout */}
-             <button 
-                onClick={onLogout}
+             <button
+                onClick={handleLogout}
                 className="w-full bg-white border border-red-100 hover:border-red-200 hover:bg-red-50 p-6 rounded-[2rem] flex items-center justify-between group transition-all shadow-sm hover:shadow-md"
              >
                  <div className="flex items-center gap-4">

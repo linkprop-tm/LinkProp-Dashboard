@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  LogOut, Search, Heart, MapPin, Home, Filter, ArrowRight, 
+import {
+  LogOut, Search, Heart, MapPin, Home, Filter, ArrowRight,
   Compass, History, Scale, Settings, HelpCircle, Menu,
   ChevronRight, Calendar, Check, X, PlusCircle, DollarSign, Ruler, LayoutGrid,
   Car, Briefcase, Bed, Bath, PenTool, Quote, StickyNote, Star,
@@ -15,6 +15,7 @@ import { PROPERTIES_GRID_DATA } from '../constants';
 import { PropertyDetails } from './PropertyDetails';
 import { Property } from '../types';
 import { Visited } from './Visited';
+import { signOut } from '../lib/api/auth';
 
 interface ClientLayoutProps {
   onLogout: () => void;
@@ -214,10 +215,15 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   // Expanded favorites list for demo purposes
   const [favorites, setFavorites] = useState<string[]>(['101', '102', '103', '104', '106', '108']);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  
+
   // Unmark Confirmation State
   const [showUnmarkModal, setShowUnmarkModal] = useState(false);
   const [propertyToUnmark, setPropertyToUnmark] = useState<string | null>(null);
+
+  const handleLogout = async () => {
+    await signOut();
+    onLogout();
+  };
 
   // Help Modal State
   const [activeHelpModal, setActiveHelpModal] = useState<'faq' | 'tutorial' | null>(null);
@@ -925,8 +931,8 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
 
                         <div className="h-px bg-gray-100"></div>
 
-                        <button 
-                            onClick={onLogout}
+                        <button
+                            onClick={handleLogout}
                             className="w-full flex items-center justify-between p-3 bg-red-50 hover:bg-red-100 rounded-xl transition-all group border border-transparent hover:border-red-200"
                         >
                             <div className="flex items-center gap-3">
