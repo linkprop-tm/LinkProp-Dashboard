@@ -119,6 +119,36 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
   };
 
   const handleNextStep = () => {
+      setRegisterError('');
+
+      // Validate step 1 fields
+      if (!regData.name.trim()) {
+        setRegisterError('Por favor ingresa tu nombre completo');
+        return;
+      }
+
+      if (!regData.email.trim()) {
+        setRegisterError('Por favor ingresa tu correo electrónico');
+        return;
+      }
+
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(regData.email)) {
+        setRegisterError('Por favor ingresa un correo electrónico válido');
+        return;
+      }
+
+      if (!regData.password || regData.password.length < 6) {
+        setRegisterError('La contraseña debe tener al menos 6 caracteres');
+        return;
+      }
+
+      if (!regData.phone.trim()) {
+        setRegisterError('Por favor ingresa tu número de teléfono');
+        return;
+      }
+
       setCurrentStep(2);
   };
 
@@ -131,9 +161,13 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
       setRegisterLoading(true);
 
       try {
-        // Validate required fields
-        if (!regData.name || !regData.email || !regData.password) {
-          throw new Error('Por favor completa todos los campos obligatorios');
+        // Validate step 2 preferences
+        if (regData.propertyTypes.length === 0) {
+          throw new Error('Por favor selecciona al menos un tipo de propiedad');
+        }
+
+        if (regData.neighborhoods.length === 0) {
+          throw new Error('Por favor selecciona al menos un barrio de interés');
         }
 
         // Prepare preferences for client
@@ -168,11 +202,44 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
           }
         );
 
+        // Reset form
+        setRegData({
+          name: '',
+          email: '',
+          password: '',
+          phone: '',
+          operationType: 'Venta',
+          propertyTypes: ['Departamento'],
+          amenities: [],
+          region: 'CABA',
+          neighborhoods: [],
+          minPrice: '',
+          maxPrice: '',
+          minArea: '',
+          maxArea: '',
+          environments: '',
+          bedrooms: '',
+          bathrooms: '',
+          antiquity: [],
+          features: {
+            credit: false,
+            professional: false,
+            garage: false,
+            pets: false
+          }
+        });
+        setCurrentStep(1);
         setIsRegisterOpen(false);
         onLogin();
       } catch (error: any) {
         console.error('Registration error:', error);
-        setRegisterError(error.message || 'Error al crear la cuenta. Intenta nuevamente.');
+        if (error.message?.includes('User already registered')) {
+          setRegisterError('Este correo electrónico ya está registrado. Intenta iniciar sesión.');
+        } else if (error.message?.includes('Password')) {
+          setRegisterError('La contraseña debe tener al menos 6 caracteres.');
+        } else {
+          setRegisterError(error.message || 'Error al crear la cuenta. Intenta nuevamente.');
+        }
       } finally {
         setRegisterLoading(false);
       }
@@ -587,7 +654,11 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
             </div>
 
             {/* Form Fields (Login) */}
-            <div className="space-y-5">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const button = e.currentTarget.querySelector('button[type="submit"]') as HTMLButtonElement;
+              if (button) button.click();
+            }} className="space-y-5">
                {loginError && (
                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
                    <AlertCircle size={16} className="text-red-600 mt-0.5 flex-shrink-0" />
@@ -632,25 +703,43 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                      </button>
                   </div>
                </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-4 mt-8">
+               {/* Submit Button */}
                <button
-                  onClick={async () => {
+                  type="submit"
+                  onClick={async (e) => {
+                    e.preventDefault();
                     setLoginError('');
+
+                    // Validate fields
+                    if (!loginEmail.trim()) {
+                      setLoginError('Por favor ingresa tu correo electrónico');
+                      return;
+                    }
+
+                    if (!loginPassword) {
+                      setLoginError('Por favor ingresa tu contraseña');
+                      return;
+                    }
+
                     setLoginLoading(true);
                     try {
                       await signIn(loginEmail, loginPassword);
                       onLogin();
                     } catch (error: any) {
                       console.error('Login error:', error);
-                      setLoginError(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
+                      if (error.message?.includes('Invalid login credentials')) {
+                        setLoginError('Credenciales inválidas. Verifica tu correo y contraseña.');
+                      } else if (error.message?.includes('Email not confirmed')) {
+                        setLoginError('Por favor confirma tu correo electrónico antes de iniciar sesión.');
+                      } else {
+                        setLoginError(error.message || 'Error al iniciar sesión. Intenta nuevamente.');
+                      }
                     } finally {
                       setLoginLoading(false);
                     }
                   }}
-                  disabled={loginLoading || !loginEmail || !loginPassword}
+                  disabled={loginLoading}
                   className="group w-full bg-gray-900 hover:bg-black text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-gray-900/20 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                >
                   {loginLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
@@ -666,7 +755,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                >
                   Registrarse
                </button>
-            </div>
+            </form>
 
             <p className="mt-8 text-center text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">
                Al continuar, aceptas nuestros <span className="font-bold text-gray-600 cursor-pointer hover:underline">Términos de Servicio</span> y <span className="font-bold text-gray-600 cursor-pointer hover:underline">Política de Privacidad</span>.
