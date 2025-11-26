@@ -1,6 +1,8 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Building2, Users, Heart, Settings, LogOut, History, Zap } from 'lucide-react';
+import { useAuthContext } from '../lib/contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface SidebarProps {
   currentView: string;
@@ -8,6 +10,32 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
+  const { user } = useAuthContext();
+  const [userName, setUserName] = useState('Usuario');
+  const [userEmail, setUserEmail] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('name, email')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (data && !error) {
+      setUserName(data.name || 'Usuario');
+      setUserEmail(data.email || user.email || '');
+    } else {
+      setUserEmail(user.email || '');
+    }
+  };
   const navItems = [
     { 
       id: 'dashboard', 
@@ -86,14 +114,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
 
       <div className="p-4 border-t border-gray-100 space-y-2">
         <div className="flex items-center gap-3 px-3 py-2">
-          <img
-            src="https://picsum.photos/100/100?random=99"
-            alt="Agent"
-            className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
-          />
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-bold text-lg ring-2 ring-gray-100">
+            {userName.charAt(0).toUpperCase()}
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-gray-900 truncate">Roberto Díaz</p>
-            <p className="text-xs text-gray-500 truncate">Agente Inmobiliario</p>
+            <p className="text-sm font-bold text-gray-900 truncate">{userName}</p>
+            <p className="text-xs text-gray-500 truncate">{userEmail}</p>
           </div>
         </div>
       </div>

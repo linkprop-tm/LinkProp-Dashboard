@@ -1,12 +1,71 @@
 
-import React from 'react';
-import { User, Mail, Phone, Camera, Save, LogOut, Shield, Key, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Mail, Phone, Camera, Save, LogOut, Shield, Key, ChevronRight, AlertCircle } from 'lucide-react';
+import { useAuthContext } from '../lib/contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface SettingsProps {
   onLogout: () => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
+  const { user } = useAuthContext();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('name, email, phone')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (data && !error) {
+      setName(data.name || '');
+      setEmail(data.email || user.email || '');
+      setPhone(data.phone || '');
+    } else {
+      setEmail(user.email || '');
+    }
+  };
+
+  const handleSave = async () => {
+    setSaveError('');
+    setSaveSuccess(false);
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name,
+          phone,
+        })
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error: any) {
+      console.error('Error saving user data:', error);
+      setSaveError(error.message || 'Error al guardar los cambios');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-fade-in pb-24">
@@ -54,9 +113,11 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Nombre Completo</label>
                                 <div className="relative group">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-600 transition-colors" size={20} />
-                                    <input 
-                                    type="text" 
-                                    defaultValue="Roberto Díaz" 
+                                    <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Tu nombre completo"
                                     className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-medium placeholder:text-gray-400 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-200 outline-none transition-all"
                                     />
                                 </div>
@@ -67,10 +128,12 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Correo Electrónico</label>
                                 <div className="relative group">
                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-600 transition-colors" size={20} />
-                                    <input 
-                                    type="email" 
-                                    defaultValue="roberto.diaz@linkprop.com" 
-                                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-medium placeholder:text-gray-400 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-200 outline-none transition-all"
+                                    <input
+                                    type="email"
+                                    value={email}
+                                    readOnly
+                                    disabled
+                                    className="w-full pl-12 pr-4 py-3.5 bg-gray-100 border border-gray-200 rounded-2xl text-gray-600 font-medium cursor-not-allowed"
                                     />
                                 </div>
                             </div>
@@ -80,20 +143,40 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Teléfono</label>
                                 <div className="relative group">
                                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-600 transition-colors" size={20} />
-                                    <input 
-                                    type="tel" 
-                                    defaultValue="+54 9 11 1234 5678" 
+                                    <input
+                                    type="tel"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="+54 9 11..."
                                     className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-medium placeholder:text-gray-400 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-200 outline-none transition-all"
                                     />
                                 </div>
                             </div>
                          </div>
 
+                        {/* Messages */}
+                        {saveSuccess && (
+                          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2">
+                            <Save size={16} className="text-emerald-600" />
+                            <p className="text-sm text-emerald-800 font-medium">Cambios guardados correctamente</p>
+                          </div>
+                        )}
+                        {saveError && (
+                          <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+                            <AlertCircle size={16} className="text-red-600 mt-0.5" />
+                            <p className="text-sm text-red-800">{saveError}</p>
+                          </div>
+                        )}
+
                         {/* Save Button */}
                         <div className="pt-4 flex justify-end">
-                            <button className="bg-gray-900 hover:bg-black text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-gray-900/20 active:scale-95 transition-all duration-200 flex items-center gap-2">
+                            <button
+                              onClick={handleSave}
+                              disabled={loading}
+                              className="bg-gray-900 hover:bg-black text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-gray-900/20 active:scale-95 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
                                 <Save size={18} />
-                                Guardar Cambios
+                                {loading ? 'Guardando...' : 'Guardar Cambios'}
                             </button>
                         </div>
                     </div>
