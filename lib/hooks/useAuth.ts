@@ -46,9 +46,9 @@ export function useAuth() {
 
   const getUserRole = async (userId: string): Promise<UserRole> => {
     const { data, error } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', userId)
+      .from('usuarios')
+      .select('rol')
+      .eq('auth_id', userId)
       .maybeSingle();
 
     if (error || !data) {
@@ -56,7 +56,7 @@ export function useAuth() {
       return 'client';
     }
 
-    return data.role as UserRole;
+    return (data.rol === 'admin' ? 'agent' : 'client') as UserRole;
   };
 
   const signIn = async (email: string, password: string) => {
@@ -78,30 +78,31 @@ export function useAuth() {
     if (authError) throw authError;
     if (!authData.user) throw new Error('No user returned from signup');
 
+    // Map role to database role
+    const dbRole = role === 'agent' ? 'admin' : 'user';
+
     // Create user profile
     const { error: profileError } = await supabase
-      .from('users')
+      .from('usuarios')
       .insert({
-        id: authData.user.id,
+        auth_id: authData.user.id,
         email,
-        role,
-        name: profileData.name,
-        phone: profileData.phone,
+        rol: dbRole,
+        full_name: profileData.name,
+        telefono: profileData.phone,
+        // If client, add preferences
+        ...(role === 'client' && profileData.preferences ? {
+          preferencias_tipo: profileData.preferences.propertyTypes,
+          preferencias_operacion: profileData.preferences.operationType,
+          preferencias_precio_min: profileData.preferences.minPrice ? parseFloat(profileData.preferences.minPrice) : null,
+          preferencias_precio_max: profileData.preferences.maxPrice ? parseFloat(profileData.preferences.maxPrice) : null,
+          preferencias_ubicacion: profileData.preferences.neighborhoods,
+          preferencias_dormitorios_min: profileData.preferences.bedrooms ? parseInt(profileData.preferences.bedrooms) : null,
+          preferencias_banos_min: profileData.preferences.bathrooms ? parseInt(profileData.preferences.bathrooms) : null,
+        } : {}),
       });
 
     if (profileError) throw profileError;
-
-    // If client, create preferences
-    if (role === 'client' && profileData.preferences) {
-      const { error: prefsError } = await supabase
-        .from('preferences')
-        .insert({
-          user_id: authData.user.id,
-          ...profileData.preferences,
-        });
-
-      if (prefsError) throw prefsError;
-    }
 
     return authData;
   };

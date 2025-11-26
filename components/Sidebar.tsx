@@ -24,13 +24,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
     if (!user) return;
 
     const { data, error } = await supabase
-      .from('users')
-      .select('name, email')
-      .eq('id', user.id)
+      .from('usuarios')
+      .select('full_name, email')
+      .eq('auth_id', user.id)
       .maybeSingle();
 
     if (data && !error) {
-      setUserName(data.name || 'Usuario');
+      setUserName(data.full_name || 'Usuario');
       setUserEmail(data.email || user.email || '');
     } else {
       setUserEmail(user.email || '');

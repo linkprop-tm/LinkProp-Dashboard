@@ -27,15 +27,15 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
     if (!user) return;
 
     const { data, error } = await supabase
-      .from('users')
-      .select('name, email, phone')
-      .eq('id', user.id)
+      .from('usuarios')
+      .select('full_name, email, telefono')
+      .eq('auth_id', user.id)
       .maybeSingle();
 
     if (data && !error) {
-      setName(data.name || '');
+      setName(data.full_name || '');
       setEmail(data.email || user.email || '');
-      setPhone(data.phone || '');
+      setPhone(data.telefono || '');
     } else {
       setEmail(user.email || '');
     }
@@ -48,12 +48,12 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
 
     try {
       const { error } = await supabase
-        .from('users')
+        .from('usuarios')
         .update({
-          name,
-          phone,
+          full_name: name,
+          telefono: phone,
         })
-        .eq('id', user?.id);
+        .eq('auth_id', user?.id);
 
       if (error) throw error;
 
