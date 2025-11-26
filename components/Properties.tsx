@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Search, MapPin, Eye, EyeOff, LayoutGrid, List, Bed, Bath, Ruler, Edit2
+  Search, MapPin, Eye, EyeOff, LayoutGrid, List, Bed, Bath, Ruler, Edit2, Building2, Plus
 } from 'lucide-react';
-import { PROPERTIES_GRID_DATA } from '../constants';
 import { AddPropertyModal } from './AddPropertyModal';
 import { Property } from '../types';
 import { useProperties } from '../lib/hooks/useProperties';
