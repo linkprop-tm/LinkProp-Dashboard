@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, Plus, X, Check, Heart, Building, TrendingUp, Clock, Command } from 'lucide-react';
 import { RECENT_ACTIVITY } from '../constants';
+import { AgentOnly } from '../lib/components/RoleGuard';
 
 interface HeaderProps {
   onAddProperty: () => void;
@@ -139,16 +140,18 @@ export const Header: React.FC<HeaderProps> = ({ onAddProperty }) => {
           )}
         </div>
 
-        {/* CTA */}
-        <button
-          onClick={onAddProperty}
-          className="flex items-center gap-2.5 bg-gray-900 hover:bg-black text-white px-5 py-3 rounded-full text-sm font-bold shadow-lg shadow-gray-900/20 hover:shadow-gray-900/40 transition-all active:scale-95"
-        >
-          <div className="bg-white/20 rounded-full p-0.5">
-            <Plus size={16} strokeWidth={3} />
-          </div>
-          <span className="hidden md:inline">Agregar Propiedad</span>
-        </button>
+        {/* CTA - Solo para agentes */}
+        <AgentOnly>
+          <button
+            onClick={onAddProperty}
+            className="flex items-center gap-2.5 bg-gray-900 hover:bg-black text-white px-5 py-3 rounded-full text-sm font-bold shadow-lg shadow-gray-900/20 hover:shadow-gray-900/40 transition-all active:scale-95"
+          >
+            <div className="bg-white/20 rounded-full p-0.5">
+              <Plus size={16} strokeWidth={3} />
+            </div>
+            <span className="hidden md:inline">Agregar Propiedad</span>
+          </button>
+        </AgentOnly>
       </div>
     </header>
   );

@@ -15,6 +15,7 @@ import { Welcome } from './components/Welcome';
 import { ClientLayout } from './components/ClientLayout';
 import { MobileNavbar } from './components/MobileNavbar';
 import { AuthProvider, useAuthContext } from './lib/contexts/AuthContext';
+import { ProtectedRoute } from './lib/components/ProtectedRoute';
 
 export type UserRole = 'agent' | 'client' | null;
 
@@ -42,7 +43,11 @@ const AppContent: React.FC = () => {
 
   // 2. Client Flow (New Interface)
   if (role === 'client') {
-    return <ClientLayout onLogout={signOut} />;
+    return (
+      <ProtectedRoute requiredRole="client">
+        <ClientLayout onLogout={signOut} />
+      </ProtectedRoute>
+    );
   }
 
   // 3. Agent Flow (Existing Interface)
@@ -68,42 +73,44 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-full bg-gray-50 overflow-hidden font-sans">
-      {/* Sidebar - Fixed (Desktop Only) - Updated to LG to support standard desktop/laptop mode */}
-      <div className="hidden lg:block flex-shrink-0">
-        <Sidebar 
-          currentView={currentView} 
-          onNavigate={setCurrentView} 
-        />
+    <ProtectedRoute requiredRole="agent">
+      <div className="flex h-screen w-full bg-gray-50 overflow-hidden font-sans">
+        {/* Sidebar - Fixed (Desktop Only) - Updated to LG to support standard desktop/laptop mode */}
+        <div className="hidden lg:block flex-shrink-0">
+          <Sidebar
+            currentView={currentView}
+            onNavigate={setCurrentView}
+          />
+        </div>
+
+        {/* Main Content Area - Single Scrollable Container */}
+        {/* Header is now INSIDE this container so sticky + backdrop blur works as content scrolls under it */}
+        <div className="flex-1 h-screen overflow-y-auto scroll-smooth relative">
+           <div className="pb-24 lg:pb-0">
+              <Header onAddProperty={() => setIsAddPropertyModalOpen(true)} />
+
+              {renderAgentContent()}
+
+              {/* Footer / Copyright */}
+              <div className="p-8 text-center text-xs text-gray-400">
+                &copy; 2025 LinkProp. All rights reserved. Designed for Top Agents.
+              </div>
+           </div>
+        </div>
+
+        {/* Mobile Bottom Navigation (Agent Only) - Visible on Mobile and Tablet (Hidden on LG+) */}
+        <MobileNavbar currentView={currentView} onNavigate={setCurrentView} />
+
+        {/* Modal Layer - Conditionally Rendered to ensure clean state on open */}
+        {isAddPropertyModalOpen && (
+          <AddPropertyModal
+            isOpen={true}
+            onClose={() => setIsAddPropertyModalOpen(false)}
+            initialData={null}
+          />
+        )}
       </div>
-
-      {/* Main Content Area - Single Scrollable Container */}
-      {/* Header is now INSIDE this container so sticky + backdrop blur works as content scrolls under it */}
-      <div className="flex-1 h-screen overflow-y-auto scroll-smooth relative">
-         <div className="pb-24 lg:pb-0">
-            <Header onAddProperty={() => setIsAddPropertyModalOpen(true)} />
-            
-            {renderAgentContent()}
-            
-            {/* Footer / Copyright */}
-            <div className="p-8 text-center text-xs text-gray-400">
-              &copy; 2025 LinkProp. All rights reserved. Designed for Top Agents.
-            </div>
-         </div>
-      </div>
-
-      {/* Mobile Bottom Navigation (Agent Only) - Visible on Mobile and Tablet (Hidden on LG+) */}
-      <MobileNavbar currentView={currentView} onNavigate={setCurrentView} />
-
-      {/* Modal Layer - Conditionally Rendered to ensure clean state on open */}
-      {isAddPropertyModalOpen && (
-        <AddPropertyModal 
-          isOpen={true} 
-          onClose={() => setIsAddPropertyModalOpen(false)}
-          initialData={null} 
-        />
-      )}
-    </div>
+    </ProtectedRoute>
   );
 };
 
