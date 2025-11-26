@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
@@ -14,9 +14,6 @@ import { UnderConstruction } from './components/UnderConstruction';
 import { Welcome } from './components/Welcome';
 import { ClientLayout } from './components/ClientLayout';
 import { MobileNavbar } from './components/MobileNavbar';
-import { getSessionOnLoad, getUserRole } from './lib/api/auth';
-import { supabase } from './lib/supabase';
-import { Loader2 } from 'lucide-react';
 
 export type UserRole = 'agent' | 'client' | null;
 
@@ -24,50 +21,12 @@ const App: React.FC = () => {
   const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
   const [userRole, setUserRole] = useState<UserRole>(null);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
-
-  useEffect(() => {
-    const checkSession = async () => {
-      const session = await getSessionOnLoad();
-      if (session) {
-        const role = await getUserRole();
-        setUserRole(role);
-      }
-      setIsCheckingSession(false);
-    };
-
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setUserRole(null);
-      } else if (event === 'SIGNED_IN' && session) {
-        const role = await getUserRole();
-        setUserRole(role);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  if (isCheckingSession) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <Loader2 size={40} className="animate-spin text-gray-900 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
 
   // 1. Auth Flow
   if (!userRole) {
     return <Welcome onLogin={(role) => {
       setUserRole(role);
-      setCurrentView('dashboard');
+      setCurrentView('dashboard'); // Reset view on login
     }} />;
   }
 
