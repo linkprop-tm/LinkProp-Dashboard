@@ -1,16 +1,16 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { 
-  Search, Filter, Plus, 
-  Edit2, 
-  Car, CreditCard, LayoutGrid, Briefcase, MapPin, 
+import {
+  Search, Filter, Plus,
+  Edit2,
+  Car, CreditCard, LayoutGrid, Briefcase, MapPin,
   UserCheck, Clock,
   Home, XCircle, Trash2, Users, ChevronDown, ChevronUp, X, RefreshCcw, DollarSign,
   AlertTriangle, Activity, Zap, Heart, ArrowUpDown, Calendar, ArrowDown, ArrowUp
 } from 'lucide-react';
-import { CLIENTS_DATA } from '../constants';
 import { EditClientModal } from './EditClientModal';
 import { Client } from '../types';
+import { obtenerUsuarios, eliminarUsuario } from '../lib/api/users';
 
 // Helper to parse dates like "06 Ene, 2025"
 const parseClientDate = (dateStr: string) => {
@@ -36,9 +36,47 @@ const parseClientDate = (dateStr: string) => {
 type SortOption = 'newest' | 'oldest' | 'interests' | 'budget';
 
 export const Clients: React.FC = () => {
-  // Use state for clients to allow updates
-  const [clients, setClients] = useState<Client[]>(CLIENTS_DATA);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    loadClients();
+  }, []);
+
+  const loadClients = async () => {
+    try {
+      setLoading(true);
+      const usuarios = await obtenerUsuarios();
+      const mappedClients: Client[] = usuarios.map(usuario => ({
+        id: usuario.id,
+        name: usuario.nombre,
+        email: usuario.email,
+        avatar: '',
+        date: new Date(usuario.fecha_creacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }),
+        groups: [],
+        searchParams: {
+          type: usuario.preferencias_tipo?.[0] || '',
+          maxPrice: usuario.preferencias_precio_max || 0,
+          currency: 'USD',
+          environments: '',
+          location: usuario.preferencias_ubicacion?.[0] || '',
+          operationType: usuario.preferencias_operacion || 'Venta',
+          minPrice: usuario.preferencias_precio_min || 0,
+          propertyTypes: usuario.preferencias_tipo || [],
+          bedrooms: usuario.preferencias_dormitorios_min?.toString() || '',
+          bathrooms: usuario.preferencias_banos_min?.toString() || ''
+        },
+        activityScore: 75,
+        status: 'active'
+      }));
+      setClients(mappedClients);
+    } catch (err) {
+      console.error('Error loading clients:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Sort State
   const [sortOption, setSortOption] = useState<SortOption>('newest');
@@ -99,10 +137,16 @@ export const Clients: React.FC = () => {
     setClientToDelete(id);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (clientToDelete) {
-      setClients(prevClients => prevClients.filter(c => c.id !== clientToDelete));
-      setClientToDelete(null);
+      try {
+        await eliminarUsuario(clientToDelete);
+        setClients(prevClients => prevClients.filter(c => c.id !== clientToDelete));
+        setClientToDelete(null);
+      } catch (err) {
+        console.error('Error deleting client:', err);
+        alert('Error al eliminar el cliente');
+      }
     }
   };
 
