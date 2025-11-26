@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
@@ -14,25 +14,35 @@ import { UnderConstruction } from './components/UnderConstruction';
 import { Welcome } from './components/Welcome';
 import { ClientLayout } from './components/ClientLayout';
 import { MobileNavbar } from './components/MobileNavbar';
+import { AuthProvider, useAuthContext } from './lib/contexts/AuthContext';
 
 export type UserRole = 'agent' | 'client' | null;
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { user, role, loading, signOut } = useAuthContext();
   const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
-  const [userRole, setUserRole] = useState<UserRole>(null);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   // 1. Auth Flow
-  if (!userRole) {
-    return <Welcome onLogin={(role) => {
-      setUserRole(role);
-      setCurrentView('dashboard'); // Reset view on login
-    }} />;
+  if (!user || !role) {
+    return <Welcome onLogin={() => {}} />;
   }
 
   // 2. Client Flow (New Interface)
-  if (userRole === 'client') {
-    return <ClientLayout onLogout={() => setUserRole(null)} />;
+  if (role === 'client') {
+    return <ClientLayout onLogout={signOut} />;
   }
 
   // 3. Agent Flow (Existing Interface)
@@ -51,7 +61,7 @@ const App: React.FC = () => {
       case 'visited':
         return <Visited />;
       case 'settings':
-        return <Settings onLogout={() => setUserRole(null)} />;
+        return <Settings onLogout={signOut} />;
       default:
         return <Dashboard />;
     }
@@ -94,6 +104,14 @@ const App: React.FC = () => {
         />
       )}
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

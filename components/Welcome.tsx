@@ -1,14 +1,15 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Eye, EyeOff, Mail, Lock, ArrowRight, User, Briefcase, 
+import {
+  Eye, EyeOff, Mail, Lock, ArrowRight, User, Briefcase,
   Building2, Sparkles, MapPin, DollarSign, PlusCircle, X,
-  Phone, Check, CheckCircle2, Car, Cat, Camera, ChevronRight
+  Phone, Check, CheckCircle2, Car, Cat, Camera, ChevronRight, AlertCircle
 } from 'lucide-react';
 import { UserRole } from '../App';
+import { useAuthContext } from '../lib/contexts/AuthContext';
 
 interface WelcomeProps {
-  onLogin: (role: UserRole) => void;
+  onLogin: () => void;
 }
 
 // CONSTANTS FOR NEIGHBORHOODS (Reused for the modal)
@@ -23,8 +24,19 @@ const GBA_NEIGHBORHOODS = [
 ];
 
 export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
+  const { signIn, signUp } = useAuthContext();
   const [selectedRole, setSelectedRole] = useState<UserRole>('agent');
   const [showPassword, setShowPassword] = useState(false);
+
+  // Login state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  // Registration state
+  const [registerError, setRegisterError] = useState('');
+  const [registerLoading, setRegisterLoading] = useState(false);
 
   // --- REGISTRATION STATE ---
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -114,10 +126,56 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
       setCurrentStep(1);
   };
 
-  const handleFinishRegistration = () => {
-      // Logic to actually register would go here
-      setIsRegisterOpen(false);
-      onLogin('client'); // Auto-login as client for demo
+  const handleFinishRegistration = async () => {
+      setRegisterError('');
+      setRegisterLoading(true);
+
+      try {
+        // Validate required fields
+        if (!regData.name || !regData.email || !regData.password) {
+          throw new Error('Por favor completa todos los campos obligatorios');
+        }
+
+        // Prepare preferences for client
+        const preferences = {
+          operation_type: regData.operationType.toLowerCase(),
+          property_types: regData.propertyTypes,
+          amenities: regData.amenities,
+          region: regData.region,
+          neighborhoods: regData.neighborhoods,
+          min_price: regData.minPrice ? parseFloat(regData.minPrice) : null,
+          max_price: regData.maxPrice ? parseFloat(regData.maxPrice) : null,
+          min_area: regData.minArea ? parseFloat(regData.minArea) : null,
+          max_area: regData.maxArea ? parseFloat(regData.maxArea) : null,
+          environments: regData.environments || null,
+          bedrooms: regData.bedrooms || null,
+          bathrooms: regData.bathrooms || null,
+          antiquity: regData.antiquity,
+          credit_eligible: regData.features.credit,
+          professional_use: regData.features.professional,
+          garage: regData.features.garage,
+          pets_allowed: regData.features.pets,
+        };
+
+        await signUp(
+          regData.email,
+          regData.password,
+          'client',
+          {
+            name: regData.name,
+            phone: regData.phone,
+            preferences,
+          }
+        );
+
+        setIsRegisterOpen(false);
+        onLogin();
+      } catch (error: any) {
+        console.error('Registration error:', error);
+        setRegisterError(error.message || 'Error al crear la cuenta. Intenta nuevamente.');
+      } finally {
+        setRegisterLoading(false);
+      }
   };
 
   // --- RENDER REGISTRATION MODAL ---
@@ -147,6 +205,12 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
 
                 {/* Modal Body */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-8 bg-gray-50/50">
+                    {registerError && (
+                      <div className="max-w-lg mx-auto mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                        <AlertCircle size={20} className="text-red-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-red-800">{registerError}</p>
+                      </div>
+                    )}
                     
                     {/* STEP 1: PROFILE */}
                     {currentStep === 1 && (
@@ -429,8 +493,16 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                 Siguiente <ArrowRight size={16} />
                             </button>
                         ) : (
-                            <button onClick={handleFinishRegistration} className="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-900/20 hover:bg-black transition-all active:scale-95 flex items-center gap-2">
-                                <Check size={16} /> Finalizar
+                            <button
+                              onClick={handleFinishRegistration}
+                              disabled={registerLoading}
+                              className="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-900/20 hover:bg-black transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {registerLoading ? (
+                                  'Creando cuenta...'
+                                ) : (
+                                  <><Check size={16} /> Finalizar</>
+                                )}
                             </button>
                         )}
                     </div>
@@ -516,14 +588,22 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
 
             {/* Form Fields (Login) */}
             <div className="space-y-5">
+               {loginError && (
+                 <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+                   <AlertCircle size={16} className="text-red-600 mt-0.5 flex-shrink-0" />
+                   <p className="text-sm text-red-800">{loginError}</p>
+                 </div>
+               )}
+
                <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-900 uppercase tracking-wide ml-1">Correo Electrónico</label>
                   <div className="relative group">
                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-500 transition-colors" size={20} />
-                     <input 
-                        type="email" 
-                        value={selectedRole === 'agent' ? 'roberto.diaz@linkprop.com' : 'ana.garcia@gmail.com'}
-                        readOnly
+                     <input
+                        type="email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="tu@email.com"
                         className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-gray-900 font-medium placeholder:text-gray-400 focus:bg-white focus:border-red-500 focus:ring-4 focus:ring-red-500/10 outline-none transition-all"
                      />
                   </div>
@@ -536,13 +616,14 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                   </div>
                   <div className="relative group">
                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-500 transition-colors" size={20} />
-                     <input 
-                        type={showPassword ? "text" : "password"} 
-                        value="password123"
-                        readOnly
+                     <input
+                        type={showPassword ? "text" : "password"}
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        placeholder="••••••••"
                         className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-gray-900 font-medium placeholder:text-gray-400 focus:bg-white focus:border-red-500 focus:ring-4 focus:ring-red-500/10 outline-none transition-all"
                      />
-                     <button 
+                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
@@ -555,12 +636,25 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-4 mt-8">
-               <button 
-                  onClick={() => onLogin(selectedRole)}
-                  className="group w-full bg-gray-900 hover:bg-black text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-gray-900/20 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
+               <button
+                  onClick={async () => {
+                    setLoginError('');
+                    setLoginLoading(true);
+                    try {
+                      await signIn(loginEmail, loginPassword);
+                      onLogin();
+                    } catch (error: any) {
+                      console.error('Login error:', error);
+                      setLoginError(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
+                    } finally {
+                      setLoginLoading(false);
+                    }
+                  }}
+                  disabled={loginLoading || !loginEmail || !loginPassword}
+                  className="group w-full bg-gray-900 hover:bg-black text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-gray-900/20 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                >
-                  Iniciar Sesión
-                  <ArrowRight size={20} className="opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+                  {loginLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                  {!loginLoading && <ArrowRight size={20} className="opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />}
                </button>
 
                <button 
