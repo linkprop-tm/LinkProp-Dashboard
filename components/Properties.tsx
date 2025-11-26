@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Search, MapPin, Eye, EyeOff, LayoutGrid, List, Bed, Bath, Ruler, Edit2
 } from 'lucide-react';
 import { PROPERTIES_GRID_DATA } from '../constants';
 import { AddPropertyModal } from './AddPropertyModal';
 import { Property } from '../types';
+import { useProperties } from '../lib/hooks/useProperties';
+import { cambiarEstadoPropiedad } from '../lib/api/properties';
 
 // --- HELPER: Status Badge ---
 const getStatusBadge = (status: string) => {
@@ -234,25 +236,44 @@ export const Properties: React.FC = () => {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
-  // Initialize state with data so we can modify it (toggle visibility)
-  const [properties, setProperties] = useState<Property[]>(PROPERTIES_GRID_DATA);
 
-  // Sync with constants if needed, but for now state rules
+  const { properties: dbProperties, loading, error, refetch } = useProperties();
+  const [properties, setProperties] = useState<Property[]>([]);
+
   useEffect(() => {
-     // Optional: If you fetch data, setProperties here
-  }, []);
+    if (dbProperties.length > 0) {
+      setProperties(dbProperties);
+    } else if (!loading && dbProperties.length === 0) {
+      setProperties(PROPERTIES_GRID_DATA);
+    }
+  }, [dbProperties, loading]);
 
   const handleEditClick = (prop: Property) => {
     setEditingProperty(prop);
   };
 
-  const handleToggleVisibility = (id: string) => {
-      setProperties(prevProps => 
-          prevProps.map(p => 
+  const handleToggleVisibility = async (id: string) => {
+      const property = properties.find(p => p.id === id);
+      if (!property) return;
+
+      const newStatus = property.isVisible ? 'Reservada' : 'Disponible';
+
+      setProperties(prevProps =>
+          prevProps.map(p =>
               p.id === id ? { ...p, isVisible: !p.isVisible } : p
           )
       );
+
+      try {
+        await cambiarEstadoPropiedad(id, newStatus);
+      } catch (err) {
+        console.error('Error updating property visibility:', err);
+        setProperties(prevProps =>
+            prevProps.map(p =>
+                p.id === id ? { ...p, isVisible: !p.isVisible } : p
+            )
+        );
+      }
   };
 
   const getFilteredProperties = () => {
@@ -261,6 +282,27 @@ export const Properties: React.FC = () => {
         p.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.neighborhood?.toLowerCase().includes(searchTerm.toLowerCase())
      );
+  }
+
+  if (loading) {
+    return (
+      <div className="p-8 max-w-[1920px] mx-auto flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Cargando propiedades...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 max-w-[1920px] mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          Error: {error}
+        </div>
+      </div>
+    );
   }
 
   return (
