@@ -81,7 +81,7 @@ export function useAuth() {
     // Map role to database role
     const dbRole = role === 'agent' ? 'admin' : 'user';
 
-    // Create user profile
+    // Create user profile in usuarios table
     const { error: profileError } = await supabase
       .from('usuarios')
       .insert({
