@@ -585,9 +585,9 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
       
       {/* LEFT SIDE: Immersive Visual */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gray-900">
-         <img 
-            src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=2400&auto=format&fit=crop" 
-            alt="Karina Poblete" 
+         <img
+            src="/imagen-welcome.png"
+            alt="Karina Poblete"
             className="absolute inset-0 w-full h-full object-cover opacity-90 transition-transform duration-[20s] hover:scale-105"
          />
          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
