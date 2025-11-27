@@ -33,6 +33,7 @@ export async function obtenerUsuarios() {
   const { data, error } = await supabase
     .from('usuarios')
     .select('*')
+    .eq('rol', 'user')
     .order('fecha_creacion', { ascending: false });
 
   if (error) throw error;
