@@ -544,35 +544,41 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                 </div>
 
                 {/* Modal Footer */}
-                <div className="px-8 py-5 border-t border-gray-100 bg-white flex justify-between items-center z-10">
-                    <button onClick={() => setIsRegisterOpen(false)} className="px-6 py-3 rounded-xl text-gray-500 font-bold text-sm hover:text-gray-900 transition-colors">
-                        Cancelar
-                    </button>
-                    
-                    <div className="flex gap-3">
-                        {currentStep === 2 && (
-                            <button onClick={handlePrevStep} className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors">
-                                Atrás
-                            </button>
-                        )}
-                        {currentStep === 1 ? (
-                            <button onClick={handleNextStep} className="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-900/20 hover:bg-black transition-all active:scale-95 flex items-center gap-2">
-                                Siguiente <ArrowRight size={16} />
-                            </button>
-                        ) : (
-                            <button
-                              onClick={handleFinishRegistration}
-                              disabled={registerLoading}
-                              className="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-900/20 hover:bg-black transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {registerLoading ? (
-                                  'Creando cuenta...'
-                                ) : (
-                                  <><Check size={16} /> Finalizar</>
-                                )}
-                            </button>
-                        )}
+                <div className="px-8 py-5 border-t border-gray-100 bg-white z-10">
+                    <div className="flex justify-between items-center mb-4">
+                        <button onClick={() => setIsRegisterOpen(false)} className="px-6 py-3 rounded-xl text-gray-500 font-bold text-sm hover:text-gray-900 transition-colors">
+                            Cancelar
+                        </button>
+
+                        <div className="flex gap-3">
+                            {currentStep === 2 && (
+                                <button onClick={handlePrevStep} className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors">
+                                    Atrás
+                                </button>
+                            )}
+                            {currentStep === 1 ? (
+                                <button onClick={handleNextStep} className="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-900/20 hover:bg-black transition-all active:scale-95 flex items-center gap-2">
+                                    Siguiente <ArrowRight size={16} />
+                                </button>
+                            ) : (
+                                <button
+                                  onClick={handleFinishRegistration}
+                                  disabled={registerLoading}
+                                  className="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-900/20 hover:bg-black transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {registerLoading ? (
+                                      'Creando cuenta...'
+                                    ) : (
+                                      <><Check size={16} /> Finalizar</>
+                                    )}
+                                </button>
+                            )}
+                        </div>
                     </div>
+
+                    <p className="text-center text-xs text-gray-400 leading-relaxed">
+                       Al continuar, aceptas nuestros <span className="font-bold text-gray-600 cursor-pointer hover:underline">Términos de Servicio</span> y <span className="font-bold text-gray-600 cursor-pointer hover:underline">Política de Privacidad</span>.
+                    </p>
                 </div>
 
             </div>
