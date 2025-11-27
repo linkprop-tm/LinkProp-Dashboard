@@ -92,6 +92,27 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
   // Drag and Drop State
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
+  // Amenities State
+  const [showAmenitiesDropdown, setShowAmenitiesDropdown] = useState(false);
+  const availableAmenities = ['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Lavadero', 'Balcón Terraza'];
+  const amenitiesDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (amenitiesDropdownRef.current && !amenitiesDropdownRef.current.contains(event.target as Node)) {
+        setShowAmenitiesDropdown(false);
+      }
+    };
+
+    if (showAmenitiesDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAmenitiesDropdown]);
+
   useEffect(() => {
     if (scrapedData) {
       setFormData({
@@ -282,6 +303,23 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
     if (!scrapedData) return;
     const newImages = [...scrapedData.images, `https://picsum.photos/600/400?random=${Date.now()}`];
     setScrapedData({ ...scrapedData, images: newImages });
+  };
+
+  // Amenities Handlers
+  const handleRemoveAmenity = (index: number) => {
+    const newAmenities = formData.amenities.filter((_, i) => i !== index);
+    setFormData({ ...formData, amenities: newAmenities });
+  };
+
+  const handleAddAmenity = (amenity: string) => {
+    if (!formData.amenities.includes(amenity)) {
+      setFormData({ ...formData, amenities: [...formData.amenities, amenity] });
+    }
+    setShowAmenitiesDropdown(false);
+  };
+
+  const getAvailableAmenities = () => {
+    return availableAmenities.filter(amenity => !formData.amenities.includes(amenity));
   };
 
   // Drag and Drop Handlers
@@ -682,14 +720,39 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                     <div>
                        <h3 className="text-xl font-bold text-gray-900 mb-4">Comodidades & Amenities</h3>
                        <div className="flex flex-wrap gap-3">
-                          {scrapedData.amenities.map((amenity, i) => (
+                          {formData.amenities.map((amenity, i) => (
                              <span key={i} className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-xl border border-gray-100 font-medium text-gray-700">
-                                {amenity} <button className="hover:text-red-500"><X size={14}/></button>
+                                {amenity}
+                                <button
+                                  onClick={() => handleRemoveAmenity(i)}
+                                  className="hover:text-red-500 transition-colors"
+                                >
+                                  <X size={14}/>
+                                </button>
                              </span>
                           ))}
-                          <button className="px-4 py-2 border border-dashed border-gray-300 text-gray-500 rounded-xl text-sm font-medium hover:border-primary-500 hover:text-primary-600 flex items-center gap-1">
-                             <CheckSquare size={16} /> Agregar
-                          </button>
+                          <div className="relative" ref={amenitiesDropdownRef}>
+                            <button
+                              onClick={() => setShowAmenitiesDropdown(!showAmenitiesDropdown)}
+                              className="px-4 py-2 border border-dashed border-gray-300 text-gray-500 rounded-xl text-sm font-medium hover:border-primary-500 hover:text-primary-600 flex items-center gap-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={getAvailableAmenities().length === 0}
+                            >
+                               <CheckSquare size={16} /> Agregar
+                            </button>
+                            {showAmenitiesDropdown && getAvailableAmenities().length > 0 && (
+                              <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 min-w-[200px] overflow-hidden">
+                                {getAvailableAmenities().map((amenity, i) => (
+                                  <button
+                                    key={i}
+                                    onClick={() => handleAddAmenity(amenity)}
+                                    className="w-full text-left px-4 py-2 text-sm font-medium text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors"
+                                  >
+                                    {amenity}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                        </div>
                     </div>
                     
@@ -740,7 +803,16 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                                  />
                               </div>
                               <div className="mt-2 flex items-center gap-1 text-gray-600 text-xs font-bold">
-                                 + $ <input type="number" value={formData.expenses} onChange={(e) => setFormData({...formData, expenses: parseInt(e.target.value) || 0})} className="w-20 bg-gray-100 px-1 rounded border-none" /> expensas
+                                 + $ <input
+                                   type="text"
+                                   value={formData.expenses === 0 ? '' : formData.expenses}
+                                   onChange={(e) => {
+                                     const value = e.target.value.replace(/[^0-9]/g, '');
+                                     setFormData({...formData, expenses: value === '' ? 0 : parseInt(value)});
+                                   }}
+                                   placeholder="0"
+                                   className="w-20 bg-gray-100 px-1 rounded border-none outline-none focus:bg-white focus:ring-1 focus:ring-primary-300"
+                                 /> expensas
                               </div>
                            </div>
                            
