@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { EditClientModal } from './EditClientModal';
 import { Client } from '../types';
-import { obtenerUsuarios, eliminarUsuario } from '../lib/api/users';
+import { obtenerClientes, eliminarUsuario } from '../lib/api/users';
 
 // Helper to parse dates like "06 Ene, 2025"
 const parseClientDate = (dateStr: string) => {
@@ -47,7 +47,7 @@ export const Clients: React.FC = () => {
   const loadClients = async () => {
     try {
       setLoading(true);
-      const usuarios = await obtenerUsuarios();
+      const usuarios = await obtenerClientes();
       const mappedClients: Client[] = usuarios.map(usuario => ({
         id: usuario.id,
         name: usuario.nombre,

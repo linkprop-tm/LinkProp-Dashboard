@@ -39,6 +39,17 @@ export async function obtenerUsuarios() {
   return data as Usuario[];
 }
 
+export async function obtenerClientes() {
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('*')
+    .eq('rol', 'user')
+    .order('fecha_creacion', { ascending: false });
+
+  if (error) throw error;
+  return data as Usuario[];
+}
+
 export async function obtenerUsuarioPorId(id: string) {
   const { data, error } = await supabase
     .from('usuarios')
