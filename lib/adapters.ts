@@ -11,7 +11,7 @@ export function propiedadToProperty(propiedad: Propiedad, matchCount?: number, i
   return {
     id: propiedad.id,
     title: propiedad.titulo,
-    address: propiedad.ubicacion,
+    address: propiedad.direccion || propiedad.ubicacion,
     price: propiedad.precio,
     currency: propiedad.moneda,
     imageUrl: propiedad.imagenes?.[0] || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
@@ -20,16 +20,28 @@ export function propiedadToProperty(propiedad: Propiedad, matchCount?: number, i
     matchesCount: matchCount || 0,
     interestedClients: interesadosCount || 0,
     status: statusMap[propiedad.estado] || 'active',
-    isVisible: propiedad.estado === 'Disponible',
+    isVisible: propiedad.visibilidad === 'Publica',
     addedAt: propiedad.fecha_creacion,
     propertyType: propiedad.tipo,
     operationType: propiedad.operacion,
     description: propiedad.descripcion,
-    totalArea: propiedad.superficie,
+    totalArea: propiedad.m2_totales || propiedad.superficie,
+    coveredArea: propiedad.m2_cubiertos || undefined,
+    environments: propiedad.ambientes,
     bedrooms: propiedad.dormitorios,
     bathrooms: propiedad.banos,
-    neighborhood: propiedad.ubicacion,
-    area: propiedad.superficie
+    antiquity: propiedad.antiguedad ? (isNaN(Number(propiedad.antiguedad)) ? undefined : Number(propiedad.antiguedad)) : undefined,
+    expenses: propiedad.expensas,
+    isCreditSuitable: propiedad.apto_credito,
+    isProfessionalSuitable: propiedad.apto_profesional,
+    orientation: propiedad.orientacion || undefined,
+    hasGarage: propiedad.cochera,
+    neighborhood: propiedad.barrio || propiedad.ubicacion,
+    province: propiedad.provincia || undefined,
+    fullAddress: propiedad.direccion || undefined,
+    sourceUrl: propiedad.url_original || undefined,
+    sourcePortal: propiedad.portal_original || undefined,
+    area: propiedad.m2_totales || propiedad.superficie
   };
 }
 
@@ -53,7 +65,22 @@ export function propertyToPropiedad(property: Partial<Property>): Partial<Propie
   if (property.bathrooms !== undefined) result.banos = property.bathrooms;
   if (property.totalArea !== undefined || property.area !== undefined) {
     result.superficie = property.totalArea || property.area || 0;
+    result.m2_totales = property.totalArea || property.area || null;
   }
+  if (property.coveredArea !== undefined) result.m2_cubiertos = property.coveredArea;
+  if (property.environments !== undefined) result.ambientes = property.environments;
+  if (property.antiquity !== undefined) result.antiguedad = String(property.antiquity);
+  if (property.expenses !== undefined) result.expensas = property.expenses;
+  if (property.isCreditSuitable !== undefined) result.apto_credito = property.isCreditSuitable;
+  if (property.isProfessionalSuitable !== undefined) result.apto_profesional = property.isProfessionalSuitable;
+  if (property.orientation) result.orientacion = property.orientation;
+  if (property.hasGarage !== undefined) result.cochera = property.hasGarage;
+  if (property.fullAddress) result.direccion = property.fullAddress;
+  if (property.neighborhood) result.barrio = property.neighborhood;
+  if (property.province) result.provincia = property.province;
+  if (property.isVisible !== undefined) result.visibilidad = property.isVisible ? 'Publica' : 'Privada';
+  if (property.sourceUrl) result.url_original = property.sourceUrl;
+  if (property.sourcePortal) result.portal_original = property.sourcePortal;
   if (property.images) result.imagenes = property.images;
   if (property.status) result.estado = estadoMap[property.status] || 'Disponible';
 

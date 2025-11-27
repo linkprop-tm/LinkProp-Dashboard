@@ -14,7 +14,7 @@ export interface Property {
   addedAt: string;
   
   // Basic Details
-  propertyType?: string; // Casa, PH, Departamento
+  propertyType?: string; // Casa, PH, Departamento, Local, Oficina, Galpon, Terreno, Comercial
   operationType?: 'Venta' | 'Alquiler';
   description?: string;
   images?: string[]; // Array of photo URLs
@@ -39,10 +39,16 @@ export interface Property {
   // Extras
   amenities?: string[];
   orientation?: string; // Orientación (Norte, Sur, Este, Oeste, etc)
-  
+  hasGarage?: boolean; // Cochera
+
   // Location
   neighborhood?: string;
   province?: string;
+  fullAddress?: string; // Dirección completa
+
+  // Source tracking
+  sourceUrl?: string; // URL original
+  sourcePortal?: string; // Portal original
   
   // Legacy optional fields (keeping for compatibility if needed, though mostly replaced)
   beds?: number; 
@@ -81,12 +87,14 @@ export interface ScrapedData {
     environments: number;
   };
   details: {
-    antiquity: number;
+    antiquity: number | string;
     expenses: number;
     isCreditSuitable: boolean;
     isProfessionalSuitable: boolean;
+    hasGarage: boolean;
     operationType: 'Venta' | 'Alquiler';
     propertyType: string;
+    orientation: string;
   };
   location: {
     neighborhood: string;

@@ -1,7 +1,8 @@
-export type TipoPropiedad = 'Casa' | 'Departamento' | 'Terreno' | 'Comercial';
+export type TipoPropiedad = 'Casa' | 'Departamento' | 'Terreno' | 'Comercial' | 'PH' | 'Local' | 'Oficina' | 'Galpon';
 export type TipoOperacion = 'Venta' | 'Alquiler';
 export type Moneda = 'USD' | 'ARS';
 export type EstadoPropiedad = 'Disponible' | 'Reservada' | 'Vendida';
+export type VisibilidadPropiedad = 'Publica' | 'Privada';
 export type EtapaRelacion = 'Explorar' | 'Interes' | 'Visitada';
 
 export interface Propiedad {
@@ -20,6 +21,31 @@ export interface Propiedad {
   estado: EstadoPropiedad;
   fecha_creacion: string;
   fecha_actualizacion: string;
+
+  // Dimensiones adicionales
+  m2_totales: number | null;
+  m2_cubiertos: number | null;
+  ambientes: number;
+
+  // Características
+  antiguedad: string;
+  orientacion: string;
+  expensas: number;
+
+  // Aptitudes booleanas
+  apto_credito: boolean;
+  apto_profesional: boolean;
+  cochera: boolean;
+
+  // Ubicación detallada
+  direccion: string;
+  barrio: string;
+  provincia: string;
+
+  // Visibilidad y origen
+  visibilidad: VisibilidadPropiedad;
+  url_original: string;
+  portal_original: string;
 }
 
 export interface Usuario {
