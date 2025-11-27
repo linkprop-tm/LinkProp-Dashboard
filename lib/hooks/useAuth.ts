@@ -45,18 +45,30 @@ export function useAuth() {
   }, []);
 
   const getUserRole = async (userId: string): Promise<UserRole> => {
+    console.log('[getUserRole] Fetching role for userId:', userId);
+
     const { data, error } = await supabase
       .from('usuarios')
       .select('rol')
       .eq('auth_id', userId)
       .maybeSingle();
 
-    if (error || !data) {
-      console.error('Error fetching user role:', error);
+    console.log('[getUserRole] Query result:', { data, error, userId });
+
+    if (error) {
+      console.error('[getUserRole] Database error:', error);
       return 'client';
     }
 
-    return (data.rol === 'admin' ? 'agent' : 'client') as UserRole;
+    if (!data) {
+      console.warn('[getUserRole] No user record found for userId:', userId);
+      return 'client';
+    }
+
+    const mappedRole = (data.rol === 'admin' ? 'agent' : 'client') as UserRole;
+    console.log('[getUserRole] Mapped role:', { dbRole: data.rol, mappedRole });
+
+    return mappedRole;
   };
 
   const signIn = async (email: string, password: string) => {
