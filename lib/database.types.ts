@@ -25,11 +25,8 @@ export interface Propiedad {
 export interface Usuario {
   id: string;
   email: string;
-  full_name: string;
+  nombre: string;
   telefono: string;
-  rol: 'admin' | 'user';
-  auth_id: string | null;
-  avatar_url: string | null;
   preferencias_tipo: TipoPropiedad[];
   preferencias_operacion: TipoOperacion | null;
   preferencias_precio_min: number | null;

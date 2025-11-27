@@ -3,7 +3,7 @@ import type { Usuario, TipoPropiedad, TipoOperacion } from '../database.types';
 
 export interface CreateUsuarioData {
   email: string;
-  full_name: string;
+  nombre: string;
   telefono?: string;
   preferencias_tipo?: TipoPropiedad[];
   preferencias_operacion?: TipoOperacion;
@@ -33,17 +33,6 @@ export async function obtenerUsuarios() {
   const { data, error } = await supabase
     .from('usuarios')
     .select('*')
-    .order('fecha_creacion', { ascending: false });
-
-  if (error) throw error;
-  return data as Usuario[];
-}
-
-export async function obtenerClientes() {
-  const { data, error } = await supabase
-    .from('usuarios')
-    .select('*')
-    .eq('rol', 'user')
     .order('fecha_creacion', { ascending: false });
 
   if (error) throw error;
