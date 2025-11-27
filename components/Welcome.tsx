@@ -637,22 +637,6 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                <p className="text-gray-500 text-base">Ingresa tus datos para acceder al panel.</p>
             </div>
 
-            {/* Role Selector (Subtle) */}
-            <div className="flex p-1 bg-gray-50 rounded-xl mb-8 border border-gray-100">
-               <button 
-                  onClick={() => setSelectedRole('agent')}
-                  className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${selectedRole === 'agent' ? 'bg-white text-gray-900 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
-               >
-                  <Briefcase size={16} /> Agente
-               </button>
-               <button 
-                  onClick={() => setSelectedRole('client')}
-                  className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${selectedRole === 'client' ? 'bg-white text-gray-900 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
-               >
-                  <User size={16} /> Cliente
-               </button>
-            </div>
-
             {/* Form Fields (Login) */}
             <form onSubmit={(e) => {
               e.preventDefault();
