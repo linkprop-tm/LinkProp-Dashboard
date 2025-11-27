@@ -41,6 +41,7 @@ export function propiedadToProperty(propiedad: Propiedad, matchCount?: number, i
     fullAddress: propiedad.direccion || undefined,
     sourceUrl: propiedad.url_original || undefined,
     sourcePortal: propiedad.portal_original || undefined,
+    amenities: propiedad.amenities || [],
     area: propiedad.m2_totales || propiedad.superficie
   };
 }
@@ -85,6 +86,7 @@ export function propertyToPropiedad(property: Partial<Property>): Partial<Propie
   if (property.sourcePortal) result.portal_original = property.sourcePortal;
   if (property.images && property.images.length > 0) result.imagenes = property.images;
   if (property.status) result.estado = estadoMap[property.status] || 'Disponible';
+  if (property.amenities !== undefined) result.amenities = property.amenities;
 
   return result;
 }

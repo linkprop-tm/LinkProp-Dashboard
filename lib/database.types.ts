@@ -46,6 +46,9 @@ export interface Propiedad {
   visibilidad: VisibilidadPropiedad;
   url_original: string;
   portal_original: string;
+
+  // Amenities y comodidades
+  amenities: string[];
 }
 
 export interface Usuario {
