@@ -50,7 +50,7 @@ export const Clients: React.FC = () => {
       const usuarios = await obtenerClientes();
       const mappedClients: Client[] = usuarios.map(usuario => ({
         id: usuario.id,
-        name: usuario.nombre,
+        name: usuario.full_name,
         email: usuario.email,
         avatar: '',
         date: new Date(usuario.fecha_creacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }),
