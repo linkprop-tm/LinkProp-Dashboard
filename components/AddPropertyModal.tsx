@@ -125,38 +125,60 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
       setSaving(true);
       setErrorMessage(null);
 
+      if (!formData.title || formData.title.trim() === '') {
+        setErrorMessage('El título de la propiedad es requerido');
+        setSaving(false);
+        return;
+      }
+
+      if (!formData.price || parseFloat(formData.price) <= 0) {
+        setErrorMessage('El precio debe ser mayor a 0');
+        setSaving(false);
+        return;
+      }
+
+      if (!formData.address && !formData.neighborhood) {
+        setErrorMessage('Debe especificar al menos la dirección o el barrio');
+        setSaving(false);
+        return;
+      }
+
       const propertyData: Partial<Property> = {
-        title: formData.title,
+        title: formData.title.trim(),
         price: parseFloat(formData.price) || 0,
         currency: formData.currency,
-        address: formData.address,
-        neighborhood: formData.neighborhood,
+        address: formData.address.trim(),
+        neighborhood: formData.neighborhood.trim(),
         province: formData.province,
         description: formData.description,
         propertyType: formData.propertyType,
         operationType: formData.operationType,
-        totalArea: formData.totalArea,
-        coveredArea: formData.coveredArea,
-        environments: formData.environments,
-        bedrooms: formData.bedrooms,
-        bathrooms: formData.bathrooms,
-        antiquity: formData.antiquity,
+        totalArea: formData.totalArea || 0,
+        coveredArea: formData.coveredArea || 0,
+        environments: formData.environments || 1,
+        bedrooms: formData.bedrooms || 0,
+        bathrooms: formData.bathrooms || 0,
+        antiquity: formData.antiquity || 0,
         orientation: formData.orientation,
-        expenses: formData.expenses,
+        expenses: formData.expenses || 0,
         hasGarage: formData.hasGarage,
         isProfessionalSuitable: formData.isProfessionalSuitable,
         isCreditSuitable: formData.isCreditSuitable,
         status: status,
         isVisible: isVisible,
-        images: scrapedData?.images || [],
-        amenities: formData.amenities
+        images: scrapedData?.images && scrapedData.images.length > 0 ? scrapedData.images : [],
+        amenities: formData.amenities || []
       };
+
+      console.log('Saving property data:', propertyData);
 
       if (initialData?.id) {
         const updateData = propertyToPropiedad(propertyData);
+        console.log('Update data to send to Supabase:', updateData);
         await actualizarPropiedad({ id: initialData.id, ...updateData });
       } else {
         const createData = propertyToPropiedad(propertyData);
+        console.log('Create data to send to Supabase:', createData);
         await crearPropiedad({
           titulo: createData.titulo || '',
           tipo: createData.tipo || 'Departamento',
@@ -173,7 +195,9 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
       onClose();
     } catch (err) {
       console.error('Error saving property:', err);
-      setErrorMessage(err instanceof Error ? err.message : 'Error al guardar la propiedad');
+      const errorMsg = err instanceof Error ? err.message : 'Error al guardar la propiedad';
+      console.error('Full error details:', JSON.stringify(err, null, 2));
+      setErrorMessage(errorMsg);
     } finally {
       setSaving(false);
     }

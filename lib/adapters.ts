@@ -60,14 +60,17 @@ export function propertyToPropiedad(property: Partial<Property>): Partial<Propie
   if (property.operationType) result.operacion = property.operationType;
   if (property.price !== undefined) result.precio = property.price;
   if (property.currency) result.moneda = property.currency as Propiedad['moneda'];
-  if (property.address || property.neighborhood) result.ubicacion = property.address || property.neighborhood || '';
+
+  if (property.address) result.direccion = property.address;
+  result.ubicacion = property.neighborhood || property.address || '';
+
   if (property.bedrooms !== undefined) result.dormitorios = property.bedrooms;
   if (property.bathrooms !== undefined) result.banos = property.bathrooms;
+
   if (property.totalArea !== undefined || property.area !== undefined) {
-    result.superficie = property.totalArea || property.area || 0;
     result.m2_totales = property.totalArea || property.area || null;
   }
-  if (property.coveredArea !== undefined) result.m2_cubiertos = property.coveredArea;
+  if (property.coveredArea !== undefined) result.m2_cubiertos = property.coveredArea || null;
   if (property.environments !== undefined) result.ambientes = property.environments;
   if (property.antiquity !== undefined) result.antiguedad = String(property.antiquity);
   if (property.expenses !== undefined) result.expensas = property.expenses;
@@ -75,13 +78,12 @@ export function propertyToPropiedad(property: Partial<Property>): Partial<Propie
   if (property.isProfessionalSuitable !== undefined) result.apto_profesional = property.isProfessionalSuitable;
   if (property.orientation) result.orientacion = property.orientation;
   if (property.hasGarage !== undefined) result.cochera = property.hasGarage;
-  if (property.fullAddress) result.direccion = property.fullAddress;
   if (property.neighborhood) result.barrio = property.neighborhood;
   if (property.province) result.provincia = property.province;
   if (property.isVisible !== undefined) result.visibilidad = property.isVisible ? 'Publica' : 'Privada';
   if (property.sourceUrl) result.url_original = property.sourceUrl;
   if (property.sourcePortal) result.portal_original = property.sourcePortal;
-  if (property.images) result.imagenes = property.images;
+  if (property.images && property.images.length > 0) result.imagenes = property.images;
   if (property.status) result.estado = estadoMap[property.status] || 'Disponible';
 
   return result;
