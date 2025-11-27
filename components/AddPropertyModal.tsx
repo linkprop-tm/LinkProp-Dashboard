@@ -6,14 +6,17 @@ import {
   Upload, GripVertical, Plus, Globe, ExternalLink, Sparkles, Loader2, Eye, EyeOff
 } from 'lucide-react';
 import { ScrapedData, Property } from '../types';
+import { actualizarPropiedad, crearPropiedad, eliminarPropiedad } from '../lib/api/properties';
+import { propertyToPropiedad } from '../lib/adapters';
 
 interface AddPropertyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialData?: Property | null; // Optional prop for editing
+  initialData?: Property | null;
+  onSuccess?: () => void;
 }
 
-export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, initialData }) => {
+export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, initialData, onSuccess }) => {
   
   // --- DATA MAPPING HELPER (Synchronous) ---
   const getInitialScrapedData = (data: Property | null | undefined): ScrapedData | null => {
@@ -57,9 +60,145 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
   const [scrapedData, setScrapedData] = useState<ScrapedData | null>(() => getInitialScrapedData(initialData));
   const [status, setStatus] = useState<'active' | 'pending' | 'sold'>(() => initialData?.status || 'active');
   const [isVisible, setIsVisible] = useState(() => initialData?.isVisible !== undefined ? initialData.isVisible : true);
-  
+
+  const [formData, setFormData] = useState(() => ({
+    title: scrapedData?.title || '',
+    price: scrapedData?.price || '',
+    currency: initialData?.currency || 'USD',
+    address: scrapedData?.address || '',
+    neighborhood: scrapedData?.location?.neighborhood || '',
+    province: scrapedData?.location?.province || 'Buenos Aires',
+    description: scrapedData?.description || '',
+    propertyType: scrapedData?.details?.propertyType || 'Departamento',
+    operationType: scrapedData?.details?.operationType || 'Venta',
+    totalArea: scrapedData?.features?.area || 0,
+    coveredArea: scrapedData?.features?.coveredArea || 0,
+    environments: scrapedData?.features?.environments || 1,
+    bedrooms: scrapedData?.features?.beds || 1,
+    bathrooms: scrapedData?.features?.baths || 1,
+    antiquity: scrapedData?.details?.antiquity || 0,
+    orientation: initialData?.orientation || 'Norte',
+    expenses: scrapedData?.details?.expenses || 0,
+    hasGarage: scrapedData?.details?.hasGarage || false,
+    isProfessionalSuitable: scrapedData?.details?.isProfessionalSuitable || false,
+    isCreditSuitable: scrapedData?.details?.isCreditSuitable || false,
+    amenities: scrapedData?.amenities || []
+  }));
+
+  const [saving, setSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   // Drag and Drop State
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (scrapedData) {
+      setFormData({
+        title: scrapedData.title,
+        price: scrapedData.price.replace(/[^0-9]/g, ''),
+        currency: initialData?.currency || 'USD',
+        address: scrapedData.address,
+        neighborhood: scrapedData.location?.neighborhood || '',
+        province: scrapedData.location?.province || 'Buenos Aires',
+        description: scrapedData.description,
+        propertyType: scrapedData.details?.propertyType || 'Departamento',
+        operationType: scrapedData.details?.operationType || 'Venta',
+        totalArea: scrapedData.features?.area || 0,
+        coveredArea: scrapedData.features?.coveredArea || 0,
+        environments: scrapedData.features?.environments || 1,
+        bedrooms: scrapedData.features?.beds || 1,
+        bathrooms: scrapedData.features?.baths || 1,
+        antiquity: typeof scrapedData.details?.antiquity === 'number' ? scrapedData.details.antiquity : 0,
+        orientation: scrapedData.details?.orientation || 'Norte',
+        expenses: scrapedData.details?.expenses || 0,
+        hasGarage: scrapedData.details?.hasGarage || false,
+        isProfessionalSuitable: scrapedData.details?.isProfessionalSuitable || false,
+        isCreditSuitable: scrapedData.details?.isCreditSuitable || false,
+        amenities: scrapedData.amenities || []
+      });
+    }
+  }, [scrapedData, initialData]);
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setErrorMessage(null);
+
+      const propertyData: Partial<Property> = {
+        title: formData.title,
+        price: parseFloat(formData.price) || 0,
+        currency: formData.currency,
+        address: formData.address,
+        neighborhood: formData.neighborhood,
+        province: formData.province,
+        description: formData.description,
+        propertyType: formData.propertyType,
+        operationType: formData.operationType,
+        totalArea: formData.totalArea,
+        coveredArea: formData.coveredArea,
+        environments: formData.environments,
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
+        antiquity: formData.antiquity,
+        orientation: formData.orientation,
+        expenses: formData.expenses,
+        hasGarage: formData.hasGarage,
+        isProfessionalSuitable: formData.isProfessionalSuitable,
+        isCreditSuitable: formData.isCreditSuitable,
+        status: status,
+        isVisible: isVisible,
+        images: scrapedData?.images || [],
+        amenities: formData.amenities
+      };
+
+      if (initialData?.id) {
+        const updateData = propertyToPropiedad(propertyData);
+        await actualizarPropiedad({ id: initialData.id, ...updateData });
+      } else {
+        const createData = propertyToPropiedad(propertyData);
+        await crearPropiedad({
+          titulo: createData.titulo || '',
+          tipo: createData.tipo || 'Departamento',
+          operacion: createData.operacion || 'Venta',
+          precio: createData.precio || 0,
+          ubicacion: createData.ubicacion || '',
+          ...createData
+        });
+      }
+
+      if (onSuccess) {
+        onSuccess();
+      }
+      onClose();
+    } catch (err) {
+      console.error('Error saving property:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Error al guardar la propiedad');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!initialData?.id || !deleteConfirm) return;
+
+    try {
+      setSaving(true);
+      setErrorMessage(null);
+      await eliminarPropiedad(initialData.id);
+
+      if (onSuccess) {
+        onSuccess();
+      }
+      onClose();
+    } catch (err) {
+      console.error('Error deleting property:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Error al eliminar la propiedad');
+    } finally {
+      setSaving(false);
+      setDeleteConfirm(false);
+    }
+  };
 
   const handleScrape = () => {
     if (!url) return;
@@ -170,7 +309,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
   };
 
   const getOperationColor = () => {
-     if (scrapedData?.details?.operationType === 'Alquiler') {
+     if (formData.operationType === 'Alquiler') {
          return 'bg-violet-50 text-violet-700 border-violet-100 focus:ring-violet-200';
      }
      return 'bg-blue-50 text-blue-700 border-blue-100 focus:ring-blue-200';
@@ -197,7 +336,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
               <p className="text-xs text-gray-400">{initialData ? 'Modifica los datos como se verán en la ficha' : 'Verifica la información importada'}</p>
             </div>
             <div className="flex gap-3">
-               <button 
+               <button
                  onClick={onClose}
                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
                >
@@ -205,6 +344,17 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                </button>
             </div>
           </div>
+
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mx-8 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2">
+              <X size={16} className="flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Error</p>
+                <p>{errorMessage}</p>
+              </div>
+            </div>
+          )}
 
           {step === 'input' && (
             <div className="h-[calc(100%-80px)] flex flex-col items-center justify-center space-y-6 px-8">
@@ -366,17 +516,17 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                     <div>
                        <div className="flex items-center gap-2 mb-3">
                           {/* 1. Operation Type */}
-                          <select 
-                            className={`px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider border outline-none focus:ring-2 ${getOperationColor()}`} 
-                            value={scrapedData.details?.operationType}
-                            onChange={(e) => setScrapedData({...scrapedData, details: {...scrapedData.details, operationType: e.target.value as any}})}
+                          <select
+                            className={`px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider border outline-none focus:ring-2 ${getOperationColor()}`}
+                            value={formData.operationType}
+                            onChange={(e) => setFormData({...formData, operationType: e.target.value as 'Venta' | 'Alquiler'})}
                           >
                               <option value="Venta">Venta</option>
                               <option value="Alquiler">Alquiler</option>
                           </select>
                           
                           {/* 2. Property Type */}
-                          <select className="px-3 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-bold uppercase tracking-wider border border-gray-200 outline-none focus:ring-2 focus:ring-gray-200" defaultValue={scrapedData.details?.propertyType}>
+                          <select className="px-3 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-bold uppercase tracking-wider border border-gray-200 outline-none focus:ring-2 focus:ring-gray-200" value={formData.propertyType} onChange={(e) => setFormData({...formData, propertyType: e.target.value})}>
                               <option value="Departamento">Departamento</option>
                               <option value="Casa">Casa</option>
                               <option value="PH">PH</option>
@@ -397,16 +547,17 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                               <option value="sold">Vendida</option>
                           </select>
                        </div>
-                       <input 
-                         type="text" 
-                         defaultValue={scrapedData.title} 
+                       <input
+                         type="text"
+                         value={formData.title}
+                         onChange={(e) => setFormData({...formData, title: e.target.value})}
                          className="w-full text-3xl md:text-4xl font-bold text-gray-900 mb-2 leading-tight border-b border-transparent hover:border-gray-300 focus:border-primary-500 outline-none bg-transparent transition-colors placeholder:text-gray-300"
                        />
                        <div className="flex items-center text-gray-500 font-medium gap-2">
                           <MapPin size={18} className="mr-1" />
-                          <input type="text" defaultValue={scrapedData.address} className="bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none w-48" placeholder="Dirección"/>
+                          <input type="text" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none w-48" placeholder="Dirección"/>
                           ,
-                          <input type="text" defaultValue={scrapedData.location?.neighborhood} className="bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none w-32" placeholder="Barrio"/>
+                          <input type="text" value={formData.neighborhood} onChange={(e) => setFormData({...formData, neighborhood: e.target.value})} className="bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none w-32" placeholder="Barrio"/>
                        </div>
                     </div>
 
@@ -418,49 +569,49 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                           <div className="flex flex-col items-center justify-start text-center">
                              <div className="mb-2 text-gray-400"><Ruler size={24} strokeWidth={1.5} /></div>
                              <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total m²</div>
-                             <input type="number" defaultValue={scrapedData.features.area} className="font-bold text-gray-900 text-lg w-16 text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none" />
+                             <input type="number" value={formData.totalArea} onChange={(e) => setFormData({...formData, totalArea: parseInt(e.target.value) || 0})} className="font-bold text-gray-900 text-lg w-16 text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none" />
                           </div>
 
                           {/* Item: Covered */}
                           <div className="flex flex-col items-center justify-start text-center">
                              <div className="mb-2 text-gray-400"><Home size={24} strokeWidth={1.5} /></div>
                              <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Cubierta m²</div>
-                             <input type="number" defaultValue={scrapedData.features.coveredArea} className="font-bold text-gray-900 text-lg w-16 text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none" />
+                             <input type="number" value={formData.coveredArea} onChange={(e) => setFormData({...formData, coveredArea: parseInt(e.target.value) || 0})} className="font-bold text-gray-900 text-lg w-16 text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none" />
                           </div>
 
                           {/* Item: Environments */}
                           <div className="flex flex-col items-center justify-start text-center">
                              <div className="mb-2 text-gray-400"><LayoutGrid size={24} strokeWidth={1.5} /></div>
                              <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Ambientes</div>
-                             <input type="number" defaultValue={scrapedData.features.environments} className="font-bold text-gray-900 text-lg w-16 text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none" />
+                             <input type="number" value={formData.environments} onChange={(e) => setFormData({...formData, environments: parseInt(e.target.value) || 0})} className="font-bold text-gray-900 text-lg w-16 text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none" />
                           </div>
 
                           {/* Item: Bedrooms */}
                           <div className="flex flex-col items-center justify-start text-center">
                              <div className="mb-2 text-gray-400"><Bed size={24} strokeWidth={1.5} /></div>
                              <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Dormitorios</div>
-                             <input type="number" defaultValue={scrapedData.features.beds} className="font-bold text-gray-900 text-lg w-16 text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none" />
+                             <input type="number" value={formData.bedrooms} onChange={(e) => setFormData({...formData, bedrooms: parseInt(e.target.value) || 0})} className="font-bold text-gray-900 text-lg w-16 text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none" />
                           </div>
 
                           {/* Item: Bathrooms */}
                           <div className="flex flex-col items-center justify-start text-center">
                              <div className="mb-2 text-gray-400"><Bath size={24} strokeWidth={1.5} /></div>
                              <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Baños</div>
-                             <input type="number" defaultValue={scrapedData.features.baths} className="font-bold text-gray-900 text-lg w-16 text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none" />
+                             <input type="number" value={formData.bathrooms} onChange={(e) => setFormData({...formData, bathrooms: parseInt(e.target.value) || 0})} className="font-bold text-gray-900 text-lg w-16 text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none" />
                           </div>
 
                           {/* Item: Antiquity */}
                           <div className="flex flex-col items-center justify-start text-center">
                              <div className="mb-2 text-gray-400"><Calendar size={24} strokeWidth={1.5} /></div>
                              <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Antigüedad</div>
-                             <input type="number" defaultValue={scrapedData.details?.antiquity} className="font-bold text-gray-900 text-lg w-16 text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none" />
+                             <input type="number" value={formData.antiquity} onChange={(e) => setFormData({...formData, antiquity: parseInt(e.target.value) || 0})} className="font-bold text-gray-900 text-lg w-16 text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none" />
                           </div>
 
                            {/* Item: Orientation */}
                            <div className="flex flex-col items-center justify-start text-center">
                              <div className="mb-2 text-gray-400"><Compass size={24} strokeWidth={1.5} /></div>
                              <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Orientación</div>
-                             <select defaultValue={initialData?.orientation || 'Norte'} className="font-bold text-gray-900 text-sm w-full text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none">
+                             <select value={formData.orientation} onChange={(e) => setFormData({...formData, orientation: e.target.value})} className="font-bold text-gray-900 text-sm w-full text-center bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none">
                                 <option value="Norte">Norte</option>
                                 <option value="Sur">Sur</option>
                                 <option value="Este">Este</option>
@@ -473,21 +624,21 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                           <label className="flex flex-col items-center justify-start text-center cursor-pointer group">
                              <div className="mb-2 text-gray-400 group-hover:text-primary-600 transition-colors"><Car size={24} strokeWidth={1.5} /></div>
                              <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Cochera</div>
-                             <input type="checkbox" className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500" />
+                             <input type="checkbox" checked={formData.hasGarage} onChange={(e) => setFormData({...formData, hasGarage: e.target.checked})} className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500" />
                           </label>
 
                           {/* Item: Prof */}
                           <label className="flex flex-col items-center justify-start text-center cursor-pointer group">
                              <div className="mb-2 text-gray-400 group-hover:text-primary-600 transition-colors"><Briefcase size={24} strokeWidth={1.5} /></div>
                              <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Apto Prof.</div>
-                             <input type="checkbox" defaultChecked={scrapedData.details?.isProfessionalSuitable} className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500" />
+                             <input type="checkbox" checked={formData.isProfessionalSuitable} onChange={(e) => setFormData({...formData, isProfessionalSuitable: e.target.checked})} className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500" />
                           </label>
 
                           {/* Item: Credit */}
                           <label className="flex flex-col items-center justify-start text-center cursor-pointer group">
                              <div className="mb-2 text-gray-400 group-hover:text-primary-600 transition-colors"><CheckCircle2 size={24} strokeWidth={1.5} /></div>
                              <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Apto Crédito</div>
-                             <input type="checkbox" defaultChecked={scrapedData.details?.isCreditSuitable} className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500" />
+                             <input type="checkbox" checked={formData.isCreditSuitable} onChange={(e) => setFormData({...formData, isCreditSuitable: e.target.checked})} className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500" />
                           </label>
 
                        </div>
@@ -496,9 +647,10 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                     {/* Description */}
                     <div>
                        <h3 className="text-xl font-bold text-gray-900 mb-4">Descripción</h3>
-                       <textarea 
+                       <textarea
                          className="w-full h-48 p-3 bg-white border border-gray-200 rounded-lg text-gray-600 leading-relaxed text-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none resize-none"
-                         defaultValue={scrapedData.description}
+                         value={formData.description}
+                         onChange={(e) => setFormData({...formData, description: e.target.value})}
                        ></textarea>
                     </div>
 
@@ -526,8 +678,16 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                                 <p className="text-sm font-bold text-red-800">Eliminar esta propiedad</p>
                                 <p className="text-xs text-red-600 mt-0.5">Esta acción no se puede deshacer.</p>
                              </div>
-                             <button className="px-4 py-2 bg-white text-red-600 border border-red-200 hover:bg-red-100 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-sm">
-                                <Trash2 size={16} /> Eliminar
+                             <button
+                                onClick={deleteConfirm ? handleDelete : () => setDeleteConfirm(true)}
+                                disabled={saving}
+                                className={`px-4 py-2 bg-white border rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-sm ${
+                                  deleteConfirm
+                                    ? 'text-white bg-red-600 border-red-600 hover:bg-red-700'
+                                    : 'text-red-600 border-red-200 hover:bg-red-100'
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                             >
+                                <Trash2 size={16} /> {deleteConfirm ? 'Confirmar Eliminar' : 'Eliminar'}
                              </button>
                           </div>
                       </div>
@@ -544,18 +704,19 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                            <div className="mb-6">
                               <p className="text-sm text-gray-500 font-medium mb-1">Valor de publicación</p>
                               <div className="flex items-center gap-2">
-                                 <select defaultValue={initialData?.currency || 'USD'} className="text-xl font-bold bg-transparent border-none outline-none text-primary-600">
+                                 <select value={formData.currency} onChange={(e) => setFormData({...formData, currency: e.target.value})} className="text-xl font-bold bg-transparent border-none outline-none text-primary-600">
                                     <option>USD</option>
                                     <option>$</option>
                                  </select>
-                                 <input 
-                                   type="text" 
-                                   defaultValue={scrapedData.price.replace(/[^0-9]/g, '')} 
+                                 <input
+                                   type="text"
+                                   value={formData.price}
+                                   onChange={(e) => setFormData({...formData, price: e.target.value.replace(/[^0-9]/g, '')})}
                                    className="w-full text-4xl font-bold text-primary-600 tracking-tight bg-transparent border-b border-gray-200 focus:border-primary-500 outline-none"
                                  />
                               </div>
                               <div className="mt-2 flex items-center gap-1 text-gray-600 text-xs font-bold">
-                                 + $ <input type="number" defaultValue={scrapedData.details?.expenses} className="w-20 bg-gray-100 px-1 rounded border-none" /> expensas
+                                 + $ <input type="number" value={formData.expenses} onChange={(e) => setFormData({...formData, expenses: parseInt(e.target.value) || 0})} className="w-20 bg-gray-100 px-1 rounded border-none" /> expensas
                               </div>
                            </div>
                            
@@ -601,12 +762,13 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                            
                            {/* Actions */}
                            <div className="space-y-3">
-                              <button 
-                                onClick={onClose}
-                                className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-lg shadow-primary-600/30 active:scale-95 transition-all flex items-center justify-center gap-2"
+                              <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold shadow-lg shadow-primary-600/30 active:scale-95 transition-all flex items-center justify-center gap-2"
                               >
-                                 <Save size={20} />
-                                 {initialData ? 'Guardar Cambios' : 'Publicar Propiedad'}
+                                 {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                                 {saving ? 'Guardando...' : (initialData ? 'Guardar Cambios' : 'Publicar Propiedad')}
                               </button>
                            </div>
                            

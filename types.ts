@@ -86,19 +86,19 @@ export interface ScrapedData {
     coveredArea: number;
     environments: number;
   };
-  details: {
-    antiquity: number | string;
-    expenses: number;
-    isCreditSuitable: boolean;
-    isProfessionalSuitable: boolean;
-    hasGarage: boolean;
-    operationType: 'Venta' | 'Alquiler';
-    propertyType: string;
-    orientation: string;
+  details?: {
+    antiquity?: number | string;
+    expenses?: number;
+    isCreditSuitable?: boolean;
+    isProfessionalSuitable?: boolean;
+    hasGarage?: boolean;
+    operationType?: 'Venta' | 'Alquiler';
+    propertyType?: string;
+    orientation?: string;
   };
-  location: {
-    neighborhood: string;
-    province: string;
+  location?: {
+    neighborhood?: string;
+    province?: string;
   };
   amenities: string[];
   images: string[];

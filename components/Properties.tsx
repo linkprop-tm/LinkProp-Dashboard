@@ -386,10 +386,14 @@ export const Properties: React.FC = () => {
 
       {/* Edit Property Modal - Conditionally Rendered to force remount and clean state init */}
       {editingProperty && (
-        <AddPropertyModal 
-          isOpen={true} 
+        <AddPropertyModal
+          isOpen={true}
           onClose={() => setEditingProperty(null)}
           initialData={editingProperty}
+          onSuccess={() => {
+            refetch();
+            setEditingProperty(null);
+          }}
         />
       )}
     </div>
