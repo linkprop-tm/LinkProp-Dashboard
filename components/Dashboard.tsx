@@ -6,13 +6,25 @@ import {
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend } from 'recharts';
 import { METRICS, CHART_DATA, CONVERSION_DATA, CLIENTS_DATA, PROPERTIES_GRID_DATA } from '../constants';
+import { obtenerPropiedadesDisponibles } from '../lib/api/properties';
 
 export const Dashboard: React.FC = () => {
   const [isMounted, setIsMounted] = useState(false);
+  const [propiedadesDisponibles, setPropiedadesDisponibles] = useState<number>(0);
 
   useEffect(() => {
     setIsMounted(true);
+    loadPropiedadesDisponibles();
   }, []);
+
+  const loadPropiedadesDisponibles = async () => {
+    try {
+      const propiedades = await obtenerPropiedadesDisponibles();
+      setPropiedadesDisponibles(propiedades.length);
+    } catch (error) {
+      console.error('Error loading propiedades disponibles:', error);
+    }
+  };
 
   // Generate mock visit requests combining properties and clients for the "Intereses" mini-view
   const VISIT_REQUESTS = PROPERTIES_GRID_DATA.slice(0, 5).map((prop, index) => {
@@ -31,6 +43,7 @@ export const Dashboard: React.FC = () => {
       {/* Section A: Metrics Cards (Modern Redesign) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {METRICS.map((metric, index) => {
+          const displayValue = index === 0 ? propiedadesDisponibles : metric.value;
           const Icon = 
             metric.iconType === 'building' ? Building :
             metric.iconType === 'users' ? Users :
@@ -70,7 +83,7 @@ export const Dashboard: React.FC = () => {
 
                  {/* Content: Value & Label */}
                  <div>
-                    <h3 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-1">{metric.value}</h3>
+                    <h3 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-1">{displayValue}</h3>
                     <p className="text-sm font-medium text-gray-400 group-hover:text-gray-500 transition-colors">{metric.label}</p>
                  </div>
               </div>
