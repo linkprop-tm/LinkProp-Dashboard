@@ -4,15 +4,17 @@ import type { Propiedad, Usuario } from './database.types';
 export function usuarioToClient(usuario: Usuario): Client {
   return {
     id: usuario.id,
-    name: usuario.nombre,
-    email: usuario.email,
+    name: usuario.nombre || 'Usuario sin nombre',
+    email: usuario.email || '',
     avatar: usuario.foto_perfil_url || '',
     phone: usuario.telefono || '',
-    date: new Date(usuario.fecha_creacion).toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    }),
+    date: usuario.fecha_creacion
+      ? new Date(usuario.fecha_creacion).toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        })
+      : '',
     groups: [],
     searchParams: {
       type: usuario.preferencias_tipo?.[0] || '',

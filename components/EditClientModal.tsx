@@ -290,7 +290,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                               className="w-24 h-24 rounded-full object-cover"
                             />
                           ) : (
-                            formData.name.charAt(0).toUpperCase()
+                            formData.name?.charAt(0)?.toUpperCase() || '?'
                           )}
                         </div>
                     </div>

@@ -495,18 +495,18 @@ export const Clients: React.FC = () => {
                                 <div className="relative">
                                     <div className="w-14 h-14 rounded-full ring-4 ring-gray-50 group-hover:ring-primary-50 transition-all bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-lg font-bold">
                                       {client.avatar ? (
-                                        <img src={client.avatar} alt={client.name} className="w-14 h-14 rounded-full object-cover" />
+                                        <img src={client.avatar} alt={client.name || 'Usuario'} className="w-14 h-14 rounded-full object-cover" />
                                       ) : (
-                                        client.name.charAt(0).toUpperCase()
+                                        client.name?.charAt(0)?.toUpperCase() || '?'
                                       )}
                                     </div>
                                     <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full ${client.status === 'active' ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-primary-600 transition-colors cursor-pointer" onClick={() => setEditingClient(client)}>
-                                       {client.name}
+                                       {client.name || 'Usuario sin nombre'}
                                     </h3>
-                                    <p className="text-xs font-medium text-gray-400 mt-0.5">{client.email}</p>
+                                    <p className="text-xs font-medium text-gray-400 mt-0.5">{client.email || 'Sin email'}</p>
                                     <p className="text-[10px] font-bold text-gray-300 uppercase mt-1">
                                         Registrado: {client.date}
                                     </p>
