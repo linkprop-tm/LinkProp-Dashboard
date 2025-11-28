@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  LogOut, Search, Heart, MapPin, Home, Filter, ArrowRight, 
+import {
+  LogOut, Search, Heart, MapPin, Home, Filter, ArrowRight,
   Compass, History, Scale, Settings, HelpCircle, Menu,
   ChevronRight, Calendar, Check, X, PlusCircle, DollarSign, Ruler, LayoutGrid,
   Car, Briefcase, Bed, Bath, PenTool, Quote, StickyNote, Star,
@@ -15,6 +15,10 @@ import { PROPERTIES_GRID_DATA } from '../constants';
 import { PropertyDetails } from './PropertyDetails';
 import { Property } from '../types';
 import { Visited } from './Visited';
+import { supabase } from '../lib/supabase';
+import { useAuthContext } from '../lib/contexts/AuthContext';
+import { Avatar } from './Avatar';
+import { UploadPhotoModal } from './UploadPhotoModal';
 
 interface ClientLayoutProps {
   onLogout: () => void;
@@ -209,12 +213,13 @@ const GBA_NEIGHBORHOODS = [
 // --- MAIN COMPONENT ---
 
 export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
+  const { user } = useAuthContext();
   const [currentView, setCurrentView] = useState<ClientView>('explore');
   const [searchTerm, setSearchTerm] = useState('');
   // Expanded favorites list for demo purposes
   const [favorites, setFavorites] = useState<string[]>(['101', '102', '103', '104', '106', '108']);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  
+
   // Unmark Confirmation State
   const [showUnmarkModal, setShowUnmarkModal] = useState(false);
   const [propertyToUnmark, setPropertyToUnmark] = useState<string | null>(null);
@@ -228,13 +233,27 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   // Sort State
   const [isSortPanelOpen, setIsSortPanelOpen] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>('default');
-  
+
+  // Profile State
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
   // Settings State
   const [settingsPropertyTypes, setSettingsPropertyTypes] = useState<string[]>(['Departamento']);
   const [settingsAmenities, setSettingsAmenities] = useState<string[]>(['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Lavadero']);
   const [settingsAntiquity, setSettingsAntiquity] = useState<string[]>(['Hasta 5 años']);
   const [settingsOperation, setSettingsOperation] = useState('Venta');
-  
+  const [settingsPriceMin, setSettingsPriceMin] = useState<string>('');
+  const [settingsPriceMax, setSettingsPriceMax] = useState<string>('');
+  const [settingsM2Min, setSettingsM2Min] = useState<string>('');
+  const [settingsM2Max, setSettingsM2Max] = useState<string>('');
+  const [settingsAmbientes, setSettingsAmbientes] = useState<string>('');
+  const [settingsDormitorios, setSettingsDormitorios] = useState<string>('');
+  const [settingsBanos, setSettingsBanos] = useState<string>('');
+
   // Settings - Specific Features State
   const [settingsSpecifics, setSettingsSpecifics] = useState({
       credit: false,
@@ -246,13 +265,180 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const toggleSpecific = (key: keyof typeof settingsSpecifics) => {
       setSettingsSpecifics(prev => ({...prev, [key]: !prev[key]}));
   };
-  
+
   // Settings - Location State
   const [settingsRegion, setSettingsRegion] = useState<'CABA' | 'GBA'>('CABA');
   const [settingsNeighborhoods, setSettingsNeighborhoods] = useState<string[]>(['Palermo Soho', 'Belgrano']);
   const [neighborhoodSearchTerm, setNeighborhoodSearchTerm] = useState('');
   const [isHoodDropdownOpen, setIsHoodDropdownOpen] = useState(false);
   const hoodInputRef = useRef<HTMLInputElement>(null);
+
+  // Loading and Save States
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [loadingPreferences, setLoadingPreferences] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPreferences, setSavingPreferences] = useState(false);
+  const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState('');
+  const [preferencesSaveSuccess, setPreferencesSaveSuccess] = useState(false);
+  const [preferencesSaveError, setPreferencesSaveError] = useState('');
+
+  // Fetch user data on mount
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+
+    setLoadingProfile(true);
+    setLoadingPreferences(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select(`
+          full_name,
+          email,
+          telefono,
+          foto_perfil_url,
+          preferencias_tipo,
+          preferencias_operacion,
+          preferencias_precio_min,
+          preferencias_precio_max,
+          preferencias_ubicacion,
+          preferencias_amenities,
+          preferencias_m2_min,
+          preferencias_ambientes,
+          preferencias_apto_credito,
+          preferencias_apto_profesional,
+          preferencias_cochera,
+          preferencias_apto_mascotas
+        `)
+        .eq('auth_id', user.id)
+        .maybeSingle();
+
+      if (data && !error) {
+        setName(data.full_name || '');
+        setEmail(data.email || user.email || '');
+        setPhone(data.telefono || '');
+        setPhotoUrl(data.foto_perfil_url || null);
+
+        setSettingsPropertyTypes(data.preferencias_tipo || ['Departamento']);
+        setSettingsOperation(data.preferencias_operacion || 'Venta');
+        setSettingsPriceMin(data.preferencias_precio_min?.toString() || '');
+        setSettingsPriceMax(data.preferencias_precio_max?.toString() || '');
+        setSettingsNeighborhoods(data.preferencias_ubicacion || ['Palermo Soho', 'Belgrano']);
+        setSettingsAmenities(data.preferencias_amenities || ['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Lavadero']);
+        setSettingsM2Min(data.preferencias_m2_min?.toString() || '');
+        setSettingsAmbientes(data.preferencias_ambientes || '');
+
+        setSettingsSpecifics({
+          credit: data.preferencias_apto_credito || false,
+          professional: data.preferencias_apto_profesional || false,
+          garage: data.preferencias_cochera || false,
+          pets: data.preferencias_apto_mascotas || false
+        });
+
+        if (data.preferencias_ubicacion && data.preferencias_ubicacion.length > 0) {
+          const firstNeighborhood = data.preferencias_ubicacion[0];
+          if (GBA_NEIGHBORHOODS.includes(firstNeighborhood)) {
+            setSettingsRegion('GBA');
+          } else {
+            setSettingsRegion('CABA');
+          }
+        }
+      } else {
+        setEmail(user.email || '');
+      }
+    } catch (error: any) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setLoadingProfile(false);
+      setLoadingPreferences(false);
+    }
+  };
+
+  const handlePhotoUploadSuccess = (newPhotoUrl: string) => {
+    setPhotoUrl(newPhotoUrl);
+    setProfileSaveSuccess(true);
+    setTimeout(() => setProfileSaveSuccess(false), 3000);
+  };
+
+  const handleSaveProfile = async () => {
+    setProfileSaveError('');
+    setProfileSaveSuccess(false);
+    setSavingProfile(true);
+
+    try {
+      const { error } = await supabase
+        .from('usuarios')
+        .update({
+          full_name: name,
+          telefono: phone,
+        })
+        .eq('auth_id', user?.id);
+
+      if (error) throw error;
+
+      setProfileSaveSuccess(true);
+      setTimeout(() => setProfileSaveSuccess(false), 3000);
+    } catch (error: any) {
+      console.error('Error saving profile:', error);
+      setProfileSaveError(error.message || 'Error al guardar el perfil');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleSavePreferences = async () => {
+    setPreferencesSaveError('');
+    setPreferencesSaveSuccess(false);
+    setSavingPreferences(true);
+
+    try {
+      const preferencesData: any = {
+        preferencias_tipo: settingsPropertyTypes,
+        preferencias_operacion: settingsOperation,
+        preferencias_ubicacion: settingsNeighborhoods,
+        preferencias_amenities: settingsAmenities,
+        preferencias_apto_credito: settingsSpecifics.credit,
+        preferencias_apto_profesional: settingsSpecifics.professional,
+        preferencias_cochera: settingsSpecifics.garage,
+        preferencias_apto_mascotas: settingsSpecifics.pets,
+      };
+
+      if (settingsPriceMin) {
+        preferencesData.preferencias_precio_min = parseFloat(settingsPriceMin);
+      }
+      if (settingsPriceMax) {
+        preferencesData.preferencias_precio_max = parseFloat(settingsPriceMax);
+      }
+      if (settingsM2Min) {
+        preferencesData.preferencias_m2_min = parseFloat(settingsM2Min);
+      }
+      if (settingsAmbientes) {
+        preferencesData.preferencias_ambientes = settingsAmbientes;
+      }
+
+      const { error } = await supabase
+        .from('usuarios')
+        .update(preferencesData)
+        .eq('auth_id', user?.id);
+
+      if (error) throw error;
+
+      setPreferencesSaveSuccess(true);
+      setTimeout(() => setPreferencesSaveSuccess(false), 3000);
+    } catch (error: any) {
+      console.error('Error saving preferences:', error);
+      setPreferencesSaveError(error.message || 'Error al guardar las preferencias');
+    } finally {
+      setSavingPreferences(false);
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -861,45 +1047,95 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                  </div>
                  
                  <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                    <div className="flex justify-center mb-6">
-                        <div className="relative">
-                            <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-gray-50">
-                                <img src="https://picsum.photos/200/200?random=50" className="w-full h-full object-cover" />
-                            </div>
-                            <button className="absolute bottom-0 right-0 p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors shadow-sm">
-                                <Camera size={14} />
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre Completo</label>
+                    {loadingProfile ? (
+                      <div className="flex justify-center items-center py-12">
+                        <div className="text-gray-400 text-sm">Cargando perfil...</div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-center mb-6">
                             <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                <input type="text" defaultValue="Ana García" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none" />
+                                <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-gray-50">
+                                    <Avatar
+                                      src={photoUrl}
+                                      name={name || 'Usuario'}
+                                      size="xlarge"
+                                    />
+                                </div>
+                                <button
+                                  onClick={() => setIsUploadModalOpen(true)}
+                                  className="absolute bottom-0 right-0 p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors shadow-sm"
+                                >
+                                    <Camera size={14} />
+                                </button>
                             </div>
                         </div>
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Correo Electrónico</label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                <input type="email" defaultValue="ana.garcia@gmail.com" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none" />
-                            </div>
-                        </div>
-                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Teléfono</label>
-                            <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                <input type="tel" defaultValue="+54 9 11 1234 5678" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none" />
-                            </div>
-                        </div>
-                    </div>
 
-                    <button className="w-full mt-6 bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold py-3 rounded-xl shadow-lg shadow-gray-900/10 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm">
-                       <Save size={16} />
-                       Guardar Perfil
-                    </button>
+                        <div className="space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre Completo</label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                    <input
+                                      type="text"
+                                      value={name}
+                                      onChange={(e) => setName(e.target.value)}
+                                      placeholder="Tu nombre completo"
+                                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Correo Electrónico</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                    <input
+                                      type="email"
+                                      value={email}
+                                      readOnly
+                                      disabled
+                                      className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 cursor-not-allowed"
+                                    />
+                                </div>
+                            </div>
+                             <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Teléfono</label>
+                                <div className="relative">
+                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                    <input
+                                      type="tel"
+                                      value={phone}
+                                      onChange={(e) => setPhone(e.target.value)}
+                                      placeholder="+54 9 11..."
+                                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {profileSaveSuccess && (
+                          <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2">
+                            <Save size={16} className="text-emerald-600" />
+                            <p className="text-sm text-emerald-800 font-medium">Perfil guardado correctamente</p>
+                          </div>
+                        )}
+                        {profileSaveError && (
+                          <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+                            <AlertCircle size={16} className="text-red-600 mt-0.5" />
+                            <p className="text-sm text-red-800">{profileSaveError}</p>
+                          </div>
+                        )}
+
+                        <button
+                          onClick={handleSaveProfile}
+                          disabled={savingProfile}
+                          className="w-full mt-6 bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold py-3 rounded-xl shadow-lg shadow-gray-900/10 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                           <Save size={16} />
+                           {savingProfile ? 'Guardando...' : 'Guardar Perfil'}
+                        </button>
+                      </>
+                    )}
                  </div>
 
                  {/* Security Card */}
@@ -1156,12 +1392,24 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                         <div className="flex items-center gap-4">
                             <div className="relative flex-1">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Min</span>
-                                <input type="number" placeholder="0" className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all" />
+                                <input
+                                  type="number"
+                                  value={settingsPriceMin}
+                                  onChange={(e) => setSettingsPriceMin(e.target.value)}
+                                  placeholder="0"
+                                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all"
+                                />
                             </div>
                             <span className="text-gray-300 font-medium">-</span>
                             <div className="relative flex-1">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Max</span>
-                                <input type="number" placeholder="Sin límite" className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all" />
+                                <input
+                                  type="number"
+                                  value={settingsPriceMax}
+                                  onChange={(e) => setSettingsPriceMax(e.target.value)}
+                                  placeholder="Sin límite"
+                                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all"
+                                />
                             </div>
                         </div>
                     </div>
@@ -1176,11 +1424,23 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                                 <label className="text-sm font-medium text-gray-700 block">Metros Cuadrados (m²)</label>
                                 <div className="flex gap-3 items-center">
                                     <div className="relative flex-1">
-                                        <input type="number" placeholder="Min" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all" />
+                                        <input
+                                          type="number"
+                                          value={settingsM2Min}
+                                          onChange={(e) => setSettingsM2Min(e.target.value)}
+                                          placeholder="Min"
+                                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
+                                        />
                                     </div>
                                     <span className="text-gray-300 font-medium">-</span>
                                      <div className="relative flex-1">
-                                        <input type="number" placeholder="Max" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all" />
+                                        <input
+                                          type="number"
+                                          value={settingsM2Max}
+                                          onChange={(e) => setSettingsM2Max(e.target.value)}
+                                          placeholder="Max"
+                                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -1338,11 +1598,29 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                         </div>
                     </div>
 
+                    {/* Messages */}
+                    {preferencesSaveSuccess && (
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2">
+                        <Save size={16} className="text-emerald-600" />
+                        <p className="text-sm text-emerald-800 font-medium">Preferencias guardadas correctamente</p>
+                      </div>
+                    )}
+                    {preferencesSaveError && (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+                        <AlertCircle size={16} className="text-red-600 mt-0.5" />
+                        <p className="text-sm text-red-800">{preferencesSaveError}</p>
+                      </div>
+                    )}
+
                     {/* Footer Save */}
                     <div className="pt-6 flex justify-end">
-                        <button className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-primary-600/20 active:scale-95 transition-all flex items-center gap-2">
+                        <button
+                          onClick={handleSavePreferences}
+                          disabled={savingPreferences || loadingPreferences}
+                          className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-primary-600/20 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                            <Save size={20} />
-                           Guardar Preferencias
+                           {savingPreferences ? 'Guardando...' : 'Guardar Preferencias'}
                         </button>
                     </div>
 
@@ -1401,9 +1679,15 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
 
          <div className="mt-auto p-6 border-t border-gray-100">
              <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 mb-4">
-               <img src="https://picsum.photos/100/100?random=50" alt="User" className="w-10 h-10 rounded-full object-cover ring-2 ring-white" />
+               <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white flex-shrink-0">
+                 <Avatar
+                   src={photoUrl}
+                   name={name || 'Usuario'}
+                   size="medium"
+                 />
+               </div>
                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-900 truncate">Ana García</p>
+                  <p className="text-sm font-bold text-gray-900 truncate">{name || 'Usuario'}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                      <p className="text-xs font-medium text-emerald-700 truncate">Cliente Activo</p>
@@ -1421,7 +1705,13 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">L</div>
                <span className="text-lg font-bold text-gray-900">LinkProp</span>
             </div>
-            <img src="https://picsum.photos/100/100?random=50" alt="User" className="w-8 h-8 rounded-full object-cover" />
+            <div className="w-8 h-8 rounded-full overflow-hidden">
+              <Avatar
+                src={photoUrl}
+                name={name || 'Usuario'}
+                size="small"
+              />
+            </div>
          </div>
 
          <div className="flex-1 overflow-y-auto p-4 lg:p-8 pb-24 lg:pb-8 scroll-smooth">
@@ -1486,6 +1776,14 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
 
       </main>
 
+      {/* Upload Photo Modal */}
+      <UploadPhotoModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onSuccess={handlePhotoUploadSuccess}
+        userId={user?.id || ''}
+        userName={name || 'Usuario'}
+      />
     </div>
   );
 };
