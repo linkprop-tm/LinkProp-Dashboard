@@ -478,7 +478,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                 <div className="h-px bg-gray-100"></div>
 
                                 {/* Dimensions */}
-                                <div className="grid grid-cols-1 gap-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Metros Cuadrados (m²)</label>
                                         <input type="number" placeholder="Min" value={regData.minArea} onChange={e => handleRegChange('minArea', e.target.value)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-center outline-none focus:bg-white focus:border-primary-300" />
