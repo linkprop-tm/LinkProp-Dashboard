@@ -1523,7 +1523,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                             <div>
                                 <label className="text-xs font-bold text-gray-500 uppercase mb-3 block">Antigüedad</label>
                                 <div className="flex flex-wrap gap-3">
-                                    {['Indiferente', 'A estrenar', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Más de 20 años'].map(val => (
+                                    {['Indiferente', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Más de 20 años'].map(val => (
                                          <button
                                             key={val}
                                             onClick={() => toggleSettingsAntiquity(val)}
