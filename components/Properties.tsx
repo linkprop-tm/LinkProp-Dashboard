@@ -6,7 +6,7 @@ import {
 import { AddPropertyModal } from './AddPropertyModal';
 import { Property } from '../types';
 import { useProperties } from '../lib/hooks/useProperties';
-import { cambiarEstadoPropiedad } from '../lib/api/properties';
+import { cambiarVisibilidadPropiedad } from '../lib/api/properties';
 
 // --- HELPER: Status Badge ---
 const getStatusBadge = (status: string) => {
@@ -255,7 +255,7 @@ export const Properties: React.FC = () => {
       const property = properties.find(p => p.id === id);
       if (!property) return;
 
-      const newStatus = property.isVisible ? 'Reservada' : 'Disponible';
+      const newVisibility = property.isVisible ? 'Privada' : 'Publica';
 
       setProperties(prevProps =>
           prevProps.map(p =>
@@ -264,7 +264,7 @@ export const Properties: React.FC = () => {
       );
 
       try {
-        await cambiarEstadoPropiedad(id, newStatus);
+        await cambiarVisibilidadPropiedad(id, newVisibility);
       } catch (err) {
         console.error('Error updating property visibility:', err);
         setProperties(prevProps =>

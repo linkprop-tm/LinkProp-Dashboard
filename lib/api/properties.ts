@@ -107,6 +107,18 @@ export async function cambiarEstadoPropiedad(id: string, estado: EstadoPropiedad
   return actualizarPropiedad({ id, estado });
 }
 
+export async function cambiarVisibilidadPropiedad(id: string, visibilidad: 'Publica' | 'Privada') {
+  const { data, error } = await supabase
+    .from('propiedades')
+    .update({ visibilidad })
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as Propiedad;
+}
+
 export async function obtenerRelacionesPorPropiedad(propiedad_id: string) {
   const { data, error } = await supabase
     .from('propiedades_usuarios')
