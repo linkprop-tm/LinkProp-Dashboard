@@ -210,6 +210,32 @@ const GBA_NEIGHBORHOODS = [
   "Tres de Febrero", "San Miguel", "Tigre", "Escobar", "Pilar", "José C. Paz"
 ];
 
+// --- UTILITY FUNCTIONS ---
+
+// Format number with thousand separators (dots) for display only
+const formatNumberWithDots = (value: string): string => {
+  if (!value) return '';
+  // Remove all non-digit characters
+  const numericOnly = value.replace(/\D/g, '');
+  if (!numericOnly) return '';
+  // Add dots every 3 digits from right to left
+  return numericOnly.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
+// Parse formatted number to get only digits (for state storage)
+const parseNumericInput = (value: string): string => {
+  // Remove all non-digit characters (including dots)
+  return value.replace(/\D/g, '');
+};
+
+// Handle numeric input change - validates and formats
+const handleNumericChange = (value: string, setter: (value: string) => void) => {
+  // Only allow digits
+  const numericOnly = value.replace(/\D/g, '');
+  // Store pure number without formatting
+  setter(numericOnly);
+};
+
 // --- MAIN COMPONENT ---
 
 export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
@@ -1394,22 +1420,22 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                             <div className="relative flex-1">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Desde</span>
                                 <input
-                                  type="number"
-                                  value={settingsPriceMin}
-                                  onChange={(e) => setSettingsPriceMin(e.target.value)}
+                                  type="text"
+                                  value={formatNumberWithDots(settingsPriceMin)}
+                                  onChange={(e) => handleNumericChange(e.target.value, setSettingsPriceMin)}
                                   placeholder="0"
-                                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all"
+                                  className="w-full pl-20 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all"
                                 />
                             </div>
                             <span className="text-gray-300 font-medium">-</span>
                             <div className="relative flex-1">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Hasta</span>
                                 <input
-                                  type="number"
-                                  value={settingsPriceMax}
-                                  onChange={(e) => setSettingsPriceMax(e.target.value)}
+                                  type="text"
+                                  value={formatNumberWithDots(settingsPriceMax)}
+                                  onChange={(e) => handleNumericChange(e.target.value, setSettingsPriceMax)}
                                   placeholder="Sin límite"
-                                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all"
+                                  className="w-full pl-20 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all"
                                 />
                             </div>
                         </div>
@@ -1426,9 +1452,9 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                                 <div className="flex gap-3 items-center">
                                     <div className="relative flex-1">
                                         <input
-                                          type="number"
-                                          value={settingsM2Min}
-                                          onChange={(e) => setSettingsM2Min(e.target.value)}
+                                          type="text"
+                                          value={formatNumberWithDots(settingsM2Min)}
+                                          onChange={(e) => handleNumericChange(e.target.value, setSettingsM2Min)}
                                           placeholder="Min"
                                           className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
                                         />
@@ -1436,9 +1462,9 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                                     <span className="text-gray-300 font-medium">-</span>
                                      <div className="relative flex-1">
                                         <input
-                                          type="number"
-                                          value={settingsM2Max}
-                                          onChange={(e) => setSettingsM2Max(e.target.value)}
+                                          type="text"
+                                          value={formatNumberWithDots(settingsM2Max)}
+                                          onChange={(e) => handleNumericChange(e.target.value, setSettingsM2Max)}
                                           placeholder="Max"
                                           className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
                                         />
