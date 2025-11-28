@@ -280,7 +280,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                      </div>
                                 </div>
                                 <h3 className="text-lg font-bold text-gray-900">Tu Información</h3>
-                                <p className="text-sm text-gray-500">Completa tus datos básicos para comenzar</p>
+                                <p className="text-sm text-gray-500">Completa con tus datos básicos para comenzar</p>
                             </div>
 
                             <div className="space-y-4">
