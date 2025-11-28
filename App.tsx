@@ -93,7 +93,7 @@ const AppContent: React.FC = () => {
 
               {/* Footer / Copyright */}
               <div className="p-8 text-center text-xs text-gray-400">
-                &copy; 2025 LinkProp. All rights reserved. Designed for Top Agents.
+                &copy; 2025 LinkProp. Todos los derechos reservados.
               </div>
            </div>
         </div>
