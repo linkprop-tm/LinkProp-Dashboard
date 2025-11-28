@@ -486,7 +486,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                     <div>
                                         <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Ambientes</label>
                                         <div className="flex gap-1 bg-gray-50 rounded-lg p-1 border border-gray-200">
-                                            {['1', '2', '3', '4+'].map(val => (
+                                            {['1', '2', '3', '4', '5+'].map(val => (
                                                 <button key={val} onClick={() => handleRegChange('environments', val)} className={`flex-1 py-1.5 text-xs font-bold rounded ${regData.environments === val ? 'bg-white shadow-sm text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>{val}</button>
                                             ))}
                                         </div>
