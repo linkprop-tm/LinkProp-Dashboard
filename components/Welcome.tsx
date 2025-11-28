@@ -478,15 +478,12 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                 <div className="h-px bg-gray-100"></div>
 
                                 {/* Dimensions */}
-                                <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                                    <div className="col-span-2 sm:col-span-1">
+                                <div className="grid grid-cols-1 gap-y-6">
+                                    <div>
                                         <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Metros Cuadrados (m²)</label>
-                                        <div className="flex gap-2">
-                                            <input type="number" placeholder="Min" value={regData.minArea} onChange={e => handleRegChange('minArea', e.target.value)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-center outline-none focus:bg-white focus:border-primary-300" />
-                                            <input type="number" placeholder="Max" value={regData.maxArea} onChange={e => handleRegChange('maxArea', e.target.value)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-center outline-none focus:bg-white focus:border-primary-300" />
-                                        </div>
+                                        <input type="number" placeholder="Min" value={regData.minArea} onChange={e => handleRegChange('minArea', e.target.value)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-center outline-none focus:bg-white focus:border-primary-300" />
                                     </div>
-                                    <div className="col-span-2 sm:col-span-1">
+                                    <div>
                                         <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Ambientes</label>
                                         <div className="flex gap-1 bg-gray-50 rounded-lg p-1 border border-gray-200">
                                             {['1', '2', '3', '4+'].map(val => (
