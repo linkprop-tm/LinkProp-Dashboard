@@ -842,7 +842,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                               </div>
                               <p className="text-xs text-gray-500">
                                   {isVisible 
-                                    ? 'La propiedad es visible para todos los clientes y en portales.' 
+                                    ? 'La propiedad es visible para todos los clientes.' 
                                     : 'La propiedad está oculta. Solo visible para el equipo interno.'}
                               </p>
                            </div>
