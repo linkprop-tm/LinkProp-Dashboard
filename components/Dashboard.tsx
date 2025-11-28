@@ -215,7 +215,7 @@ export const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">Conversión de Ventas</h3>
-                  <p className="text-sm text-gray-500">Visitas presenciales vs Cierres</p>
+                  <p className="text-sm text-gray-500">Match vs Visita</p>
                 </div>
               </div>
               <div className="text-right">
