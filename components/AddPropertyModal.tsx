@@ -61,6 +61,9 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
   const [scrapedData, setScrapedData] = useState<ScrapedData | null>(() => getInitialScrapedData(initialData));
   const [status, setStatus] = useState<'active' | 'pending' | 'sold'>(() => initialData?.status || 'active');
   const [isVisible, setIsVisible] = useState(() => initialData?.isVisible !== undefined ? initialData.isVisible : true);
+  const [sourceUrl, setSourceUrl] = useState<string>('');
+  const [sourcePortal, setSourcePortal] = useState<string>('');
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const [formData, setFormData] = useState(() => ({
     title: scrapedData?.title || '',
@@ -190,7 +193,9 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
         status: status,
         isVisible: isVisible,
         images: scrapedData?.images && scrapedData.images.length > 0 ? scrapedData.images : [],
-        amenities: formData.amenities || []
+        amenities: formData.amenities || [],
+        sourceUrl: sourceUrl || undefined,
+        sourcePortal: sourcePortal || undefined
       };
 
       console.log('Saving property data:', propertyData);
@@ -207,7 +212,9 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
           tipo: createData.tipo || 'Departamento',
           operacion: createData.operacion || 'Venta',
           precio: createData.precio || 0,
-          ubicacion: createData.ubicacion || '',
+          direccion: createData.direccion,
+          barrio: createData.barrio,
+          provincia: createData.provincia,
           ...createData
         });
       }
@@ -247,50 +254,118 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
     }
   };
 
-  const handleScrape = () => {
+  const handleScrape = async () => {
     if (!url) return;
     setStep('scraping');
-    
-    // Simulate scraping process
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += 1.5; // Slower increment for smoother bar
-      if (currentProgress >= 100) {
-        currentProgress = 100;
-        clearInterval(interval);
-        setScrapedData({
-          title: "Exclusivo Departamento en Torre Bellini",
-          price: "245000",
-          address: "Esmeralda 1300",
-          description: "Impecable departamento de 3 ambientes con vista al río. Edificio de categoría con amenities full: pileta, gimnasio, SUM. Seguridad 24hs.",
-          features: {
-            beds: 2,
-            baths: 2,
-            area: 85,
-            coveredArea: 80,
-            environments: 3
-          },
-          details: {
-            antiquity: 5,
-            expenses: 45000,
-            isCreditSuitable: true,
-            isProfessionalSuitable: true,
-            operationType: 'Venta',
-            propertyType: 'Departamento'
-          },
-          location: {
-            neighborhood: 'Retiro',
-            province: 'CABA'
-          },
-          amenities: ['Pileta', 'Gimnasio', 'Seguridad 24hs', 'SUM', 'Balcón'],
-          images: Array.from({length: 32}, (_, i) => `https://picsum.photos/600/400?random=${100+i}`) // Generating lots of images for demo
-        });
-        setStatus('active');
-        setIsVisible(true);
-        setTimeout(() => setStep('preview'), 800);
+    setProgress(0);
+    setElapsedTime(0);
+    setErrorMessage(null);
+
+    const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
+
+    if (!webhookUrl || webhookUrl === 'https://your-n8n-instance.com/webhook/scrape-property') {
+      setErrorMessage('URL del webhook no configurada. Por favor configura VITE_N8N_WEBHOOK_URL en el archivo .env');
+      setStep('input');
+      return;
+    }
+
+    const progressInterval = setInterval(() => {
+      setElapsedTime(prev => prev + 1);
+      setProgress(prev => {
+        if (prev < 60) return prev + 2;
+        if (prev < 90) return prev + 0.5;
+        return prev;
+      });
+    }, 1000);
+
+    const timeoutId = setTimeout(() => {
+      clearInterval(progressInterval);
+      setErrorMessage('El scraping está tardando demasiado. El portal podría estar lento. ¿Deseas reintentar?');
+      setStep('input');
+    }, 90000);
+
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url_original: url }),
+      });
+
+      clearTimeout(timeoutId);
+      clearInterval(progressInterval);
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
-      setProgress(Math.min(currentProgress, 100));
-    }, 50);
+
+      const data = await response.json();
+
+      if (!data.titulo || !data.precio || !data.tipo || !data.operacion) {
+        throw new Error('La respuesta del webhook no contiene los campos requeridos');
+      }
+
+      const parsedAntiquity = data.antiguedad ? parseInt(String(data.antiguedad).replace(/[^0-9]/g, '')) || 0 : 0;
+
+      setScrapedData({
+        title: data.titulo,
+        price: String(data.precio),
+        address: data.direccion || '',
+        description: data.descripcion || '',
+        features: {
+          beds: data.dormitorios || 0,
+          baths: data.banos || 0,
+          area: data.m2_totales || 0,
+          coveredArea: data.m2_cubiertos || 0,
+          environments: data.ambientes || 0
+        },
+        details: {
+          antiquity: parsedAntiquity,
+          expenses: data.expensas || 0,
+          isCreditSuitable: data.apto_credito || false,
+          isProfessionalSuitable: data.apto_profesional || false,
+          operationType: data.operacion,
+          propertyType: data.tipo,
+          hasGarage: data.cochera || false,
+          orientation: data.orientacion || 'Norte'
+        },
+        location: {
+          neighborhood: data.barrio || '',
+          province: data.provincia || 'Buenos Aires'
+        },
+        amenities: data.amenities || [],
+        images: data.imagenes || []
+      });
+
+      setSourceUrl(data.url_original || url);
+      setSourcePortal(data.portal_original || '');
+      setStatus('active');
+      setIsVisible(true);
+      setProgress(100);
+      setTimeout(() => setStep('preview'), 800);
+
+    } catch (err) {
+      clearTimeout(timeoutId);
+      clearInterval(progressInterval);
+      console.error('Error scraping property:', err);
+
+      let errorMsg = 'Error al obtener los datos de la propiedad';
+      if (err instanceof Error) {
+        if (err.message.includes('404')) {
+          errorMsg = 'No se pudo acceder a la URL proporcionada. Verifica que sea correcta.';
+        } else if (err.message.includes('500')) {
+          errorMsg = 'Error en el servidor de scraping. Por favor intenta nuevamente.';
+        } else if (err.message.includes('campos requeridos')) {
+          errorMsg = 'La respuesta del portal no es válida. Intenta con otra URL.';
+        } else {
+          errorMsg = err.message;
+        }
+      }
+
+      setErrorMessage(errorMsg);
+      setStep('input');
+    }
   };
 
   // Photo Management Functions
@@ -479,12 +554,15 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
 
               {/* Dynamic Step Text */}
               <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-                {progress < 30 ? 'Conectando con el portal...' :
-                 progress < 60 ? 'Procesando imágenes...' :
-                 progress < 90 ? 'Extrayendo características...' : 'Generando ficha...'}
+                {elapsedTime < 15 ? 'Conectando con el portal...' :
+                 elapsedTime < 30 ? 'Procesando imágenes y características...' :
+                 elapsedTime < 50 ? 'El portal está respondiendo lentamente, por favor espera...' :
+                 elapsedTime < 70 ? 'Casi listo, extrayendo últimos detalles...' : 'Finalizando el scraping...'}
               </h3>
-              
-              <p className="text-gray-400 text-sm mb-8 font-medium">La IA de LinkProp está analizando la publicación</p>
+
+              <p className="text-gray-400 text-sm mb-8 font-medium">
+                {elapsedTime > 30 ? `Tiempo transcurrido: ${elapsedTime}s` : 'La IA de LinkProp está analizando la publicación'}
+              </p>
 
               {/* Modern Gradient Progress Bar */}
               <div className="w-full max-w-md space-y-3">
@@ -884,24 +962,26 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                         </div>
 
                         {/* Portal / Source Info Box - Moved Outside */}
-                         <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                              <div className="flex items-center justify-between mb-3">
-                                   <div className="flex items-center gap-1.5">
-                                      <Globe size={14} className="text-gray-400"/>
-                                      <span className="text-xs font-bold text-gray-500 uppercase">Portal de Origen</span>
-                                   </div>
-                                   <span className="text-[10px] font-bold px-2 py-0.5 bg-primary-50 border border-primary-100 rounded-md text-primary-600">
-                                      {getPortalName(url)}
-                                   </span>
-                              </div>
-                              <div className="flex items-center gap-2 bg-gray-50 p-2.5 rounded-lg border border-gray-100 group hover:border-primary-200 transition-colors">
-                                   <Link size={14} className="text-gray-400 flex-shrink-0" />
-                                   <a href={url || '#'} target="_blank" rel="noreferrer" className="text-xs text-gray-600 truncate hover:text-primary-600 transition-colors block w-full font-medium">
-                                      {url || 'https://www.zonaprop.com.ar/propiedades/clasificado-...'}
-                                   </a>
-                                   <ExternalLink size={14} className="text-gray-300 flex-shrink-0 group-hover:text-primary-600" />
-                              </div>
-                         </div>
+                         {(sourceUrl || url) && (
+                           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                                <div className="flex items-center justify-between mb-3">
+                                     <div className="flex items-center gap-1.5">
+                                        <Globe size={14} className="text-gray-400"/>
+                                        <span className="text-xs font-bold text-gray-500 uppercase">Portal de Origen</span>
+                                     </div>
+                                     <span className="text-[10px] font-bold px-2 py-0.5 bg-primary-50 border border-primary-100 rounded-md text-primary-600">
+                                        {sourcePortal || getPortalName(sourceUrl || url)}
+                                     </span>
+                                </div>
+                                <div className="flex items-center gap-2 bg-gray-50 p-2.5 rounded-lg border border-gray-100 group hover:border-primary-200 transition-colors">
+                                     <Link size={14} className="text-gray-400 flex-shrink-0" />
+                                     <a href={sourceUrl || url || '#'} target="_blank" rel="noreferrer" className="text-xs text-gray-600 truncate hover:text-primary-600 transition-colors block w-full font-medium">
+                                        {sourceUrl || url || 'https://www.zonaprop.com.ar/propiedades/clasificado-...'}
+                                     </a>
+                                     <ExternalLink size={14} className="text-gray-300 flex-shrink-0 group-hover:text-primary-600" />
+                                </div>
+                           </div>
+                         )}
                     </div>
                  </div>
 

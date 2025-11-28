@@ -8,12 +8,14 @@ export interface CreatePropiedadData {
   operacion: Propiedad['operacion'];
   precio: number;
   moneda?: Propiedad['moneda'];
-  ubicacion: string;
   dormitorios?: number;
   banos?: number;
   superficie?: number;
   imagenes?: string[];
   estado?: EstadoPropiedad;
+  direccion?: string;
+  barrio?: string;
+  provincia?: string;
 }
 
 export interface UpdatePropiedadData extends Partial<CreatePropiedadData> {

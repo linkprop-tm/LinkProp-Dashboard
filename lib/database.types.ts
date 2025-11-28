@@ -13,7 +13,6 @@ export interface Propiedad {
   operacion: TipoOperacion;
   precio: number;
   moneda: Moneda;
-  ubicacion: string;
   dormitorios: number;
   banos: number;
   superficie: number;

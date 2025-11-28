@@ -39,8 +39,9 @@ export function calcularMatch(propiedad: Propiedad, usuario: Usuario): MatchScor
 
   if (usuario.preferencias_ubicacion && usuario.preferencias_ubicacion.length > 0) {
     puntos_totales += 20;
+    const ubicacionCompleta = `${propiedad.direccion} ${propiedad.barrio} ${propiedad.provincia}`.toLowerCase();
     const ubicacion_match = usuario.preferencias_ubicacion.some(loc =>
-      propiedad.ubicacion.toLowerCase().includes(loc.toLowerCase())
+      ubicacionCompleta.includes(loc.toLowerCase())
     );
     if (ubicacion_match) {
       puntos_obtenidos += 20;

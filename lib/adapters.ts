@@ -11,7 +11,7 @@ export function propiedadToProperty(propiedad: Propiedad, matchCount?: number, i
   return {
     id: propiedad.id,
     title: propiedad.titulo,
-    address: propiedad.direccion || propiedad.ubicacion,
+    address: propiedad.direccion,
     price: propiedad.precio,
     currency: propiedad.moneda,
     imageUrl: propiedad.imagenes?.[0] || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
@@ -36,7 +36,7 @@ export function propiedadToProperty(propiedad: Propiedad, matchCount?: number, i
     isProfessionalSuitable: propiedad.apto_profesional,
     orientation: propiedad.orientacion || undefined,
     hasGarage: propiedad.cochera,
-    neighborhood: propiedad.barrio || propiedad.ubicacion,
+    neighborhood: propiedad.barrio,
     province: propiedad.provincia || undefined,
     fullAddress: propiedad.direccion || undefined,
     sourceUrl: propiedad.url_original || undefined,
@@ -63,7 +63,6 @@ export function propertyToPropiedad(property: Partial<Property>): Partial<Propie
   if (property.currency) result.moneda = property.currency as Propiedad['moneda'];
 
   if (property.address) result.direccion = property.address;
-  result.ubicacion = property.neighborhood || property.address || '';
 
   if (property.bedrooms !== undefined) result.dormitorios = property.bedrooms;
   if (property.bathrooms !== undefined) result.banos = property.bathrooms;
