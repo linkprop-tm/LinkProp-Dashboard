@@ -1,5 +1,60 @@
-import type { Property } from '../types';
-import type { Propiedad } from './database.types';
+import type { Property, Client } from '../types';
+import type { Propiedad, Usuario } from './database.types';
+
+export function usuarioToClient(usuario: Usuario): Client {
+  return {
+    id: usuario.id,
+    name: usuario.nombre,
+    email: usuario.email,
+    avatar: usuario.foto_perfil_url || '',
+    phone: usuario.telefono || '',
+    date: new Date(usuario.fecha_creacion).toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }),
+    groups: [],
+    searchParams: {
+      type: usuario.preferencias_tipo?.[0] || '',
+      maxPrice: usuario.preferencias_precio_max || 0,
+      minPrice: usuario.preferencias_precio_min || 0,
+      currency: 'USD',
+      environments: usuario.preferencias_dormitorios_min?.toString() || '',
+      location: usuario.preferencias_ubicacion?.[0] || '',
+      operationType: usuario.preferencias_operacion || 'Venta',
+      propertyTypes: usuario.preferencias_tipo || [],
+      bedrooms: usuario.preferencias_dormitorios_min?.toString() || '',
+      bathrooms: usuario.preferencias_banos_min?.toString() || '',
+      amenities: []
+    },
+    activityScore: 75,
+    status: 'active'
+  };
+}
+
+export function clientToUsuario(client: Client): Partial<Usuario> {
+  return {
+    id: client.id,
+    nombre: client.name,
+    email: client.email,
+    telefono: client.phone || '',
+    preferencias_tipo: client.searchParams.propertyTypes && client.searchParams.propertyTypes.length > 0
+      ? client.searchParams.propertyTypes
+      : (client.searchParams.type ? [client.searchParams.type] : []),
+    preferencias_operacion: client.searchParams.operationType || 'Venta',
+    preferencias_precio_min: client.searchParams.minPrice || null,
+    preferencias_precio_max: client.searchParams.maxPrice || null,
+    preferencias_ubicacion: client.searchParams.location
+      ? [client.searchParams.location]
+      : [],
+    preferencias_dormitorios_min: client.searchParams.bedrooms
+      ? parseInt(client.searchParams.bedrooms.replace('+', ''))
+      : null,
+    preferencias_banos_min: client.searchParams.bathrooms
+      ? parseInt(client.searchParams.bathrooms.replace('+', ''))
+      : null
+  };
+}
 
 export function propiedadToProperty(propiedad: Propiedad, matchCount?: number, interesadosCount?: number): Property {
   const statusMap: Record<string, 'active' | 'pending' | 'sold'> = {

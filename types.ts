@@ -137,6 +137,7 @@ export interface Client {
   name: string;
   email: string;
   avatar: string;
+  phone?: string;
   date: string;
   groups: string[];
   searchParams: SearchParams;

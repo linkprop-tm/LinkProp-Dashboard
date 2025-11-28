@@ -1,10 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  X, User, Mail, MapPin, DollarSign, 
-  Briefcase, Sparkles, Building2, Trash2
+import {
+  X, User, Mail, MapPin, DollarSign,
+  Briefcase, Sparkles, Building2, Trash2, Phone, Loader2, Heart, Eye, CheckCircle
 } from 'lucide-react';
 import { Client, SearchParams } from '../types';
+import { obtenerUsuarioPorId, actualizarUsuario, obtenerRelacionesPorUsuario } from '../lib/api/users';
+import { clientToUsuario, usuarioToClient } from '../lib/adapters';
+import type { PropiedadUsuario } from '../lib/database.types';
 
 interface EditClientModalProps {
   isOpen: boolean;
@@ -16,11 +19,53 @@ interface EditClientModalProps {
 
 export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClose, client, onSave, onDelete }) => {
   const [formData, setFormData] = useState<Client>(client);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [activityData, setActivityData] = useState<{
+    explorar: number;
+    interes: number;
+    visitada: number;
+    relaciones: any[];
+  } | null>(null);
 
-  // Update local state if the client prop changes
+  // Load full user data from database
   useEffect(() => {
-    setFormData(client);
-  }, [client]);
+    if (isOpen && client.id) {
+      loadFullUserData();
+    }
+  }, [isOpen, client.id]);
+
+  const loadFullUserData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const usuario = await obtenerUsuarioPorId(client.id);
+      if (usuario) {
+        setFormData(usuarioToClient(usuario));
+      }
+
+      const relaciones = await obtenerRelacionesPorUsuario(client.id);
+      const explorar = relaciones.filter(r => r.etapa === 'Explorar').length;
+      const interes = relaciones.filter(r => r.etapa === 'Interes').length;
+      const visitada = relaciones.filter(r => r.etapa === 'Visitada').length;
+
+      setActivityData({
+        explorar,
+        interes,
+        visitada,
+        relaciones: relaciones.slice(0, 5)
+      });
+    } catch (err) {
+      console.error('Error loading user data:', err);
+      setError('Error al cargar los datos del usuario');
+      setFormData(client);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (field: keyof Client, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -54,9 +99,54 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
       handleSearchParamChange('type', type);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.name || formData.name.trim() === '') {
+      errors.name = 'El nombre es requerido';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email || !emailRegex.test(formData.email)) {
+      errors.email = 'Email inválido';
+    }
+
+    if (formData.searchParams.minPrice && formData.searchParams.maxPrice) {
+      if (formData.searchParams.minPrice > formData.searchParams.maxPrice) {
+        errors.price = 'El precio mínimo no puede ser mayor que el máximo';
+      }
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const updateData = clientToUsuario(formData);
+      const updatedUsuario = await actualizarUsuario({
+        id: formData.id,
+        ...updateData
+      });
+
+      const updatedClient = usuarioToClient(updatedUsuario);
+      onSave(updatedClient);
+      onClose();
+    } catch (err) {
+      console.error('Error saving client:', err);
+      setError('Error al guardar los cambios. Por favor, intenta de nuevo.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -88,9 +178,73 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-gray-50/30">
-          <form id="edit-client-form" onSubmit={handleSubmit} className="space-y-10">
-            
-            {/* Section 1: Personal Info & Status */}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
+              <p className="text-gray-600 font-medium">Cargando datos del usuario...</p>
+            </div>
+          ) : (
+            <>
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <X className="text-red-600" size={18} />
+                  </div>
+                  <p className="text-sm text-red-700 font-medium">{error}</p>
+                </div>
+              )}
+
+              {validationErrors.price && (
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
+                  <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                    <X className="text-amber-600" size={18} />
+                  </div>
+                  <p className="text-sm text-amber-700 font-medium">{validationErrors.price}</p>
+                </div>
+              )}
+
+              <form id="edit-client-form" onSubmit={handleSubmit} className="space-y-10">
+
+                {/* Activity Stats Section */}
+                {activityData && (
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <Eye className="text-blue-600" size={20} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-blue-600 uppercase">Explorando</p>
+                          <p className="text-2xl font-bold text-gray-900">{activityData.explorar}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-amber-100 rounded-lg">
+                          <Heart className="text-amber-600" size={20} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-amber-600 uppercase">Interés</p>
+                          <p className="text-2xl font-bold text-gray-900">{activityData.interes}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-100 rounded-lg">
+                          <CheckCircle className="text-emerald-600" size={20} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-emerald-600 uppercase">Visitadas</p>
+                          <p className="text-2xl font-bold text-gray-900">{activityData.visitada}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Section 1: Personal Info & Status */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
                 <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
@@ -128,11 +282,17 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
               
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                     <div className="flex-shrink-0 mx-auto md:mx-0">
-                        <img 
-                        src={formData.avatar} 
-                        alt="Avatar" 
-                        className="w-24 h-24 rounded-full object-cover ring-4 ring-gray-50"
-                        />
+                        <div className="w-24 h-24 rounded-full ring-4 ring-gray-50 bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-2xl font-bold">
+                          {formData.avatar ? (
+                            <img
+                              src={formData.avatar}
+                              alt="Avatar"
+                              className="w-24 h-24 rounded-full object-cover"
+                            />
+                          ) : (
+                            formData.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
                     </div>
                     <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1.5">
@@ -148,10 +308,26 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                             <label className="text-xs font-bold text-gray-500 ml-1">Email</label>
                             <div className="relative">
                                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                <input 
-                                    type="email" 
+                                <input
+                                    type="email"
                                     value={formData.email}
                                     onChange={(e) => handleInputChange('email', e.target.value)}
+                                    className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none transition-all focus:bg-white ${validationErrors.email ? 'border-red-300' : 'border-gray-200'}`}
+                                />
+                                {validationErrors.email && (
+                                    <p className="text-xs text-red-500 mt-1">{validationErrors.email}</p>
+                                )}
+                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-gray-500 ml-1">Teléfono</label>
+                            <div className="relative">
+                                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                <input
+                                    type="tel"
+                                    value={formData.phone || ''}
+                                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                                    placeholder="Ej. +54 11 1234-5678"
                                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none transition-all focus:bg-white"
                                 />
                             </div>
@@ -394,40 +570,54 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
             </div>
 
           </form>
+            </>
+          )}
         </div>
 
         {/* Footer Actions */}
-        <div className="px-8 py-5 border-t border-gray-100 bg-gray-50 flex justify-between items-center sticky bottom-0 z-10">
-          {/* Delete Button (Left) */}
-          <button
-              type="button"
-              onClick={() => {
-                  onDelete();
-                  onClose();
-              }}
-              className="px-4 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"
-          >
-              <Trash2 size={16} /> Eliminar
-          </button>
+        {!loading && (
+          <div className="px-8 py-5 border-t border-gray-100 bg-gray-50 flex justify-between items-center sticky bottom-0 z-10">
+            {/* Delete Button (Left) */}
+            <button
+                type="button"
+                onClick={() => {
+                    onDelete();
+                    onClose();
+                }}
+                disabled={saving}
+                className="px-4 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                <Trash2 size={16} /> Eliminar
+            </button>
 
-          {/* Right Actions */}
-          <div className="flex gap-3">
-              <button 
-                 type="button"
-                 onClick={onClose}
-                 className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-white transition-colors"
-              >
-                 Cancelar
-              </button>
-              <button 
-                 type="submit"
-                 form="edit-client-form"
-                 className="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-900/20 hover:bg-black transition-all active:scale-95"
-              >
-                 Guardar Cambios
-              </button>
+            {/* Right Actions */}
+            <div className="flex gap-3">
+                <button
+                   type="button"
+                   onClick={onClose}
+                   disabled={saving}
+                   className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                   Cancelar
+                </button>
+                <button
+                   type="submit"
+                   form="edit-client-form"
+                   disabled={saving}
+                   className="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-900/20 hover:bg-black transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                   {saving ? (
+                     <>
+                       <Loader2 className="w-4 h-4 animate-spin" />
+                       Guardando...
+                     </>
+                   ) : (
+                     'Guardar Cambios'
+                   )}
+                </button>
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>

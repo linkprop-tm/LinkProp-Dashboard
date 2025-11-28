@@ -11,6 +11,7 @@ import {
 import { EditClientModal } from './EditClientModal';
 import { Client } from '../types';
 import { obtenerUsuarios, eliminarUsuario } from '../lib/api/users';
+import { usuarioToClient } from '../lib/adapters';
 
 // Helper to parse dates like "06 Ene, 2025"
 const parseClientDate = (dateStr: string) => {
@@ -48,28 +49,7 @@ export const Clients: React.FC = () => {
     try {
       setLoading(true);
       const usuarios = await obtenerUsuarios();
-      const mappedClients: Client[] = usuarios.map(usuario => ({
-        id: usuario.id,
-        name: usuario.nombre,
-        email: usuario.email,
-        avatar: '',
-        date: new Date(usuario.fecha_creacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }),
-        groups: [],
-        searchParams: {
-          type: usuario.preferencias_tipo?.[0] || '',
-          maxPrice: usuario.preferencias_precio_max || 0,
-          currency: 'USD',
-          environments: '',
-          location: usuario.preferencias_ubicacion?.[0] || '',
-          operationType: usuario.preferencias_operacion || 'Venta',
-          minPrice: usuario.preferencias_precio_min || 0,
-          propertyTypes: usuario.preferencias_tipo || [],
-          bedrooms: usuario.preferencias_dormitorios_min?.toString() || '',
-          bathrooms: usuario.preferencias_banos_min?.toString() || ''
-        },
-        activityScore: 75,
-        status: 'active'
-      }));
+      const mappedClients: Client[] = usuarios.map(usuario => usuarioToClient(usuario));
       setClients(mappedClients);
     } catch (err) {
       console.error('Error loading clients:', err);
@@ -513,7 +493,13 @@ export const Clients: React.FC = () => {
                         <div className="flex items-start justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="relative">
-                                    <img src={client.avatar} alt={client.name} className="w-14 h-14 rounded-full object-cover ring-4 ring-gray-50 group-hover:ring-primary-50 transition-all" />
+                                    <div className="w-14 h-14 rounded-full ring-4 ring-gray-50 group-hover:ring-primary-50 transition-all bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-lg font-bold">
+                                      {client.avatar ? (
+                                        <img src={client.avatar} alt={client.name} className="w-14 h-14 rounded-full object-cover" />
+                                      ) : (
+                                        client.name.charAt(0).toUpperCase()
+                                      )}
+                                    </div>
                                     <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full ${client.status === 'active' ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
                                 </div>
                                 <div>
