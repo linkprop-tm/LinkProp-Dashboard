@@ -469,9 +469,9 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                         <DollarSign size={16} className="text-gray-400" /> Rango de Precios (USD)
                                     </label>
                                     <div className="flex items-center gap-4">
-                                        <input type="number" placeholder="Min" value={regData.minPrice} onChange={e => handleRegChange('minPrice', e.target.value)} className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50" />
+                                        <input type="number" placeholder="Desde" value={regData.minPrice} onChange={e => handleRegChange('minPrice', e.target.value)} className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50" />
                                         <span className="text-gray-300">-</span>
-                                        <input type="number" placeholder="Max" value={regData.maxPrice} onChange={e => handleRegChange('maxPrice', e.target.value)} className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50" />
+                                        <input type="number" placeholder="Hasta" value={regData.maxPrice} onChange={e => handleRegChange('maxPrice', e.target.value)} className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50" />
                                     </div>
                                 </div>
                                 
