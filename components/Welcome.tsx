@@ -15,13 +15,22 @@ interface WelcomeProps {
 // CONSTANTS FOR NEIGHBORHOODS (Reused for the modal)
 const CABA_NEIGHBORHOODS = [
   "Puerto Madero", "Palermo Chico", "Recoleta", "Palermo Botánico", "Las Cañitas", 
-  "Palermo Soho", "Palermo Hollywood", "Belgrano", "Núñez", "Colegiales", 
-  "Villa Urquiza", "Caballito", "Villa Devoto", "San Telmo"
+  "Palermo", "Palermo Nuevo", "Palermo Soho", "Palermo Hollywood", "Belgrano", 
+  "Núñez", "Colegiales", "Villa Devoto", "Villa Urquiza", "Retiro", "Saavedra", 
+  "Coghlan", "Chacarita", "Villa Crespo", "Villa Pueyrredón", "Caballito", 
+  "Villa del Parque", "Parque Chas", "Agronomía", "Villa Ortúzar", "Versalles", 
+  "Villa Real", "Flores", "Floresta", "Villa Luro", "Monte Castro", 
+  "Villa Santa Rita", "Villa General Mitre", "Boedo", "San Telmo", "Monserrat", 
+  "San Nicolás", "Balvanera", "Almagro", "Barracas", "Parque Patricios", 
+  "Constitución", "San Cristóbal", "La Paternal", "Parque Chacabuco", 
+  "Nueva Pompeya", "Parque Avellaneda", "Mataderos", "Liniers", "La Boca", 
+  "Villa Riachuelo", "Villa Lugano", "Villa Soldati"
 ];
 
 const GBA_NEIGHBORHOODS = [
-  "Vicente López", "San Isidro", "Tigre", "Nordelta", "Pilar", "Olivos"
-];
+  "Vicente López", "San Martín", "San Isidro", "San Fernando", 
+  "Tres de Febrero", "San Miguel", "Tigre", "Escobar", "Pilar", "José C. Paz"
+  ];
 
 export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
   const { signIn, signUp } = useAuthContext();
