@@ -172,23 +172,13 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
 
         // Prepare preferences for client
         const preferences = {
-          operation_type: regData.operationType.toLowerCase(),
+          operation_type: regData.operationType,
           property_types: regData.propertyTypes,
-          amenities: regData.amenities,
-          region: regData.region,
           neighborhoods: regData.neighborhoods,
           min_price: regData.minPrice ? parseFloat(regData.minPrice) : null,
           max_price: regData.maxPrice ? parseFloat(regData.maxPrice) : null,
-          min_area: regData.minArea ? parseFloat(regData.minArea) : null,
-          max_area: regData.maxArea ? parseFloat(regData.maxArea) : null,
-          environments: regData.environments || null,
           bedrooms: regData.bedrooms || null,
           bathrooms: regData.bathrooms || null,
-          antiquity: regData.antiquity,
-          credit_eligible: regData.features.credit,
-          professional_use: regData.features.professional,
-          garage: regData.features.garage,
-          pets_allowed: regData.features.pets,
         };
 
         await signUp(

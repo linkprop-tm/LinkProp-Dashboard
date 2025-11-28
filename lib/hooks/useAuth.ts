@@ -104,11 +104,11 @@ export function useAuth() {
         telefono: profileData.phone,
         // If client, add preferences
         ...(role === 'client' && profileData.preferences ? {
-          preferencias_tipo: profileData.preferences.propertyTypes,
-          preferencias_operacion: profileData.preferences.operationType,
-          preferencias_precio_min: profileData.preferences.minPrice ? parseFloat(profileData.preferences.minPrice) : null,
-          preferencias_precio_max: profileData.preferences.maxPrice ? parseFloat(profileData.preferences.maxPrice) : null,
-          preferencias_ubicacion: profileData.preferences.neighborhoods,
+          preferencias_tipo: profileData.preferences.property_types || [],
+          preferencias_operacion: profileData.preferences.operation_type || null,
+          preferencias_precio_min: profileData.preferences.min_price || null,
+          preferencias_precio_max: profileData.preferences.max_price || null,
+          preferencias_ubicacion: profileData.preferences.neighborhoods || [],
           preferencias_dormitorios_min: profileData.preferences.bedrooms ? parseInt(profileData.preferences.bedrooms) : null,
           preferencias_banos_min: profileData.preferences.bathrooms ? parseInt(profileData.preferences.bathrooms) : null,
         } : {}),

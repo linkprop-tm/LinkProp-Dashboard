@@ -4,7 +4,7 @@ import type { Propiedad, Usuario } from './database.types';
 export function usuarioToClient(usuario: Usuario): Client {
   return {
     id: usuario.id,
-    name: usuario.nombre || 'Usuario sin nombre',
+    name: usuario.full_name || 'Usuario sin nombre',
     email: usuario.email || '',
     avatar: usuario.foto_perfil_url || '',
     phone: usuario.telefono || '',
@@ -37,7 +37,7 @@ export function usuarioToClient(usuario: Usuario): Client {
 export function clientToUsuario(client: Client): Partial<Usuario> {
   return {
     id: client.id,
-    nombre: client.name,
+    full_name: client.name,
     email: client.email,
     telefono: client.phone || '',
     preferencias_tipo: client.searchParams.propertyTypes && client.searchParams.propertyTypes.length > 0

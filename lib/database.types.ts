@@ -53,7 +53,7 @@ export interface Propiedad {
 export interface Usuario {
   id: string;
   email: string;
-  nombre: string;
+  full_name: string;
   telefono: string;
   preferencias_tipo: TipoPropiedad[];
   preferencias_operacion: TipoOperacion | null;
@@ -65,12 +65,14 @@ export interface Usuario {
   fecha_creacion: string;
   fecha_actualizacion: string;
   foto_perfil_url: string | null;
+  auth_id?: string;
+  rol?: string;
 }
 
 export interface Admin {
   id: string;
   email: string;
-  nombre: string;
+  full_name: string;
   rol: 'admin' | 'agente';
   telefono: string;
   fecha_creacion: string;

@@ -3,7 +3,7 @@ import type { Usuario, TipoPropiedad, TipoOperacion } from '../database.types';
 
 export interface CreateUsuarioData {
   email: string;
-  nombre: string;
+  full_name: string;
   telefono?: string;
   preferencias_tipo?: TipoPropiedad[];
   preferencias_operacion?: TipoOperacion;
