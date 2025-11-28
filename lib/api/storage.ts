@@ -1,8 +1,10 @@
 import { supabase } from '../supabase';
 
 const AVATARS_BUCKET = 'avatars';
+const PROPERTY_IMAGES_BUCKET = 'property-images';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_PROPERTY_IMAGES = 10;
 
 export interface UploadResult {
   url: string;
@@ -127,3 +129,115 @@ export function generarColorAvatar(nombre: string): string {
 
   return colores[Math.abs(hash) % colores.length];
 }
+
+export interface PropertyImageUploadResult {
+  url: string;
+  path: string;
+  index: number;
+}
+
+export async function subirFotoPropiedad(
+  propertyId: string,
+  file: File,
+  index: number
+): Promise<PropertyImageUploadResult> {
+  const validation = validarImagen(file);
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
+  const fileExt = file.name.split('.').pop();
+  const timestamp = Date.now();
+  const fileName = `${timestamp}-${index}.${fileExt}`;
+  const filePath = `${propertyId}/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(PROPERTY_IMAGES_BUCKET)
+    .upload(filePath, file, {
+      upsert: false,
+      contentType: file.type,
+    });
+
+  if (uploadError) {
+    throw new Error(`Error al subir la foto: ${uploadError.message}`);
+  }
+
+  const { data: urlData } = supabase.storage
+    .from(PROPERTY_IMAGES_BUCKET)
+    .getPublicUrl(filePath, {
+      transform: {
+        width: 1200,
+        height: 900,
+        quality: 85,
+      },
+    });
+
+  return {
+    url: urlData.publicUrl,
+    path: filePath,
+    index,
+  };
+}
+
+export async function subirMultiplesFotosPropiedad(
+  propertyId: string,
+  files: File[]
+): Promise<PropertyImageUploadResult[]> {
+  if (files.length > MAX_PROPERTY_IMAGES) {
+    throw new Error(`Máximo ${MAX_PROPERTY_IMAGES} imágenes permitidas`);
+  }
+
+  const uploadPromises = files.map((file, index) =>
+    subirFotoPropiedad(propertyId, file, index)
+  );
+
+  return Promise.all(uploadPromises);
+}
+
+export async function eliminarFotoPropiedad(filePath: string): Promise<void> {
+  const { error } = await supabase.storage
+    .from(PROPERTY_IMAGES_BUCKET)
+    .remove([filePath]);
+
+  if (error) {
+    throw new Error(`Error al eliminar la foto: ${error.message}`);
+  }
+}
+
+export async function eliminarMultiplesFotosPropiedad(filePaths: string[]): Promise<void> {
+  const { error } = await supabase.storage
+    .from(PROPERTY_IMAGES_BUCKET)
+    .remove(filePaths);
+
+  if (error) {
+    throw new Error(`Error al eliminar las fotos: ${error.message}`);
+  }
+}
+
+export function obtenerUrlPublicaPropiedad(filePath: string): string {
+  const { data } = supabase.storage.from(PROPERTY_IMAGES_BUCKET).getPublicUrl(filePath, {
+    transform: {
+      width: 1200,
+      height: 900,
+      quality: 85,
+    },
+  });
+
+  return data.publicUrl;
+}
+
+export async function actualizarImagenesPropiedad(
+  propertyId: string,
+  imageUrls: string[]
+): Promise<void> {
+  const { error } = await supabase
+    .from('propiedades')
+    .update({ imagenes: imageUrls })
+    .eq('id', propertyId);
+
+  if (error) {
+    throw new Error(`Error al actualizar las imágenes: ${error.message}`);
+  }
+}
+
+export { MAX_PROPERTY_IMAGES };

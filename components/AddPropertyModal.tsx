@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  X, Link, CheckCircle2, MapPin, Image as ImageIcon, Home, Bath, Bed, Save, Calendar, 
+import {
+  X, Link, CheckCircle2, MapPin, Image as ImageIcon, Home, Bath, Bed, Save, Calendar,
   DollarSign, Ruler, Briefcase, CheckSquare, LayoutGrid, Trash2, Car, Compass, ShieldCheck,
   Upload, GripVertical, Plus, Globe, ExternalLink, Sparkles, Loader2, Eye, EyeOff
 } from 'lucide-react';
 import { ScrapedData, Property } from '../types';
 import { actualizarPropiedad, crearPropiedad, eliminarPropiedad } from '../lib/api/properties';
 import { propertyToPropiedad } from '../lib/adapters';
+import { PropertyPhotosUploadModal } from './PropertyPhotosUploadModal';
 
 interface AddPropertyModalProps {
   isOpen: boolean;
@@ -88,6 +89,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false);
 
   // Drag and Drop State
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -300,9 +302,14 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
   };
 
   const handleAddPhoto = () => {
+    setShowPhotoUploadModal(true);
+  };
+
+  const handlePhotoUploadSuccess = (newPhotoUrls: string[]) => {
     if (!scrapedData) return;
-    const newImages = [...scrapedData.images, `https://picsum.photos/600/400?random=${Date.now()}`];
-    setScrapedData({ ...scrapedData, images: newImages });
+    const updatedImages = [...scrapedData.images, ...newPhotoUrls];
+    setScrapedData({ ...scrapedData, images: updatedImages });
+    setShowPhotoUploadModal(false);
   };
 
   // Amenities Handlers
@@ -904,6 +911,14 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
 
         </div>
       </div>
+
+      <PropertyPhotosUploadModal
+        isOpen={showPhotoUploadModal}
+        onClose={() => setShowPhotoUploadModal(false)}
+        onSuccess={handlePhotoUploadSuccess}
+        propertyId={initialData?.id || 'temp-' + Date.now()}
+        currentImagesCount={scrapedData?.images.length || 0}
+      />
     </div>
   );
 };
