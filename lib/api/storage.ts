@@ -4,7 +4,7 @@ const AVATARS_BUCKET = 'avatars';
 const PROPERTY_IMAGES_BUCKET = 'property-images';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const MAX_PROPERTY_IMAGES = 10;
+const MAX_PROPERTY_IMAGES = 50;
 
 export interface UploadResult {
   url: string;
