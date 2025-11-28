@@ -1053,9 +1053,9 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                       </div>
                     ) : (
                       <>
-                        <div className="flex justify-center mb-6">
-                            <div className="relative">
-                                <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-gray-50">
+                        <div className="flex-shrink-0 mx-auto text-center mb-6">
+                            <div className="relative inline-block">
+                                <div className="w-32 h-32 rounded-full overflow-hidden border-[6px] border-white shadow-xl ring-1 ring-gray-100">
                                     <Avatar
                                       src={photoUrl}
                                       name={name || 'Usuario'}
@@ -1064,11 +1064,12 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                                 </div>
                                 <button
                                   onClick={() => setIsUploadModalOpen(true)}
-                                  className="absolute bottom-0 right-0 p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors shadow-sm"
+                                  className="absolute bottom-1 right-1 p-2.5 bg-gray-900 text-white rounded-full hover:bg-black hover:shadow-lg transition-colors duration-200 shadow-md border-[3px] border-white"
                                 >
-                                    <Camera size={14} />
+                                    <Camera size={16} />
                                 </button>
                             </div>
+                            <p className="mt-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Foto de Perfil</p>
                         </div>
 
                         <div className="space-y-4">
