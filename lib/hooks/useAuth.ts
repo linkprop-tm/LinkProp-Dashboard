@@ -109,8 +109,13 @@ export function useAuth() {
           preferencias_precio_min: profileData.preferences.min_price || null,
           preferencias_precio_max: profileData.preferences.max_price || null,
           preferencias_ubicacion: profileData.preferences.neighborhoods || [],
-          preferencias_dormitorios_min: profileData.preferences.bedrooms ? parseInt(profileData.preferences.bedrooms) : null,
-          preferencias_banos_min: profileData.preferences.bathrooms ? parseInt(profileData.preferences.bathrooms) : null,
+          preferencias_m2_min: profileData.preferences.min_area ? parseFloat(profileData.preferences.min_area) : null,
+          preferencias_ambientes: profileData.preferences.environments || null,
+          preferencias_amenities: profileData.preferences.amenities || [],
+          preferencias_apto_credito: profileData.preferences.credit || false,
+          preferencias_apto_profesional: profileData.preferences.professional || false,
+          preferencias_cochera: profileData.preferences.garage || false,
+          preferencias_apto_mascotas: profileData.preferences.pets || false,
         } : {}),
       });
 

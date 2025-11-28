@@ -177,8 +177,13 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
           neighborhoods: regData.neighborhoods,
           min_price: regData.minPrice ? parseFloat(regData.minPrice) : null,
           max_price: regData.maxPrice ? parseFloat(regData.maxPrice) : null,
-          bedrooms: regData.bedrooms || null,
-          bathrooms: regData.bathrooms || null,
+          min_area: regData.minArea || null,
+          environments: regData.environments || null,
+          amenities: regData.amenities || [],
+          credit: regData.features.credit,
+          professional: regData.features.professional,
+          garage: regData.features.garage,
+          pets: regData.features.pets,
         };
 
         await signUp(
