@@ -3,16 +3,44 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, Plus, X, Check, Heart, Building, TrendingUp, Clock, Command } from 'lucide-react';
 import { RECENT_ACTIVITY } from '../constants';
 import { AgentOnly } from '../lib/components/RoleGuard';
+import { useAuthContext } from '../lib/contexts/AuthContext';
+import { Avatar } from './Avatar';
+import { supabase } from '../lib/supabase';
 
 interface HeaderProps {
   onAddProperty: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ onAddProperty }) => {
+  const { user } = useAuthContext();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
 
-  // Close notifications when clicking outside
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('usuarios')
+      .select('full_name, foto_perfil_url')
+      .eq('auth_id', user.id)
+      .maybeSingle();
+
+    if (data) {
+      setUserName(data.full_name || user.email || 'Usuario');
+      setUserPhoto(data.foto_perfil_url || null);
+    } else {
+      setUserName(user.email || 'Usuario');
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
@@ -152,6 +180,16 @@ export const Header: React.FC<HeaderProps> = ({ onAddProperty }) => {
             <span className="hidden md:inline">Agregar Propiedad</span>
           </button>
         </AgentOnly>
+
+        {/* User Avatar */}
+        <div className="flex items-center gap-3">
+          <Avatar
+            src={userPhoto}
+            name={userName}
+            size="medium"
+            className="cursor-pointer ring-2 ring-gray-100 hover:ring-primary-200 transition-all"
+          />
+        </div>
       </div>
     </header>
   );

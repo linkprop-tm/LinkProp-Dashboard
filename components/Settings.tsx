@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Camera, Save, LogOut, Shield, Key, ChevronRight, AlertCircle } from 'lucide-react';
 import { useAuthContext } from '../lib/contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { Avatar } from './Avatar';
+import { UploadPhotoModal } from './UploadPhotoModal';
 
 interface SettingsProps {
   onLogout: () => void;
@@ -13,6 +15,8 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -28,7 +32,7 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
 
     const { data, error } = await supabase
       .from('usuarios')
-      .select('full_name, email, telefono')
+      .select('full_name, email, telefono, foto_perfil_url')
       .eq('auth_id', user.id)
       .maybeSingle();
 
@@ -36,9 +40,16 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
       setName(data.full_name || '');
       setEmail(data.email || user.email || '');
       setPhone(data.telefono || '');
+      setPhotoUrl(data.foto_perfil_url || null);
     } else {
       setEmail(user.email || '');
     }
+  };
+
+  const handlePhotoUploadSuccess = (newPhotoUrl: string) => {
+    setPhotoUrl(newPhotoUrl);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
   };
 
   const handleSave = async () => {
@@ -92,13 +103,17 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
                     <div className="flex-shrink-0 mx-auto md:mx-0 text-center">
                         <div className="relative group inline-block">
                             <div className="w-32 h-32 rounded-full overflow-hidden border-[6px] border-white shadow-xl ring-1 ring-gray-100">
-                                <img 
-                                    src="https://picsum.photos/200/200?random=99" 
-                                    alt="Profile" 
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                                <Avatar
+                                    src={photoUrl}
+                                    name={name || 'Usuario'}
+                                    size="xlarge"
+                                    className="transition-transform duration-500 group-hover:scale-110"
                                 />
                             </div>
-                            <button className="absolute bottom-1 right-1 p-2.5 bg-gray-900 text-white rounded-full hover:bg-black transition-all duration-200 shadow-md border-[3px] border-white active:scale-95">
+                            <button
+                                onClick={() => setIsUploadModalOpen(true)}
+                                className="absolute bottom-1 right-1 p-2.5 bg-gray-900 text-white rounded-full hover:bg-black transition-all duration-200 shadow-md border-[3px] border-white active:scale-95"
+                            >
                                 <Camera size={16} />
                             </button>
                         </div>
@@ -227,6 +242,15 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
         </div>
 
       </div>
+
+      {/* Upload Photo Modal */}
+      <UploadPhotoModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onSuccess={handlePhotoUploadSuccess}
+        userId={user?.id || ''}
+        userName={name || 'Usuario'}
+      />
     </div>
   );
 };

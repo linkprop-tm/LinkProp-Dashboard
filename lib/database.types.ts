@@ -65,6 +65,7 @@ export interface Usuario {
   preferencias_banos_min: number | null;
   fecha_creacion: string;
   fecha_actualizacion: string;
+  foto_perfil_url: string | null;
 }
 
 export interface Admin {
