@@ -1392,7 +1392,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="relative flex-1">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Min</span>
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Desde</span>
                                 <input
                                   type="number"
                                   value={settingsPriceMin}
@@ -1403,7 +1403,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                             </div>
                             <span className="text-gray-300 font-medium">-</span>
                             <div className="relative flex-1">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Max</span>
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Hasta</span>
                                 <input
                                   type="number"
                                   value={settingsPriceMax}
