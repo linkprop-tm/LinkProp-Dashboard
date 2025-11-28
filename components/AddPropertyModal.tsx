@@ -529,6 +529,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                  <img src="/assets/Zonaprop.svg" alt="ZonaProp" className="h-6 object-contain grayscale" />
                  <img src="/assets/argenprop.svg" alt="Argenprop" className="h-6 object-contain grayscale" />
                  <img src="/assets/mercado-libre.svg" alt="MercadoLibre" className="h-6 object-contain grayscale" />
+                 <img src="/assets/remax copy.svg" alt="Remax" className="h-6 object-contain grayscale" />
                </div>
             </div>
           )}
