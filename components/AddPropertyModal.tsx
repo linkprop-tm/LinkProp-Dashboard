@@ -521,7 +521,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                     disabled={!url}
                     className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 rounded-lg shadow-lg shadow-primary-600/20 transition-all active:scale-95"
                  >
-                    Autocompletar Datos
+                    Importar Datos
                  </button>
                </div>
                
