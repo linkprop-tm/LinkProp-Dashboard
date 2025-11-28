@@ -348,7 +348,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                         <div className="space-y-8 animate-fade-in">
                             <div className="text-center mb-2">
                                 <h3 className="text-lg font-bold text-gray-900">Preferencias de Búsqueda</h3>
-                                <p className="text-sm text-gray-500">Ayúdanos a encontrar tu propiedad ideal</p>
+                                <p className="text-sm text-gray-500">Seleccioná lo que te gustaría que tenga tu propiedad ideal</p>
                             </div>
 
                             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-8">
