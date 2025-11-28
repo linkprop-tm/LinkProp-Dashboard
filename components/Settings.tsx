@@ -102,7 +102,7 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
                     {/* Avatar Section */}
                     <div className="flex-shrink-0 mx-auto md:mx-0 text-center">
                         <div className="relative inline-block">
-                            <div className="w-32 h-32 rounded-full overflow-hidden border-[6px] border-white shadow-xl ring-1 ring-gray-100">
+                            <div className="rounded-full overflow-hidden border-[6px] border-white shadow-xl ring-1 ring-gray-100">
                                 <Avatar
                                     src={photoUrl}
                                     name={name || 'Usuario'}
