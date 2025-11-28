@@ -193,7 +193,7 @@ const SortPanel: React.FC<{
 // --- CONSTANTS FOR NEIGHBORHOODS ---
 const CABA_NEIGHBORHOODS = [
   "Puerto Madero", "Palermo Chico", "Recoleta", "Palermo Botánico", "Las Cañitas", 
-  "Palermo Alto", "Palermo Nuevo", "Palermo Soho", "Palermo Hollywood", "Belgrano", 
+  "Palermo", "Palermo Nuevo", "Palermo Soho", "Palermo Hollywood", "Belgrano", 
   "Núñez", "Colegiales", "Villa Devoto", "Villa Urquiza", "Retiro", "Saavedra", 
   "Coghlan", "Chacarita", "Villa Crespo", "Villa Pueyrredón", "Caballito", 
   "Villa del Parque", "Parque Chas", "Agronomía", "Villa Ortúzar", "Versalles", 
