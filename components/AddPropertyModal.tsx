@@ -525,10 +525,10 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                  </button>
                </div>
                
-               <div className="flex gap-6 mt-8 opacity-50">
-                 <span className="text-xs font-bold text-gray-400">ZonaProp</span>
-                 <span className="text-xs font-bold text-gray-400">Argenprop</span>
-                 <span className="text-xs font-bold text-gray-400">MercadoLibre Inmuebles</span>
+               <div className="flex gap-6 mt-8 opacity-50 items-center">
+                 <img src="/assets/Zonaprop.svg" alt="ZonaProp" className="h-6 object-contain grayscale" />
+                 <img src="/assets/argenprop.svg" alt="Argenprop" className="h-6 object-contain grayscale" />
+                 <img src="/assets/mercado-libre.svg" alt="MercadoLibre" className="h-6 object-contain grayscale" />
                </div>
             </div>
           )}
