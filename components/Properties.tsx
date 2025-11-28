@@ -314,7 +314,7 @@ export const Properties: React.FC = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
                <h1 className="text-3xl font-bold text-gray-900">Propiedades</h1>
-               <p className="text-gray-500 mt-1">Gestiona la visibilidad y detalles de tu inventario.</p>
+               <p className="text-gray-500 mt-1">Gestiona la visibilidad y detalles de las propiedades.</p>
             </div>
             
             <div className="flex items-center gap-3 w-full md:w-auto">
