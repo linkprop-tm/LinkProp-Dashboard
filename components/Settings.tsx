@@ -101,18 +101,17 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
                 <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
                     {/* Avatar Section */}
                     <div className="flex-shrink-0 mx-auto md:mx-0 text-center">
-                        <div className="relative group inline-block">
+                        <div className="relative inline-block">
                             <div className="w-32 h-32 rounded-full overflow-hidden border-[6px] border-white shadow-xl ring-1 ring-gray-100">
                                 <Avatar
                                     src={photoUrl}
                                     name={name || 'Usuario'}
                                     size="xlarge"
-                                    className="transition-transform duration-500 group-hover:scale-110"
                                 />
                             </div>
                             <button
                                 onClick={() => setIsUploadModalOpen(true)}
-                                className="absolute bottom-1 right-1 p-2.5 bg-gray-900 text-white rounded-full hover:bg-black transition-all duration-200 shadow-md border-[3px] border-white active:scale-95"
+                                className="absolute bottom-1 right-1 p-2.5 bg-gray-900 text-white rounded-full hover:bg-black hover:shadow-lg transition-colors duration-200 shadow-md border-[3px] border-white"
                             >
                                 <Camera size={16} />
                             </button>
