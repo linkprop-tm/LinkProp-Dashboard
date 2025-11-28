@@ -252,17 +252,11 @@ export const Properties: React.FC = () => {
   };
 
   const handleToggleVisibility = async (id: string) => {
-      console.log('🔄 Toggle visibility for ID:', id);
       const property = properties.find(p => p.id === id);
-      console.log('📦 Property found:', property);
 
-      if (!property) {
-        console.error('❌ Property not found');
-        return;
-      }
+      if (!property) return;
 
       const newVisibility = property.isVisible ? 'Privada' : 'Publica';
-      console.log('🎯 New visibility:', newVisibility);
 
       setProperties(prevProps =>
           prevProps.map(p =>
@@ -271,20 +265,10 @@ export const Properties: React.FC = () => {
       );
 
       try {
-        console.log('📡 Calling API to update visibility...');
-        const result = await cambiarVisibilidadPropiedad(id, newVisibility);
-        console.log('✅ API call successful, result:', result);
-
-        console.log('🔄 Refetching properties from database...');
+        await cambiarVisibilidadPropiedad(id, newVisibility);
         await refetch();
-        console.log('✅ Refetch completed - visibility should now be updated in the UI');
       } catch (err) {
-        console.error('❌ Error updating property visibility:', err);
-        console.error('❌ Error details:', {
-          message: err instanceof Error ? err.message : 'Unknown error',
-          propertyId: id,
-          attemptedVisibility: newVisibility
-        });
+        console.error('Error updating property visibility:', err);
         setProperties(prevProps =>
             prevProps.map(p =>
                 p.id === id ? { ...p, isVisible: !p.isVisible } : p
