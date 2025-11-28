@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Building2, Users, Heart, Settings, LogOut, History, Zap } from 'lucide-react';
 import { useAuthContext } from '../lib/contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { Avatar } from './Avatar';
 
 interface SidebarProps {
   currentView: string;
@@ -13,6 +14,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
   const { user } = useAuthContext();
   const [userName, setUserName] = useState('Usuario');
   const [userEmail, setUserEmail] = useState('');
+  const [userPhoto, setUserPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -25,13 +27,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
 
     const { data, error } = await supabase
       .from('usuarios')
-      .select('full_name, email')
+      .select('full_name, email, foto_perfil_url')
       .eq('auth_id', user.id)
       .maybeSingle();
 
     if (data && !error) {
       setUserName(data.full_name || 'Usuario');
       setUserEmail(data.email || user.email || '');
+      setUserPhoto(data.foto_perfil_url || null);
     } else {
       setUserEmail(user.email || '');
     }
@@ -114,9 +117,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
 
       <div className="p-4 border-t border-gray-100 space-y-2">
         <div className="flex items-center gap-3 px-3 py-2">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-bold text-lg ring-2 ring-gray-100">
-            {userName.charAt(0).toUpperCase()}
-          </div>
+          <Avatar
+            src={userPhoto}
+            name={userName}
+            size="medium"
+            className="ring-2 ring-gray-100"
+          />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-gray-900 truncate">{userName}</p>
             <p className="text-xs text-gray-500 truncate">{userEmail}</p>
