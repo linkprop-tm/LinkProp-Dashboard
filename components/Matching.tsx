@@ -1,78 +1,116 @@
-
-import React, { useState } from 'react';
-import { 
-  Sparkles, Check, ArrowRight, X, MapPin, ArrowDown, ArrowUp
+import React, { useState, useEffect } from 'react';
+import {
+  Sparkles, Check, ArrowRight, X, MapPin, ArrowDown, ArrowUp, Loader2
 } from 'lucide-react';
 import { PieChart, Pie, Cell } from 'recharts';
-import { CLIENTS_DATA, PROPERTIES_GRID_DATA } from '../constants';
 import { AddPropertyModal } from './AddPropertyModal';
-import { Property } from '../types';
-
-// --- MOCK MATCHING LOGIC ---
-const MATCHES = CLIENTS_DATA.flatMap(client => {
-  const matchedProps = PROPERTIES_GRID_DATA
-    .sort(() => 0.5 - Math.random())
-    .slice(0, Math.floor(Math.random() * 5) + 5);
-
-  return matchedProps.map(prop => ({
-    id: `${client.id}-${prop.id}`,
-    client,
-    property: prop,
-    score: Math.floor(Math.random() * (99 - 70) + 70), 
-    status: ['new', 'sent', 'viewed', 'liked'][Math.floor(Math.random() * 4)],
-    reason: 'Ubicación y Precio'
-  }));
-}).sort((a, b) => b.score - a.score);
+import { Property, Client } from '../types';
+import { obtenerMatchesParaTodosLosUsuarios, UsuarioConMatches } from '../lib/api/matches';
+import { transformUsuarioToClient, transformPropiedadToProperty, MatchData, transformMatchToUI } from '../lib/adapters-matching';
 
 export const Matching: React.FC = () => {
-  // State for the Client Modal
   const [clientModalOpen, setClientModalOpen] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
 
-  // --- HELPER FOR MODAL ---
+  const [matchesData, setMatchesData] = useState<UsuarioConMatches[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadMatchesData();
+  }, []);
+
+  const loadMatchesData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await obtenerMatchesParaTodosLosUsuarios(70);
+      setMatchesData(data);
+    } catch (err) {
+      console.error('Error loading matches:', err);
+      setError('Error al cargar los datos de matching. Por favor, intente nuevamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleOpenClientModal = (clientId: string) => {
      setClientModalOpen(clientId);
   };
 
-  // VIEW: CLIENT CENTRIC CARDS
   const renderClientView = () => {
-    // Group matches by client
-    const clientGroups = Object.values(MATCHES.reduce((acc, match) => {
-      if (!acc[match.client.id]) acc[match.client.id] = { client: match.client, matches: [] };
-      acc[match.client.id].matches.push(match);
-      return acc;
-    }, {} as Record<string, { client: typeof CLIENTS_DATA[0], matches: typeof MATCHES }>));
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-primary-600 mx-auto mb-4" />
+            <p className="text-gray-600 font-medium">Calculando matches...</p>
+          </div>
+        </div>
+      );
+    }
 
-    // Sort Groups based on sortOrder (Count of matches)
-    const sortedGroups = clientGroups.sort((a, b) => {
-        const countA = a.matches.length;
-        const countB = b.matches.length;
-        return sortOrder === 'desc' ? countB - countA : countA - countB;
+    if (error) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center max-w-md">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <X className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Error al cargar datos</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button
+              onClick={loadMatchesData}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (matchesData.length === 0) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center max-w-md">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">No hay usuarios registrados</h3>
+            <p className="text-gray-600">Cuando agregues usuarios al sistema, aparecerán aquí con sus matches.</p>
+          </div>
+        </div>
+      );
+    }
+
+    const sortedGroups = [...matchesData].sort((a, b) => {
+      const countA = a.total_matches;
+      const countB = b.total_matches;
+      return sortOrder === 'desc' ? countB - countA : countA - countB;
     });
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-        {sortedGroups.map(({ client, matches }) => {
-          
-          // Calculate Distribution for Chart
-          const highMatches = matches.filter(m => m.score >= 90).length;
-          const medMatches = matches.filter(m => m.score >= 80 && m.score < 90).length;
-          const lowMatches = matches.filter(m => m.score >= 70 && m.score < 80).length;
+        {sortedGroups.map((usuarioData) => {
+          const client = transformUsuarioToClient(usuarioData.usuario);
+          const highMatches = usuarioData.matches_alta;
+          const medMatches = usuarioData.matches_media;
+          const lowMatches = usuarioData.matches_baja;
+          const totalMatches = usuarioData.total_matches;
 
           const chartData = [
-            { name: '+90% Match', value: highMatches, color: '#10b981' }, // emerald-500
-            { name: '+80% Match', value: medMatches, color: '#f59e0b' }, // amber-500
-            { name: '+70% Match', value: lowMatches, color: '#f43f5e' }, // rose-500
+            { name: '+90% Match', value: highMatches, color: '#10b981' },
+            { name: '+80% Match', value: medMatches, color: '#f59e0b' },
+            { name: '+70% Match', value: lowMatches, color: '#f43f5e' },
           ].filter(d => d.value > 0);
 
           return (
             <div key={client.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col overflow-hidden group">
-              
-              {/* Card Header & Budget */}
+
               <div className="p-7">
                 <div className="flex justify-between items-start">
-                   {/* Left: Client Info */}
                    <div className="flex items-center gap-5">
                       <div className="relative">
                          <img src={client.avatar} alt={client.name} className="w-16 h-16 rounded-full object-cover ring-4 ring-gray-50" />
@@ -92,12 +130,11 @@ export const Matching: React.FC = () => {
                       </div>
                    </div>
 
-                   {/* Right: Budget Display */}
                    <div className="text-right pl-4">
                       <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Presupuesto</p>
                       <div className="flex flex-col items-end">
                           <p className="text-2xl font-bold text-gray-900 tracking-tight leading-none">
-                            {client.searchParams.maxPrice.toLocaleString()}
+                            {client.searchParams.maxPrice > 0 ? client.searchParams.maxPrice.toLocaleString() : 'N/D'}
                           </p>
                           <p className="text-xs font-bold text-gray-400 mt-0.5">{client.searchParams.currency}</p>
                       </div>
@@ -105,42 +142,44 @@ export const Matching: React.FC = () => {
                 </div>
               </div>
 
-              {/* Divider */}
               <div className="h-px bg-gray-50 mx-7"></div>
 
-              {/* Stats Section */}
               <div className="px-7 py-6 flex items-center gap-8">
-                 
-                 {/* Chart */}
+
                  <div className="w-36 h-36 relative flex-shrink-0 flex items-center justify-center">
-                      <PieChart width={144} height={144}>
-                        <Pie
-                          data={chartData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={45}
-                          outerRadius={62}
-                          paddingAngle={5}
-                          dataKey="value"
-                          stroke="none"
-                        >
-                          {chartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    
-                    {/* Centered Total */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                       <span className="text-3xl font-bold text-gray-900 leading-none">{matches.length}</span>
-                       <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Matches</span>
-                    </div>
+                      {chartData.length > 0 ? (
+                        <>
+                          <PieChart width={144} height={144}>
+                            <Pie
+                              data={chartData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={45}
+                              outerRadius={62}
+                              paddingAngle={5}
+                              dataKey="value"
+                              stroke="none"
+                            >
+                              {chartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                          </PieChart>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                             <span className="text-3xl font-bold text-gray-900 leading-none">{totalMatches}</span>
+                             <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Matches</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center">
+                          <span className="text-3xl font-bold text-gray-300 leading-none">0</span>
+                          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Matches</span>
+                        </div>
+                      )}
                  </div>
 
-                 {/* Legend / Breakdown */}
                  <div className="flex-1 space-y-4">
-                    
-                    {/* Row 90+ */}
+
                     <div className="flex items-center justify-between group/row cursor-default">
                        <div className="flex items-center gap-3">
                           <div className="w-1.5 h-8 rounded-full bg-emerald-100 group-hover/row:bg-emerald-500 transition-colors duration-300"></div>
@@ -152,7 +191,6 @@ export const Matching: React.FC = () => {
                        <span className="text-xl font-bold text-gray-900">{highMatches}</span>
                     </div>
 
-                    {/* Row 80+ */}
                     <div className="flex items-center justify-between group/row cursor-default">
                        <div className="flex items-center gap-3">
                           <div className="w-1.5 h-8 rounded-full bg-amber-100 group-hover/row:bg-amber-500 transition-colors duration-300"></div>
@@ -164,7 +202,6 @@ export const Matching: React.FC = () => {
                        <span className="text-xl font-bold text-gray-900">{medMatches}</span>
                     </div>
 
-                    {/* Row 70+ */}
                     <div className="flex items-center justify-between group/row cursor-default">
                        <div className="flex items-center gap-3">
                           <div className="w-1.5 h-8 rounded-full bg-rose-100 group-hover/row:bg-rose-500 transition-colors duration-300"></div>
@@ -179,9 +216,8 @@ export const Matching: React.FC = () => {
                  </div>
               </div>
 
-              {/* Footer Action */}
               <div className="p-7 pt-2 mt-auto">
-                 <button 
+                 <button
                     onClick={() => handleOpenClientModal(client.id)}
                     className="w-full py-3.5 rounded-xl bg-gray-50 text-gray-600 font-bold text-xs uppercase tracking-widest hover:bg-gray-900 hover:text-white transition-all flex items-center justify-center gap-2 group-hover:shadow-lg"
                  >
@@ -196,24 +232,21 @@ export const Matching: React.FC = () => {
     );
   };
 
-  // --- RENDER MODAL CONTENT ---
   const renderClientModal = () => {
     if (!clientModalOpen) return null;
-    
-    const client = CLIENTS_DATA.find(c => c.id === clientModalOpen);
-    if (!client) return null;
 
-    const matches = MATCHES.filter(m => m.client.id === clientModalOpen);
-    
+    const usuarioData = matchesData.find(ud => ud.usuario.id === clientModalOpen);
+    if (!usuarioData) return null;
+
+    const client = transformUsuarioToClient(usuarioData.usuario);
+    const matches = usuarioData.matches.map(transformMatchToUI);
+
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-fade-in">
-         {/* Backdrop */}
          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={() => setClientModalOpen(null)}></div>
-         
-         {/* Modal Container */}
+
          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden animate-fade-in-up">
-            
-            {/* Header */}
+
             <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100 bg-white z-10">
                <div className="flex items-center gap-4">
                   <div className="relative">
@@ -227,7 +260,7 @@ export const Matching: React.FC = () => {
                      <p className="text-sm text-gray-500">{client.email}</p>
                   </div>
                </div>
-               
+
                <div className="flex items-center gap-4">
                   <div className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-lg">
                      {matches.length} Matches Encontrados
@@ -238,31 +271,45 @@ export const Matching: React.FC = () => {
                </div>
             </div>
 
-            {/* Single Scrollable List Content */}
             <div className="flex-1 overflow-y-auto custom-scrollbar p-8 bg-white">
-               {matches.map((match, index) => {
-                  
-                  let colorStart = '#10b981'; // emerald-500
-                  let colorEnd = '#34d399';   // emerald-400
+               {matches.length === 0 ? (
+                 <div className="flex items-center justify-center min-h-[400px]">
+                   <div className="text-center max-w-md">
+                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                       <Sparkles className="w-8 h-8 text-gray-400" />
+                     </div>
+                     <h3 className="text-lg font-bold text-gray-900 mb-2">Sin matches disponibles</h3>
+                     <p className="text-gray-600">Este usuario no tiene propiedades que coincidan con sus preferencias actualmente.</p>
+                   </div>
+                 </div>
+               ) : (
+                 matches.map((match, index) => {
+
+                  let colorStart = '#10b981';
+                  let colorEnd = '#34d399';
                   let textColor = 'text-emerald-700';
 
                   if (match.score < 90) {
-                     colorStart = '#f59e0b'; // amber-500
-                     colorEnd = '#fbbf24';   // amber-400
+                     colorStart = '#f59e0b';
+                     colorEnd = '#fbbf24';
                      textColor = 'text-amber-700';
                   }
                   if (match.score < 75) {
-                     colorStart = '#f43f5e'; // rose-500
-                     colorEnd = '#fb7185';   // rose-400
+                     colorStart = '#f43f5e';
+                     colorEnd = '#fb7185';
                      textColor = 'text-rose-700';
                   }
 
+                  const criterios = match.reason.split(', ');
+                  const tienePrecio = criterios.some(c => c.toLowerCase().includes('precio'));
+                  const tieneUbicacion = criterios.some(c => c.toLowerCase().includes('ubicación') || c.toLowerCase().includes('ubicacion'));
+                  const tieneAmenities = criterios.some(c => c.toLowerCase().includes('amenities'));
+
                   return (
                     <div key={match.id} className={`pb-12 ${index !== matches.length - 1 ? 'border-b border-gray-100 mb-12' : ''}`}>
-                       
+
                        <div className="flex flex-col xl:flex-row gap-8 items-stretch">
-                          
-                          {/* LEFT SIDE: PROPERTY - IMMERSIVE CARD STYLE */}
+
                           <div className="w-full xl:w-96 space-y-3 flex-shrink-0">
                              <div className="flex justify-between items-center px-1">
                                 <span className="font-bold text-gray-900 text-lg">
@@ -270,13 +317,13 @@ export const Matching: React.FC = () => {
                                 </span>
                              </div>
 
-                             <div 
+                             <div
                                 className="relative aspect-[3/4] rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 group cursor-pointer border border-gray-200"
                                 onClick={() => setEditingProperty(match.property)}
                              >
                                 <img src={match.property.imageUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-                                
+
                                 <div className="absolute top-4 left-4">
                                      <span className="bg-emerald-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md shadow-sm flex items-center gap-1.5 border border-white/20">
                                         <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Disponible
@@ -291,7 +338,7 @@ export const Matching: React.FC = () => {
                                      <p className="text-xs font-medium text-white/80 flex items-center gap-1 mb-4">
                                         <MapPin size={12} /> {match.property.address}, {match.property.neighborhood}
                                      </p>
-                                     
+
                                      <div className="flex items-center justify-between border-t border-white/20 pt-3 mt-2">
                                         <div className="flex gap-3 text-xs font-bold text-white/90">
                                            <span>{match.property.totalArea} m²</span>
@@ -308,51 +355,51 @@ export const Matching: React.FC = () => {
                              </div>
                           </div>
 
-                          {/* RIGHT SIDE: ANALYSIS */}
                           <div className="flex-1 flex flex-col gap-4">
                              <div className="font-bold text-gray-400 uppercase tracking-wider text-right xl:text-left pt-1 flex-shrink-0 text-sm">
                                 ANÁLISIS DE COINCIDENCIA
                              </div>
 
                              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-6 flex-shrink-0 flex-1 flex flex-col justify-center">
-                                {/* Item 1 */}
                                 <div>
                                    <div className="flex justify-between text-sm mb-2">
                                       <span className="text-gray-900 font-bold">Presupuesto</span>
-                                      <span className="text-emerald-600 font-bold flex items-center gap-1"><Check size={14}/> Dentro del rango</span>
+                                      <span className={`font-bold flex items-center gap-1 ${tienePrecio ? 'text-emerald-600' : 'text-gray-400'}`}>
+                                        {tienePrecio ? <><Check size={14}/> Dentro del rango</> : 'Fuera del rango'}
+                                      </span>
                                    </div>
                                    <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                                      <div className="h-full bg-emerald-500 w-full rounded-full"></div>
+                                      <div className={`h-full rounded-full ${tienePrecio ? 'bg-emerald-500 w-full' : 'bg-gray-300 w-[30%]'}`}></div>
                                    </div>
                                 </div>
 
-                                {/* Item 2 */}
                                 <div>
                                    <div className="flex justify-between text-sm mb-2">
                                       <span className="text-gray-900 font-bold">Ubicación (Barrio)</span>
-                                      <span className="text-emerald-600 font-bold flex items-center gap-1"><Check size={14}/> Zona exacta</span>
+                                      <span className={`font-bold flex items-center gap-1 ${tieneUbicacion ? 'text-emerald-600' : 'text-gray-400'}`}>
+                                        {tieneUbicacion ? <><Check size={14}/> Zona coincidente</> : 'Zona diferente'}
+                                      </span>
                                    </div>
                                    <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                                      <div className="h-full bg-emerald-500 w-[95%] rounded-full"></div>
+                                      <div className={`h-full rounded-full ${tieneUbicacion ? 'bg-emerald-500 w-[95%]' : 'bg-gray-300 w-[30%]'}`}></div>
                                    </div>
                                 </div>
 
-                                {/* Item 3 */}
                                 <div>
                                    <div className="flex justify-between text-sm mb-2">
                                       <span className="text-gray-700 font-medium">Amenities</span>
-                                      <span className="text-amber-600 font-bold flex items-center gap-1">Falta Cochera</span>
+                                      <span className={`font-bold flex items-center gap-1 ${tieneAmenities ? 'text-emerald-600' : 'text-gray-400'}`}>
+                                        {tieneAmenities ? 'Coinciden' : 'No especificado'}
+                                      </span>
                                    </div>
                                    <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                                      <div className="h-full bg-amber-500 w-[70%] rounded-full"></div>
+                                      <div className={`h-full rounded-full ${tieneAmenities ? 'bg-emerald-500 w-[70%]' : 'bg-gray-300 w-[40%]'}`}></div>
                                    </div>
                                 </div>
                              </div>
 
-                             {/* MATCH SCORE CARD (TEXT ONLY VERSION) - COMPACT */}
                              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center p-6 relative overflow-hidden group hover:shadow-md transition-all duration-500 min-h-[160px] flex-1">
-                                
-                                {/* Background Elements for Harmony */}
+
                                 <div className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-current to-transparent opacity-[0.03] rounded-bl-full -mr-10 -mt-10 transition-opacity group-hover:opacity-[0.05] ${textColor}`}></div>
                                 <div className={`absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-current to-transparent opacity-[0.03] rounded-tr-full -ml-8 -mb-8 transition-opacity group-hover:opacity-[0.05] ${textColor}`}></div>
 
@@ -361,7 +408,7 @@ export const Matching: React.FC = () => {
                                         {match.score}
                                         <span className="text-3xl mt-1.5 opacity-40 font-bold tracking-normal">%</span>
                                     </div>
-                                    
+
                                     <div className="mt-2">
                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
                                           PUNTUACIÓN GENERAL
@@ -375,7 +422,8 @@ export const Matching: React.FC = () => {
                        </div>
                     </div>
                   );
-               })}
+               })
+               )}
             </div>
 
          </div>
@@ -385,8 +433,7 @@ export const Matching: React.FC = () => {
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8 animate-fade-in pb-24">
-      
-      {/* Header & Toolbar - SYMMETRICAL LAYOUT */}
+
       <div className="flex flex-col gap-6">
          <div className="flex flex-col md:flex-row justify-between items-end gap-4 mb-2">
             <div>
@@ -397,14 +444,13 @@ export const Matching: React.FC = () => {
                   Analiza la compatibilidad entre tu cartera de clientes y propiedades.
                </p>
             </div>
-            
-            {/* Sorting Buttons */}
+
             <div className="flex bg-gray-100 p-1.5 rounded-xl self-start md:self-auto">
                <button
                   onClick={() => setSortOrder('desc')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                     sortOrder === 'desc' 
-                     ? 'bg-white text-gray-900 shadow-sm' 
+                     sortOrder === 'desc'
+                     ? 'bg-white text-gray-900 shadow-sm'
                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                   }`}
                >
@@ -413,8 +459,8 @@ export const Matching: React.FC = () => {
                <button
                   onClick={() => setSortOrder('asc')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                     sortOrder === 'asc' 
-                     ? 'bg-white text-gray-900 shadow-sm' 
+                     sortOrder === 'asc'
+                     ? 'bg-white text-gray-900 shadow-sm'
                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                   }`}
                >
@@ -424,18 +470,15 @@ export const Matching: React.FC = () => {
          </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="min-h-[500px]">
          {renderClientView()}
       </div>
 
-      {/* Client Modal */}
       {renderClientModal()}
 
-      {/* Edit Property Modal - NEW */}
       {editingProperty && (
-        <AddPropertyModal 
-          isOpen={true} 
+        <AddPropertyModal
+          isOpen={true}
           onClose={() => setEditingProperty(null)}
           initialData={editingProperty}
         />

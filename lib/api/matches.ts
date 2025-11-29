@@ -81,6 +81,71 @@ export async function calcularMatchIndividual(
   return calcularMatch(propiedad, usuario);
 }
 
+export interface MatchConPropiedad {
+  id: string;
+  usuario: Usuario;
+  propiedad: Propiedad;
+  porcentaje_match: number;
+  criterios_coincidentes: string[];
+}
+
+export interface UsuarioConMatches {
+  usuario: Usuario;
+  matches: MatchConPropiedad[];
+  total_matches: number;
+  matches_alta: number;
+  matches_media: number;
+  matches_baja: number;
+}
+
+export async function obtenerMatchesParaTodosLosUsuarios(
+  porcentaje_minimo: number = 70
+): Promise<UsuarioConMatches[]> {
+  const [usuarios, todasPropiedades] = await Promise.all([
+    obtenerUsuarios(),
+    obtenerPropiedades()
+  ]);
+
+  const propiedades = todasPropiedades.filter(
+    p => p.visibilidad === 'Publica' && p.estado === 'Disponible'
+  );
+
+  const resultados: UsuarioConMatches[] = usuarios.map(usuario => {
+    const propiedades_match = filtrarPropiedadesPorMatch(
+      propiedades,
+      usuario,
+      porcentaje_minimo
+    );
+
+    const matches: MatchConPropiedad[] = propiedades_match.map(prop => ({
+      id: `${usuario.id}-${prop.id}`,
+      usuario,
+      propiedad: prop,
+      porcentaje_match: prop.porcentaje_match,
+      criterios_coincidentes: prop.criterios_coincidentes
+    }));
+
+    const matches_alta = matches.filter(m => m.porcentaje_match >= 90).length;
+    const matches_media = matches.filter(
+      m => m.porcentaje_match >= 80 && m.porcentaje_match < 90
+    ).length;
+    const matches_baja = matches.filter(
+      m => m.porcentaje_match >= 70 && m.porcentaje_match < 80
+    ).length;
+
+    return {
+      usuario,
+      matches,
+      total_matches: matches.length,
+      matches_alta,
+      matches_media,
+      matches_baja
+    };
+  });
+
+  return resultados;
+}
+
 export async function obtenerEstadisticasMatches() {
   const [todasPropiedades, usuarios] = await Promise.all([
     obtenerPropiedades(),
