@@ -579,28 +579,28 @@ export const Clients: React.FC = () => {
                          </div>
 
                          {/* Requirements Tags */}
-                         <div className="flex flex-wrap gap-2 pt-2">
+                         <div className="grid grid-cols-2 gap-2 pt-2">
                              <span className="px-2 py-1 bg-gray-50 text-gray-500 text-[10px] font-bold uppercase rounded-md border border-gray-100 flex items-center gap-1">
-                                 <LayoutGrid size={20} /> {client.searchParams.environments} Ambientes
+                                 <LayoutGrid size={10} /> {client.searchParams.environments} amb
                              </span>
-                             {client.searchParams.hasGarage && (
+                             {client.searchParams.hasGarage ? (
                                 <span className="px-2 py-1 bg-orange-50 text-orange-600 text-[10px] font-bold uppercase rounded-md border border-orange-100 flex items-center gap-1">
-                                    <Car size={20} /> Cochera
+                                    <Car size={10} /> Cochera
                                 </span>
-                             )}
-                             {client.searchParams.isCreditSuitable && (
+                             ) : <div />}
+                             {client.searchParams.isCreditSuitable ? (
                                 <span className="px-2 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase rounded-md border border-green-100 flex items-center gap-1">
-                                    <CreditCard size={20} /> Apto Crédito
+                                    <CreditCard size={10} /> Apto Crédito
                                 </span>
-                             )}
-                             {client.searchParams.isProfessionalSuitable && (
+                             ) : <div />}
+                             {client.searchParams.isProfessionalSuitable ? (
                                 <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase rounded-md border border-blue-100 flex items-center gap-1">
-                                    <Briefcase size={20} /> Apto Profesional
+                                    <Briefcase size={10} /> Apto Profesional
                                 </span>
-                             )}
+                             ) : <div />}
                              {client.searchParams.isPetFriendly && (
                                 <span className="px-2 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase rounded-md border border-green-100 flex items-center gap-1">
-                                    <Cat size={20} /> Apto Mascotas
+                                    <Cat size={10} /> Apto Mascotas
                                 </span>
                              )}
                          </div>
