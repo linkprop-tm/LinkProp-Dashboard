@@ -8,7 +8,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { METRICS, CHART_DATA, CONVERSION_DATA, CLIENTS_DATA, PROPERTIES_GRID_DATA } from '../constants';
 import { obtenerPropiedadesDisponibles } from '../lib/api/properties';
 import { obtenerClientesActivos, obtenerUltimosClientes } from '../lib/api/users';
-import { contarRelacionesPorEtapa } from '../lib/api/relationships';
+import { contarRelacionesPorEtapa, obtenerUltimosIntereses, type InteresReciente } from '../lib/api/relationships';
 import { usuarioToClient } from '../lib/adapters';
 import type { Client } from '../types';
 
@@ -18,6 +18,7 @@ export const Dashboard: React.FC = () => {
   const [clientesActivos, setClientesActivos] = useState<number>(0);
   const [interesesMes, setInteresesMes] = useState<number>(0);
   const [ultimosClientes, setUltimosClientes] = useState<Client[]>([]);
+  const [ultimosIntereses, setUltimosIntereses] = useState<InteresReciente[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -25,6 +26,7 @@ export const Dashboard: React.FC = () => {
     loadClientesActivos();
     loadInteresesMes();
     loadUltimosClientes();
+    loadUltimosIntereses();
   }, []);
 
   const loadPropiedadesDisponibles = async () => {
@@ -61,6 +63,15 @@ export const Dashboard: React.FC = () => {
       setUltimosClientes(clientes);
     } catch (error) {
       console.error('Error loading ultimos clientes:', error);
+    }
+  };
+
+  const loadUltimosIntereses = async () => {
+    try {
+      const intereses = await obtenerUltimosIntereses(5);
+      setUltimosIntereses(intereses);
+    } catch (error) {
+      console.error('Error loading ultimos intereses:', error);
     }
   };
 
@@ -312,29 +323,47 @@ export const Dashboard: React.FC = () => {
           
           <div className="flex-1 overflow-y-auto max-h-[350px] p-0">
             <div className="divide-y divide-gray-50">
-                {VISIT_REQUESTS.map((req) => (
-                    <div key={req.id} className="p-4 hover:bg-gray-50 transition-colors flex items-center gap-4 group cursor-default">
-                       {/* Visual Connection: Client + Property */}
-                       <div className="relative flex-shrink-0">
-                          <img src={req.property.imageUrl} className="w-12 h-12 rounded-lg object-cover shadow-sm ring-1 ring-gray-100" alt="" />
+                {ultimosIntereses.length > 0 ? (
+                  ultimosIntereses.map((interes) => {
+                    const imagenPropiedad = interes.propiedad.imagenes?.[0] || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
+                    const avatarUsuario = interes.usuario.foto_perfil_url;
+                    const nombreUsuario = interes.usuario.full_name || 'Usuario';
+                    const tituloPropiedad = interes.propiedad.titulo || 'Propiedad';
+
+                    return (
+                      <div key={interes.id} className="p-4 hover:bg-gray-50 transition-colors flex items-center gap-4 group cursor-default">
+                        <div className="relative flex-shrink-0">
+                          <img src={imagenPropiedad} className="w-12 h-12 rounded-lg object-cover shadow-sm ring-1 ring-gray-100" alt={tituloPropiedad} />
                           <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full ring-2 ring-white overflow-hidden shadow-sm">
-                              <img src={req.client.avatar} className="w-full h-full object-cover" alt="" />
+                            {avatarUsuario ? (
+                              <img src={avatarUsuario} className="w-full h-full object-cover" alt={nombreUsuario} />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-xs font-bold">
+                                {nombreUsuario.charAt(0).toUpperCase()}
+                              </div>
+                            )}
                           </div>
-                       </div>
-                       
-                       <div className="flex-1 min-w-0">
+                        </div>
+
+                        <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-center mb-0.5">
-                             <h4 className="text-sm font-bold text-gray-900 truncate">{req.client.name}</h4>
-                             <span className="text-[10px] font-medium text-gray-400">
-                                {req.time}
-                             </span>
+                            <h4 className="text-sm font-bold text-gray-900 truncate">{nombreUsuario}</h4>
+                            <span className="text-[10px] font-medium text-gray-400">
+                              {interes.tiempo_transcurrido}
+                            </span>
                           </div>
                           <p className="text-xs text-gray-500 truncate">
-                             Interesado en <span className="font-semibold text-gray-700">{req.property.title}</span>
+                            Interesado en <span className="font-semibold text-gray-700">{tituloPropiedad}</span>
                           </p>
-                       </div>
-                    </div>
-                ))}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                    No hay intereses recientes
+                  </div>
+                )}
             </div>
           </div>
           

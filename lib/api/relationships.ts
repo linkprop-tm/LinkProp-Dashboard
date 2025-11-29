@@ -244,6 +244,60 @@ export async function obtenerConteoInteresesPorUsuario(): Promise<Record<string,
   return conteos;
 }
 
+export interface InteresReciente {
+  id: string;
+  propiedad: Propiedad;
+  usuario: Usuario;
+  fecha_interes: string;
+  tiempo_transcurrido?: string;
+}
+
+export async function obtenerUltimosIntereses(limite: number = 10): Promise<InteresReciente[]> {
+  const { data, error } = await supabase
+    .from('propiedades_usuarios')
+    .select(`
+      id,
+      propiedad_id,
+      usuario_id,
+      fecha_interes,
+      propiedades (*),
+      usuarios (*)
+    `)
+    .eq('etapa', 'Interes')
+    .order('fecha_interes', { ascending: false })
+    .limit(limite);
+
+  if (error) throw error;
+
+  return (data || [])
+    .filter((rel: any) => rel.propiedades && rel.usuarios)
+    .map((rel: any) => {
+      const fechaInteres = new Date(rel.fecha_interes || new Date());
+      const ahora = new Date();
+      const diffMs = ahora.getTime() - fechaInteres.getTime();
+      const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDias = Math.floor(diffHoras / 24);
+
+      let tiempoTranscurrido = '';
+      if (diffHoras < 1) {
+        const diffMinutos = Math.floor(diffMs / (1000 * 60));
+        tiempoTranscurrido = `${diffMinutos} minuto${diffMinutos !== 1 ? 's' : ''}`;
+      } else if (diffHoras < 24) {
+        tiempoTranscurrido = `${diffHoras} hora${diffHoras !== 1 ? 's' : ''}`;
+      } else {
+        tiempoTranscurrido = `${diffDias} día${diffDias !== 1 ? 's' : ''}`;
+      }
+
+      return {
+        id: rel.id,
+        propiedad: rel.propiedades as Propiedad,
+        usuario: rel.usuarios as Usuario,
+        fecha_interes: rel.fecha_interes || new Date().toISOString(),
+        tiempo_transcurrido: tiempoTranscurrido
+      };
+    });
+}
+
 export async function obtenerVisitasPorPropiedad(): Promise<PropiedadConVisitantes[]> {
   const { data, error } = await supabase
     .from('propiedades_usuarios')
