@@ -51,22 +51,6 @@ export function calcularMatch(propiedad: Propiedad, usuario: Usuario): MatchScor
     }
   }
 
-  if (usuario.preferencias_dormitorios_min !== null) {
-    puntos_totales += 10;
-    if (propiedad.dormitorios >= usuario.preferencias_dormitorios_min) {
-      puntos_obtenidos += 10;
-      criterios_coincidentes.push('Dormitorios');
-    }
-  }
-
-  if (usuario.preferencias_banos_min !== null) {
-    puntos_totales += 10;
-    if (propiedad.banos >= usuario.preferencias_banos_min) {
-      puntos_obtenidos += 10;
-      criterios_coincidentes.push('Baños');
-    }
-  }
-
   const porcentaje = puntos_totales > 0 ? Math.round((puntos_obtenidos / puntos_totales) * 100) : 0;
 
   return {

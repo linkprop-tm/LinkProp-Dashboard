@@ -10,8 +10,6 @@ export interface CreateUsuarioData {
   preferencias_precio_min?: number;
   preferencias_precio_max?: number;
   preferencias_ubicacion?: string[];
-  preferencias_dormitorios_min?: number;
-  preferencias_banos_min?: number;
 }
 
 export interface UpdateUsuarioData extends Partial<CreateUsuarioData> {
@@ -127,9 +125,7 @@ export async function actualizarPreferencias(
     'preferencias_operacion' |
     'preferencias_precio_min' |
     'preferencias_precio_max' |
-    'preferencias_ubicacion' |
-    'preferencias_dormitorios_min' |
-    'preferencias_banos_min'
+    'preferencias_ubicacion'
   >>
 ) {
   return actualizarUsuario({ id: usuario_id, ...preferencias });

@@ -60,10 +60,7 @@ export interface Usuario {
   preferencias_precio_min: number | null;
   preferencias_precio_max: number | null;
   preferencias_ubicacion: string[];
-  preferencias_dormitorios_min: number | null;
-  preferencias_banos_min: number | null;
   preferencias_m2_min: number | null;
-  preferencias_m2_max: number | null;
   preferencias_ambientes: string | null;
   preferencias_amenities: string[];
   preferencias_antiguedad: string[];

@@ -26,11 +26,11 @@ export function usuarioToClient(usuario: Usuario): Client {
       neighborhoods: usuario.preferencias_ubicacion || [],
       operationType: usuario.preferencias_operacion || 'Venta',
       propertyTypes: usuario.preferencias_tipo || [],
-      bedrooms: usuario.preferencias_dormitorios_min?.toString() || '',
-      bathrooms: usuario.preferencias_banos_min?.toString() || '',
+      bedrooms: '',
+      bathrooms: '',
       amenities: usuario.preferencias_amenities || [],
       minArea: usuario.preferencias_m2_min || undefined,
-      maxArea: usuario.preferencias_m2_max || undefined,
+      maxArea: undefined,
       antiquity: usuario.preferencias_antiguedad || [],
       hasGarage: usuario.preferencias_cochera || false,
       isCreditSuitable: usuario.preferencias_apto_credito || false,
@@ -57,14 +57,7 @@ export function clientToUsuario(client: Client): Partial<Usuario> {
     preferencias_ubicacion: client.searchParams.location
       ? [client.searchParams.location]
       : [],
-    preferencias_dormitorios_min: client.searchParams.bedrooms
-      ? parseInt(client.searchParams.bedrooms.replace('+', ''))
-      : null,
-    preferencias_banos_min: client.searchParams.bathrooms
-      ? parseInt(client.searchParams.bathrooms.replace('+', ''))
-      : null,
     preferencias_m2_min: client.searchParams.minArea || null,
-    preferencias_m2_max: client.searchParams.maxArea || null,
     preferencias_ambientes: client.searchParams.environments?.toString() || null,
     preferencias_amenities: client.searchParams.amenities || [],
     preferencias_antiguedad: client.searchParams.antiquity || [],
