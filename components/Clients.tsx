@@ -548,21 +548,13 @@ export const Clients: React.FC = () => {
                     {/* Search Params Summary */}
                     <div className="p-6 space-y-4 flex-1">
                          {/* Location & Type */}
-                         <div className="flex items-start gap-3">
-                             <div className="p-2 bg-blue-50 text-primary-600 rounded-lg shrink-0">
-                                 <Home size={16} />
-                             </div>
-                             <div>
-                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Búsqueda</p>
-                                 <div className="flex items-start gap-2">
-                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase shrink-0 ${client.searchParams.operationType === 'Alquiler' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                        {client.searchParams.operationType || 'Venta'}
-                                     </span>
-                                     <p className="text-sm font-bold text-gray-700 leading-tight">
-                                        {client.searchParams.type} en {formatNeighborhoods(client.searchParams.neighborhoods, client.searchParams.location)}
-                                     </p>
-                                 </div>
-                             </div>
+                         <div className="flex items-start gap-2">
+                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase shrink-0 ${client.searchParams.operationType === 'Alquiler' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                {client.searchParams.operationType || 'Venta'}
+                             </span>
+                             <p className="text-sm font-bold text-gray-700 leading-tight">
+                                {client.searchParams.type} en {formatNeighborhoods(client.searchParams.neighborhoods, client.searchParams.location)}
+                             </p>
                          </div>
 
                          {/* Budget */}
