@@ -643,7 +643,7 @@ export const Clients: React.FC = () => {
                              onClick={() => setEditingClient(client)}
                              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gray-900 hover:bg-black text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-gray-900/20 active:scale-95 transition-all"
                         >
-                             Editar <Edit2 size={14} />
+                             Editar cliente <Edit2 size={14} />
                         </button>
                     </div>
 
