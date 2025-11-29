@@ -112,8 +112,8 @@ export const Matching: React.FC = () => {
               <div className="p-7">
                 <div className="flex justify-between items-start">
                    <div className="flex items-center gap-5">
-                      <div className="relative">
-                         <img src={client.avatar} alt={client.name} className="w-16 h-16 rounded-full object-cover ring-4 ring-gray-50" />
+                      <div className="relative flex-shrink-0 w-16 h-16">
+                         <img src={client.avatar} alt={client.name} className="w-full h-full rounded-full object-cover ring-4 ring-gray-50" />
                       </div>
                       <div>
                          <h3 className="font-bold text-xl text-gray-900 leading-tight mb-1.5">{client.name}</h3>
