@@ -125,9 +125,25 @@ export function useAuth() {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    setAuthState({ user: null, role: null, loading: false });
+    console.log('[signOut] Starting logout process...');
+
+    try {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error('[signOut] Supabase signOut error:', error);
+        throw error;
+      }
+
+      console.log('[signOut] Supabase signOut successful');
+      setAuthState({ user: null, role: null, loading: false });
+      console.log('[signOut] Local state cleared');
+    } catch (error) {
+      console.error('[signOut] Error during logout:', error);
+      console.log('[signOut] Forcing local state cleanup despite error');
+      setAuthState({ user: null, role: null, loading: false });
+      throw error;
+    }
   };
 
   return {

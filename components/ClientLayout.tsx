@@ -308,6 +308,8 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const [profileSaveError, setProfileSaveError] = useState('');
   const [preferencesSaveSuccess, setPreferencesSaveSuccess] = useState(false);
   const [preferencesSaveError, setPreferencesSaveError] = useState('');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
 
   // Fetch user data on mount
   useEffect(() => {
@@ -463,6 +465,24 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
       setPreferencesSaveError(error.message || 'Error al guardar las preferencias');
     } finally {
       setSavingPreferences(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    console.log('[ClientLayout] Logout button clicked');
+    setLogoutError('');
+    setIsLoggingOut(true);
+
+    try {
+      console.log('[ClientLayout] Calling onLogout function...');
+      await onLogout();
+      console.log('[ClientLayout] Logout successful');
+    } catch (error: any) {
+      console.error('[ClientLayout] Logout error:', error);
+      setLogoutError(error.message || 'Error al cerrar sesión');
+      setTimeout(() => setLogoutError(''), 5000);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -1188,16 +1208,26 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
 
                         <div className="h-px bg-gray-100"></div>
 
-                        <button 
-                            onClick={onLogout}
-                            className="w-full flex items-center justify-between p-3 bg-red-50 hover:bg-red-100 rounded-xl transition-all group border border-transparent hover:border-red-200"
+                        <button
+                            onClick={handleLogout}
+                            disabled={isLoggingOut}
+                            className="w-full flex items-center justify-between p-3 bg-red-50 hover:bg-red-100 rounded-xl transition-all group border border-transparent hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <div className="flex items-center gap-3">
-                                <LogOut size={18} className="text-red-600" />
-                                <span className="text-sm font-bold text-red-700">Cerrar Sesión</span>
+                                <LogOut size={18} className={isLoggingOut ? "text-red-600 animate-pulse" : "text-red-600"} />
+                                <span className="text-sm font-bold text-red-700">
+                                  {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar Sesión'}
+                                </span>
                             </div>
-                            <ChevronRight size={16} className="text-red-400 group-hover:text-red-500" />
+                            {!isLoggingOut && <ChevronRight size={16} className="text-red-400 group-hover:text-red-500" />}
                         </button>
+
+                        {logoutError && (
+                          <div className="mt-3 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+                            <AlertCircle size={16} className="text-red-600 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-red-800">{logoutError}</p>
+                          </div>
+                        )}
                     </div>
                  </div>
 
