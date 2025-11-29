@@ -217,6 +217,16 @@ export async function obtenerInteresesPorPropiedad(): Promise<PropiedadConIntere
   return Array.from(propiedadesMap.values());
 }
 
+export async function contarRelacionesPorEtapa(etapa: EtapaRelacion) {
+  const { count, error } = await supabase
+    .from('propiedades_usuarios')
+    .select('*', { count: 'exact', head: true })
+    .eq('etapa', etapa);
+
+  if (error) throw error;
+  return count || 0;
+}
+
 export async function obtenerVisitasPorPropiedad(): Promise<PropiedadConVisitantes[]> {
   const { data, error } = await supabase
     .from('propiedades_usuarios')

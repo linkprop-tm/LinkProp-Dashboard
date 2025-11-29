@@ -8,16 +8,19 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { METRICS, CHART_DATA, CONVERSION_DATA, CLIENTS_DATA, PROPERTIES_GRID_DATA } from '../constants';
 import { obtenerPropiedadesDisponibles } from '../lib/api/properties';
 import { obtenerClientesActivos } from '../lib/api/users';
+import { contarRelacionesPorEtapa } from '../lib/api/relationships';
 
 export const Dashboard: React.FC = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [propiedadesDisponibles, setPropiedadesDisponibles] = useState<number>(0);
   const [clientesActivos, setClientesActivos] = useState<number>(0);
+  const [interesesMes, setInteresesMes] = useState<number>(0);
 
   useEffect(() => {
     setIsMounted(true);
     loadPropiedadesDisponibles();
     loadClientesActivos();
+    loadInteresesMes();
   }, []);
 
   const loadPropiedadesDisponibles = async () => {
@@ -38,6 +41,15 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const loadInteresesMes = async () => {
+    try {
+      const count = await contarRelacionesPorEtapa('Interes');
+      setInteresesMes(count);
+    } catch (error) {
+      console.error('Error loading intereses:', error);
+    }
+  };
+
   // Generate mock visit requests combining properties and clients for the "Intereses" mini-view
   const VISIT_REQUESTS = PROPERTIES_GRID_DATA.slice(0, 5).map((prop, index) => {
      const client = CLIENTS_DATA[index % CLIENTS_DATA.length];
@@ -55,7 +67,7 @@ export const Dashboard: React.FC = () => {
       {/* Section A: Metrics Cards (Modern Redesign) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {METRICS.map((metric, index) => {
-          const displayValue = index === 0 ? propiedadesDisponibles : index === 1 ? clientesActivos : metric.value;
+          const displayValue = index === 0 ? propiedadesDisponibles : index === 1 ? clientesActivos : index === 2 ? interesesMes : metric.value;
           const Icon = 
             metric.iconType === 'building' ? Building :
             metric.iconType === 'users' ? Users :
