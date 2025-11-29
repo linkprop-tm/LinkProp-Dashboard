@@ -6,6 +6,18 @@ export interface MatchScore {
   criterios_coincidentes: string[];
 }
 
+export interface CriterioAnalisis {
+  porcentaje: number;
+  estado: 'coincide' | 'no_coincide' | 'no_especificado';
+  texto: string;
+}
+
+export interface AnalisisTop3 {
+  presupuesto: CriterioAnalisis;
+  ubicacion: CriterioAnalisis;
+  ambientes: CriterioAnalisis;
+}
+
 export function cumpleFiltrosObligatorios(propiedad: Propiedad, usuario: Usuario): boolean {
   if (usuario.preferencias_tipo && usuario.preferencias_tipo.length > 0) {
     if (!usuario.preferencias_tipo.includes(propiedad.tipo)) {
@@ -227,4 +239,147 @@ export function obtenerUsuariosQueMatchean(
     })
     .filter(item => item.porcentaje_match >= porcentaje_minimo)
     .sort((a, b) => b.porcentaje_match - a.porcentaje_match);
+}
+
+export function analizarTop3Criterios(propiedad: Propiedad, usuario: Usuario): AnalisisTop3 {
+  const analisis: AnalisisTop3 = {
+    presupuesto: { porcentaje: 0, estado: 'no_especificado', texto: 'No especificado' },
+    ubicacion: { porcentaje: 0, estado: 'no_especificado', texto: 'Sin preferencias' },
+    ambientes: { porcentaje: 0, estado: 'no_especificado', texto: 'No especificado' }
+  };
+
+  if (usuario.preferencias_precio_min !== null || usuario.preferencias_precio_max !== null) {
+    const precio_min = usuario.preferencias_precio_min ?? 0;
+    const precio_max = usuario.preferencias_precio_max ?? Infinity;
+
+    if (propiedad.precio >= precio_min && propiedad.precio <= precio_max) {
+      analisis.presupuesto = {
+        porcentaje: 100,
+        estado: 'coincide',
+        texto: 'Dentro del rango'
+      };
+    } else if (propiedad.precio > precio_max) {
+      const exceso_porcentaje = (propiedad.precio - precio_max) / precio_max;
+
+      if (exceso_porcentaje <= 0.05) {
+        analisis.presupuesto = {
+          porcentaje: 75,
+          estado: 'coincide',
+          texto: '5% por encima del rango'
+        };
+      } else if (exceso_porcentaje <= 0.10) {
+        analisis.presupuesto = {
+          porcentaje: 50,
+          estado: 'no_coincide',
+          texto: '10% por encima del rango'
+        };
+      } else if (exceso_porcentaje <= 0.20) {
+        analisis.presupuesto = {
+          porcentaje: 25,
+          estado: 'no_coincide',
+          texto: '20% por encima del rango'
+        };
+      } else {
+        analisis.presupuesto = {
+          porcentaje: 10,
+          estado: 'no_coincide',
+          texto: 'Fuera del rango'
+        };
+      }
+    } else if (propiedad.precio < precio_min) {
+      const deficit_porcentaje = (precio_min - propiedad.precio) / precio_min;
+
+      if (deficit_porcentaje <= 0.10) {
+        analisis.presupuesto = {
+          porcentaje: 85,
+          estado: 'coincide',
+          texto: '10% por debajo del rango'
+        };
+      } else if (deficit_porcentaje <= 0.20) {
+        analisis.presupuesto = {
+          porcentaje: 70,
+          estado: 'coincide',
+          texto: '20% por debajo del rango'
+        };
+      } else {
+        analisis.presupuesto = {
+          porcentaje: 50,
+          estado: 'coincide',
+          texto: 'Por debajo del rango'
+        };
+      }
+    }
+  }
+
+  if (usuario.preferencias_ubicacion && usuario.preferencias_ubicacion.length > 0) {
+    const ubicacionCompleta = `${propiedad.direccion} ${propiedad.barrio} ${propiedad.provincia}`.toLowerCase();
+    const expandedNeighborhoods = expandNeighborhoods(usuario.preferencias_ubicacion);
+    const ubicacion_match = expandedNeighborhoods.some(loc =>
+      ubicacionCompleta.includes(loc.toLowerCase())
+    );
+
+    if (ubicacion_match) {
+      analisis.ubicacion = {
+        porcentaje: 100,
+        estado: 'coincide',
+        texto: 'Zona coincidente'
+      };
+    } else {
+      analisis.ubicacion = {
+        porcentaje: 0,
+        estado: 'no_coincide',
+        texto: 'Zona diferente'
+      };
+    }
+  }
+
+  if (usuario.preferencias_ambientes) {
+    const ambientes_preferidos = usuario.preferencias_ambientes;
+
+    if (ambientes_preferidos.includes('+')) {
+      const min_ambientes = parseInt(ambientes_preferidos.replace('+', ''));
+      if (propiedad.ambientes >= min_ambientes) {
+        analisis.ambientes = {
+          porcentaje: 100,
+          estado: 'coincide',
+          texto: 'Coincidencia exacta'
+        };
+      } else if (propiedad.ambientes === min_ambientes - 1) {
+        analisis.ambientes = {
+          porcentaje: 60,
+          estado: 'coincide',
+          texto: 'Cercano (-1 ambiente)'
+        };
+      } else {
+        analisis.ambientes = {
+          porcentaje: 25,
+          estado: 'no_coincide',
+          texto: 'Menos ambientes'
+        };
+      }
+    } else {
+      const ambientes_exactos = parseInt(ambientes_preferidos);
+      if (propiedad.ambientes === ambientes_exactos) {
+        analisis.ambientes = {
+          porcentaje: 100,
+          estado: 'coincide',
+          texto: 'Coincidencia exacta'
+        };
+      } else if (Math.abs(propiedad.ambientes - ambientes_exactos) === 1) {
+        analisis.ambientes = {
+          porcentaje: 60,
+          estado: 'coincide',
+          texto: `Cercano (±1 ambiente)`
+        };
+      } else {
+        analisis.ambientes = {
+          porcentaje: 25,
+          estado: 'no_coincide',
+          texto: 'Diferente'
+        };
+      }
+    }
+  }
+
+  return analisis;
 }

@@ -7,6 +7,7 @@ import { AddPropertyModal } from './AddPropertyModal';
 import { Property, Client } from '../types';
 import { obtenerMatchesParaTodosLosUsuarios, UsuarioConMatches } from '../lib/api/matches';
 import { transformUsuarioToClient, transformPropiedadToProperty, MatchData, transformMatchToUI } from '../lib/adapters-matching';
+import { analizarTop3Criterios } from '../lib/matching';
 
 export const Matching: React.FC = () => {
   const [clientModalOpen, setClientModalOpen] = useState<string | null>(null);
@@ -300,10 +301,10 @@ export const Matching: React.FC = () => {
                      textColor = 'text-rose-700';
                   }
 
-                  const criterios = match.reason.split(', ');
-                  const tienePrecio = criterios.some(c => c.toLowerCase().includes('precio'));
-                  const tieneUbicacion = criterios.some(c => c.toLowerCase().includes('ubicación') || c.toLowerCase().includes('ubicacion'));
-                  const tieneAmenities = criterios.some(c => c.toLowerCase().includes('amenities'));
+                  const matchOriginal = usuarioData.matches.find(m => m.id === match.id);
+                  const analisis = matchOriginal
+                    ? analizarTop3Criterios(matchOriginal.propiedad, usuarioData.usuario)
+                    : null;
 
                   return (
                     <div key={match.id} className={`pb-12 ${index !== matches.length - 1 ? 'border-b border-gray-100 mb-12' : ''}`}>
@@ -363,36 +364,66 @@ export const Matching: React.FC = () => {
                                 <div>
                                    <div className="flex justify-between text-sm mb-2">
                                       <span className="text-gray-900 font-bold">Presupuesto</span>
-                                      <span className={`font-bold flex items-center gap-1 ${tienePrecio ? 'text-emerald-600' : 'text-gray-400'}`}>
-                                        {tienePrecio ? <><Check size={14}/> Dentro del rango</> : 'Fuera del rango'}
+                                      <span className={`font-bold flex items-center gap-1 ${
+                                        analisis?.presupuesto.estado === 'coincide' ? 'text-emerald-600' :
+                                        analisis?.presupuesto.estado === 'no_coincide' ? 'text-gray-400' :
+                                        'text-gray-400'
+                                      }`}>
+                                        {analisis?.presupuesto.estado === 'coincide' && <Check size={14}/>}
+                                        {analisis?.presupuesto.texto || 'No especificado'}
                                       </span>
                                    </div>
                                    <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                                      <div className={`h-full rounded-full ${tienePrecio ? 'bg-emerald-500 w-full' : 'bg-gray-300 w-[30%]'}`}></div>
+                                      <div
+                                        className={`h-full rounded-full ${
+                                          analisis?.presupuesto.estado === 'coincide' ? 'bg-emerald-500' : 'bg-gray-300'
+                                        }`}
+                                        style={{ width: `${analisis?.presupuesto.porcentaje || 0}%` }}
+                                      ></div>
                                    </div>
                                 </div>
 
                                 <div>
                                    <div className="flex justify-between text-sm mb-2">
                                       <span className="text-gray-900 font-bold">Ubicación (Barrio)</span>
-                                      <span className={`font-bold flex items-center gap-1 ${tieneUbicacion ? 'text-emerald-600' : 'text-gray-400'}`}>
-                                        {tieneUbicacion ? <><Check size={14}/> Zona coincidente</> : 'Zona diferente'}
+                                      <span className={`font-bold flex items-center gap-1 ${
+                                        analisis?.ubicacion.estado === 'coincide' ? 'text-emerald-600' :
+                                        analisis?.ubicacion.estado === 'no_coincide' ? 'text-gray-400' :
+                                        'text-gray-400'
+                                      }`}>
+                                        {analisis?.ubicacion.estado === 'coincide' && <Check size={14}/>}
+                                        {analisis?.ubicacion.texto || 'Sin preferencias'}
                                       </span>
                                    </div>
                                    <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                                      <div className={`h-full rounded-full ${tieneUbicacion ? 'bg-emerald-500 w-[95%]' : 'bg-gray-300 w-[30%]'}`}></div>
+                                      <div
+                                        className={`h-full rounded-full ${
+                                          analisis?.ubicacion.estado === 'coincide' ? 'bg-emerald-500' : 'bg-gray-300'
+                                        }`}
+                                        style={{ width: `${analisis?.ubicacion.porcentaje || 0}%` }}
+                                      ></div>
                                    </div>
                                 </div>
 
                                 <div>
                                    <div className="flex justify-between text-sm mb-2">
-                                      <span className="text-gray-700 font-medium">Amenities</span>
-                                      <span className={`font-bold flex items-center gap-1 ${tieneAmenities ? 'text-emerald-600' : 'text-gray-400'}`}>
-                                        {tieneAmenities ? 'Coinciden' : 'No especificado'}
+                                      <span className="text-gray-900 font-bold">Ambientes</span>
+                                      <span className={`font-bold flex items-center gap-1 ${
+                                        analisis?.ambientes.estado === 'coincide' ? 'text-emerald-600' :
+                                        analisis?.ambientes.estado === 'no_coincide' ? 'text-gray-400' :
+                                        'text-gray-400'
+                                      }`}>
+                                        {analisis?.ambientes.estado === 'coincide' && <Check size={14}/>}
+                                        {analisis?.ambientes.texto || 'No especificado'}
                                       </span>
                                    </div>
                                    <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                                      <div className={`h-full rounded-full ${tieneAmenities ? 'bg-emerald-500 w-[70%]' : 'bg-gray-300 w-[40%]'}`}></div>
+                                      <div
+                                        className={`h-full rounded-full ${
+                                          analisis?.ambientes.estado === 'coincide' ? 'bg-emerald-500' : 'bg-gray-300'
+                                        }`}
+                                        style={{ width: `${analisis?.ambientes.porcentaje || 0}%` }}
+                                      ></div>
                                    </div>
                                 </div>
                              </div>
