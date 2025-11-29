@@ -24,6 +24,13 @@ const AppContent: React.FC = () => {
   const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
 
+  // Reset to dashboard when user logs in as agent
+  useEffect(() => {
+    if (user && role === 'agent') {
+      setCurrentView('dashboard');
+    }
+  }, [user, role]);
+
   // Show loading state
   if (loading) {
     return (
