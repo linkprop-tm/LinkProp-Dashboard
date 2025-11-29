@@ -585,22 +585,22 @@ export const Clients: React.FC = () => {
                              </span>
                              {client.searchParams.hasGarage && (
                                 <span className="px-2 py-1 bg-orange-50 text-orange-600 text-[10px] font-bold uppercase rounded-md border border-orange-100 flex items-center gap-1">
-                                    <Car size={10} /> Cochera
+                                    <Car size={20} /> Cochera
                                 </span>
                              )}
                              {client.searchParams.isCreditSuitable && (
                                 <span className="px-2 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase rounded-md border border-green-100 flex items-center gap-1">
-                                    <CreditCard size={10} /> Apto Crédito
+                                    <CreditCard size={20} /> Apto Crédito
                                 </span>
                              )}
                              {client.searchParams.isProfessionalSuitable && (
                                 <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase rounded-md border border-blue-100 flex items-center gap-1">
-                                    <Briefcase size={10} /> Apto Profesional
+                                    <Briefcase size={20} /> Apto Profesional
                                 </span>
                              )}
                              {client.searchParams.isPetFriendly && (
                                 <span className="px-2 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase rounded-md border border-green-100 flex items-center gap-1">
-                                    <Cat size={10} /> Apto Mascotas
+                                    <Cat size={20} /> Apto Mascotas
                                 </span>
                              )}
                          </div>
