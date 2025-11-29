@@ -62,6 +62,15 @@ export interface Usuario {
   preferencias_ubicacion: string[];
   preferencias_dormitorios_min: number | null;
   preferencias_banos_min: number | null;
+  preferencias_m2_min: number | null;
+  preferencias_m2_max: number | null;
+  preferencias_ambientes: string | null;
+  preferencias_amenities: string[];
+  preferencias_antiguedad: string[];
+  preferencias_apto_credito: boolean | null;
+  preferencias_apto_profesional: boolean | null;
+  preferencias_cochera: boolean | null;
+  preferencias_apto_mascotas: boolean | null;
   fecha_creacion: string;
   fecha_actualizacion: string;
   foto_perfil_url: string | null;

@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, User, Mail, MapPin, DollarSign,
-  Briefcase, Sparkles, Building2, Trash2, Phone, Loader2, Heart, Eye, CheckCircle
+  Briefcase, Sparkles, Building2, Trash2, Phone, Loader2, Heart, Eye, CheckCircle,
+  Car, Check, Cat
 } from 'lucide-react';
 import { Client, SearchParams } from '../types';
 import { obtenerUsuarioPorId, actualizarUsuario, obtenerRelacionesPorUsuario } from '../lib/api/users';
@@ -91,12 +92,25 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
      handleSearchParamChange(field, newArray);
   };
   
-  // Helper specifically for Property Type to keep it sync with 'type' field if needed, 
-  // though we will use the array 'propertyTypes' if possible, or just 'type' as single string 
-  // adapted to the chip UI. For this demo, let's treat 'type' as the single source of truth 
-  // but allow the UI to look like it could be multiple (though we'll enforce single for 'type' string compatibility).
+  // Helper for Property Type - supports multiple selection
   const handlePropertyTypeChange = (type: string) => {
-      handleSearchParamChange('type', type);
+      const currentTypes = formData.searchParams.propertyTypes || [];
+      let newTypes: string[];
+
+      if (currentTypes.includes(type)) {
+          newTypes = currentTypes.filter(t => t !== type);
+      } else {
+          newTypes = [...currentTypes, type];
+      }
+
+      setFormData(prev => ({
+          ...prev,
+          searchParams: {
+              ...prev.searchParams,
+              type: newTypes[0] || '',
+              propertyTypes: newTypes
+          }
+      }));
   };
 
   const validateForm = (): boolean => {
@@ -394,7 +408,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                           </label>
                           <div className="flex flex-wrap gap-2">
                                 {['Departamento', 'Casa', 'PH', 'Terreno', 'Local', 'Oficina', 'Galpón'].map(type => {
-                                    const isSelected = formData.searchParams.type === type;
+                                    const isSelected = (formData.searchParams.propertyTypes || []).includes(type);
                                     return (
                                         <button
                                             type="button"
@@ -414,31 +428,33 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                       </div>
                   </div>
 
-                  {/* Amenities */}
-                  <div className="p-6 bg-blue-50/30 rounded-xl border border-blue-100/50">
-                        <label className="flex items-center gap-2 mb-4 text-primary-700 font-bold text-sm">
-                            <Sparkles size={16} /> Amenities Deseados
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                            {['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Seguridad 24hs', 'Lavadero', 'Balcón Terraza'].map(item => {
-                                const isSelected = (formData.searchParams.amenities || []).includes(item);
-                                return (
-                                    <button
-                                        type="button"
-                                        key={item}
-                                        onClick={() => toggleArrayItem('amenities', item)}
-                                        className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-                                            isSelected
-                                            ? 'bg-white text-primary-600 border-primary-200 shadow-sm'
-                                            : 'bg-white/50 text-gray-500 border-gray-200 hover:bg-white'
-                                        }`}
-                                    >
-                                        {item}
-                                    </button>
-                                )
-                            })}
-                        </div>
-                  </div>
+                  {/* Amenities - Solo para Departamento */}
+                  {(formData.searchParams.propertyTypes?.includes('Departamento') || formData.searchParams.type === 'Departamento') && (
+                    <div className="p-6 bg-white rounded-xl border border-primary-100 shadow-[0_0_15px_rgba(37,99,235,0.05)]">
+                          <label className="flex items-center gap-2 mb-4 text-primary-700 font-bold text-sm">
+                              <Sparkles size={16} /> Amenities Deseados
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                              {['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Lavadero', 'Balcón Terraza'].map(item => {
+                                  const isSelected = (formData.searchParams.amenities || []).includes(item);
+                                  return (
+                                      <button
+                                          type="button"
+                                          key={item}
+                                          onClick={() => toggleArrayItem('amenities', item)}
+                                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                                              isSelected
+                                              ? 'bg-white text-primary-600 border-primary-200 shadow-sm'
+                                              : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'
+                                          }`}
+                                      >
+                                          {item}
+                                      </button>
+                                  )
+                              })}
+                          </div>
+                    </div>
+                  )}
 
                   {/* Price Range */}
                   <div>
@@ -467,6 +483,22 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all" 
                                 />
                             </div>
+                        </div>
+                   </div>
+
+                   {/* Ubicación / Barrios */}
+                   <div>
+                        <label className="flex items-center gap-2 mb-3 text-gray-900 font-bold text-sm">
+                            <MapPin size={16} className="text-gray-400" /> Ubicación / Barrios de Preferencia
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={formData.searchParams.location}
+                                onChange={(e) => handleSearchParamChange('location', e.target.value)}
+                                placeholder="Ej. Palermo, Belgrano, Recoleta..."
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none transition-all focus:bg-white"
+                            />
                         </div>
                    </div>
 
@@ -565,6 +597,147 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                                 </div>
                             </div>
                          </div>
+                   </div>
+
+                   <div className="h-px bg-gray-100"></div>
+
+                   {/* Características Específicas */}
+                   <div>
+                        <h3 className="text-sm font-bold text-primary-600 uppercase tracking-wider mb-6">Características Específicas</h3>
+
+                        <div className="space-y-6">
+                            {/* Antigüedad */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase mb-3 block">Antigüedad</label>
+                                <div className="flex flex-wrap gap-3">
+                                    {['Indiferente', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Más de 20 años'].map(val => {
+                                        const isSelected = (formData.searchParams.antiquity || []).includes(val);
+                                        return (
+                                            <button
+                                                type="button"
+                                                key={val}
+                                                onClick={() => toggleArrayItem('antiquity', val)}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                                                    isSelected
+                                                    ? 'bg-primary-50 text-primary-600 border-primary-200'
+                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                                                }`}
+                                            >
+                                                {val}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Aptitudes - Condicionales según tipo de operación */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Apto Crédito (solo para Venta) / Apto Mascotas (solo para Alquiler) */}
+                                {formData.searchParams.operationType === 'Venta' ? (
+                                    <div
+                                        onClick={() => handleSearchParamChange('isCreditSuitable', !formData.searchParams.isCreditSuitable)}
+                                        className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all group select-none ${
+                                            formData.searchParams.isCreditSuitable
+                                            ? 'bg-green-50 border-green-200 shadow-sm'
+                                            : 'border-gray-200 hover:border-green-200 hover:bg-green-50/30'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                                                formData.searchParams.isCreditSuitable ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'
+                                            }`}>
+                                                <CheckCircle size={16} strokeWidth={2.5} />
+                                            </div>
+                                            <span className={`text-sm font-bold ${
+                                                formData.searchParams.isCreditSuitable ? 'text-green-800' : 'text-gray-700'
+                                            }`}>Apto Crédito</span>
+                                        </div>
+                                        <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
+                                            formData.searchParams.isCreditSuitable ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300 bg-white'
+                                        }`}>
+                                            {formData.searchParams.isCreditSuitable && <Check size={14} strokeWidth={3}/>}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div
+                                        onClick={() => handleSearchParamChange('isPetFriendly', !formData.searchParams.isPetFriendly)}
+                                        className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all group select-none ${
+                                            formData.searchParams.isPetFriendly
+                                            ? 'bg-green-50 border-green-200 shadow-sm'
+                                            : 'border-gray-200 hover:border-green-200 hover:bg-green-50/30'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                                                formData.searchParams.isPetFriendly ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'
+                                            }`}>
+                                                <Cat size={16} strokeWidth={2.5} />
+                                            </div>
+                                            <span className={`text-sm font-bold ${
+                                                formData.searchParams.isPetFriendly ? 'text-green-800' : 'text-gray-700'
+                                            }`}>Apto Mascotas</span>
+                                        </div>
+                                        <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
+                                            formData.searchParams.isPetFriendly ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300 bg-white'
+                                        }`}>
+                                            {formData.searchParams.isPetFriendly && <Check size={14} strokeWidth={3}/>}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Apto Profesional */}
+                                <div
+                                    onClick={() => handleSearchParamChange('isProfessionalSuitable', !formData.searchParams.isProfessionalSuitable)}
+                                    className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all group select-none ${
+                                        formData.searchParams.isProfessionalSuitable
+                                        ? 'bg-blue-50 border-blue-200 shadow-sm'
+                                        : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/30'
+                                    }`}
+                                >
+                                     <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                                            formData.searchParams.isProfessionalSuitable ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-600'
+                                        }`}>
+                                            <Briefcase size={16} strokeWidth={2.5} />
+                                        </div>
+                                        <span className={`text-sm font-bold ${
+                                            formData.searchParams.isProfessionalSuitable ? 'text-blue-800' : 'text-gray-700'
+                                        }`}>Apto Profesional</span>
+                                     </div>
+                                     <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
+                                         formData.searchParams.isProfessionalSuitable ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-300 bg-white'
+                                     }`}>
+                                         {formData.searchParams.isProfessionalSuitable && <Check size={14} strokeWidth={3}/>}
+                                     </div>
+                                </div>
+
+                                {/* Cochera */}
+                                <div
+                                    onClick={() => handleSearchParamChange('hasGarage', !formData.searchParams.hasGarage)}
+                                    className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all group select-none ${
+                                        formData.searchParams.hasGarage
+                                        ? 'bg-orange-50 border-orange-200 shadow-sm'
+                                        : 'border-gray-200 hover:border-orange-200 hover:bg-orange-50/30'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                                            formData.searchParams.hasGarage ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-600'
+                                        }`}>
+                                            <Car size={16} strokeWidth={2.5} />
+                                        </div>
+                                        <span className={`text-sm font-bold ${
+                                            formData.searchParams.hasGarage ? 'text-orange-800' : 'text-gray-700'
+                                        }`}>Cochera</span>
+                                    </div>
+                                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
+                                        formData.searchParams.hasGarage ? 'border-orange-500 bg-orange-500 text-white' : 'border-gray-300 bg-white'
+                                    }`}>
+                                         {formData.searchParams.hasGarage && <Check size={14} strokeWidth={3}/>}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                    </div>
                </div>
             </div>

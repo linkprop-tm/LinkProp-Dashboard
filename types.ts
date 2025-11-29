@@ -110,26 +110,27 @@ export interface SearchParams {
   currency: string;
   environments: string | number; // '2' or '3+'
   location: string;
-  
+
   // Extended fields for new UI
   operationType?: 'Venta' | 'Alquiler';
   minPrice?: number;
   propertyTypes?: string[]; // Array for multiple selection if needed, or single
   amenities?: string[];
-  
+
   // Dimensions
   minArea?: number;
   maxArea?: number;
   bedrooms?: string;
   bathrooms?: string;
-  
+
   // Legacy booleans (can still be used or mapped to amenities)
   hasGarage?: boolean;
   isCreditSuitable?: boolean;
   isProfessionalSuitable?: boolean;
-  
+  isPetFriendly?: boolean;
+
   // Specifics
-  antiquity?: string[]; // Array of strings e.g. ['A estrenar']
+  antiquity?: string[]; // Array of strings e.g. ['A estrenar', 'Hasta 5 años']
 }
 
 export interface Client {

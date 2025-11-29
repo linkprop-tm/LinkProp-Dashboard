@@ -21,13 +21,20 @@ export function usuarioToClient(usuario: Usuario): Client {
       maxPrice: usuario.preferencias_precio_max || 0,
       minPrice: usuario.preferencias_precio_min || 0,
       currency: 'USD',
-      environments: usuario.preferencias_dormitorios_min?.toString() || '',
+      environments: usuario.preferencias_ambientes || '',
       location: usuario.preferencias_ubicacion?.[0] || '',
       operationType: usuario.preferencias_operacion || 'Venta',
       propertyTypes: usuario.preferencias_tipo || [],
       bedrooms: usuario.preferencias_dormitorios_min?.toString() || '',
       bathrooms: usuario.preferencias_banos_min?.toString() || '',
-      amenities: []
+      amenities: usuario.preferencias_amenities || [],
+      minArea: usuario.preferencias_m2_min || undefined,
+      maxArea: usuario.preferencias_m2_max || undefined,
+      antiquity: usuario.preferencias_antiguedad || [],
+      hasGarage: usuario.preferencias_cochera || false,
+      isCreditSuitable: usuario.preferencias_apto_credito || false,
+      isProfessionalSuitable: usuario.preferencias_apto_profesional || false,
+      isPetFriendly: usuario.preferencias_apto_mascotas || false
     },
     activityScore: 75,
     status: 'active'
@@ -54,7 +61,16 @@ export function clientToUsuario(client: Client): Partial<Usuario> {
       : null,
     preferencias_banos_min: client.searchParams.bathrooms
       ? parseInt(client.searchParams.bathrooms.replace('+', ''))
-      : null
+      : null,
+    preferencias_m2_min: client.searchParams.minArea || null,
+    preferencias_m2_max: client.searchParams.maxArea || null,
+    preferencias_ambientes: client.searchParams.environments?.toString() || null,
+    preferencias_amenities: client.searchParams.amenities || [],
+    preferencias_antiguedad: client.searchParams.antiquity || [],
+    preferencias_apto_credito: client.searchParams.isCreditSuitable || null,
+    preferencias_apto_profesional: client.searchParams.isProfessionalSuitable || null,
+    preferencias_cochera: client.searchParams.hasGarage || null,
+    preferencias_apto_mascotas: client.searchParams.isPetFriendly || null
   };
 }
 
