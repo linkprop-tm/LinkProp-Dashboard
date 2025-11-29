@@ -132,7 +132,7 @@ export const Matching: React.FC = () => {
                    </div>
 
                    <div className="text-right pl-4">
-                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Presupuesto</p>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Presupuesto Max</p>
                       <div className="flex flex-col items-end">
                           <p className="text-2xl font-bold text-gray-900 tracking-tight leading-none">
                             {client.searchParams.maxPrice > 0 ? client.searchParams.maxPrice.toLocaleString() : 'N/D'}
