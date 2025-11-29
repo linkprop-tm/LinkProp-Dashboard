@@ -9,6 +9,7 @@ import { Client, SearchParams } from '../types';
 import { obtenerUsuarioPorId, actualizarUsuario, obtenerRelacionesPorUsuario } from '../lib/api/users';
 import { clientToUsuario, usuarioToClient } from '../lib/adapters';
 import type { PropiedadUsuario } from '../lib/database.types';
+import { NEIGHBORHOODS } from '../lib/neighborhoods';
 
 interface EditClientModalProps {
   isOpen: boolean;
@@ -24,7 +25,6 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [neighborhoodInput, setNeighborhoodInput] = useState('');
   const [activityData, setActivityData] = useState<{
     explorar: number;
     interes: number;
@@ -115,26 +115,18 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
   };
 
   // Helper for neighborhoods
-  const addNeighborhood = () => {
-    const trimmed = neighborhoodInput.trim();
-    if (trimmed && !(formData.searchParams.neighborhoods || []).includes(trimmed)) {
-      handleSearchParamChange('neighborhoods', [...(formData.searchParams.neighborhoods || []), trimmed]);
-      handleSearchParamChange('location', trimmed);
-      setNeighborhoodInput('');
-    }
-  };
+  const toggleNeighborhood = (neighborhood: string) => {
+    const currentNeighborhoods = formData.searchParams.neighborhoods || [];
+    let newNeighborhoods: string[];
 
-  const removeNeighborhood = (neighborhood: string) => {
-    const newNeighborhoods = (formData.searchParams.neighborhoods || []).filter(n => n !== neighborhood);
+    if (currentNeighborhoods.includes(neighborhood)) {
+      newNeighborhoods = currentNeighborhoods.filter(n => n !== neighborhood);
+    } else {
+      newNeighborhoods = [...currentNeighborhoods, neighborhood];
+    }
+
     handleSearchParamChange('neighborhoods', newNeighborhoods);
     handleSearchParamChange('location', newNeighborhoods[0] || '');
-  };
-
-  const handleNeighborhoodKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addNeighborhood();
-    }
   };
 
   const validateForm = (): boolean => {
@@ -503,49 +495,34 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                             <MapPin size={16} className="text-gray-400" /> Ubicación / Barrios de Preferencia
                         </label>
 
-                        {/* Tags Display */}
+                        {/* Selected neighborhoods count */}
                         {formData.searchParams.neighborhoods && formData.searchParams.neighborhoods.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {formData.searchParams.neighborhoods.map((neighborhood, index) => (
-                              <div
-                                key={index}
-                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm font-medium border border-primary-200"
-                              >
-                                <span>{neighborhood}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => removeNeighborhood(neighborhood)}
-                                  className="hover:bg-primary-100 rounded-full p-0.5 transition-colors"
-                                >
-                                  <X size={14} />
-                                </button>
-                              </div>
-                            ))}
+                          <div className="mb-3 text-xs text-gray-500">
+                            {formData.searchParams.neighborhoods.length} barrio{formData.searchParams.neighborhoods.length !== 1 ? 's' : ''} seleccionado{formData.searchParams.neighborhoods.length !== 1 ? 's' : ''}
                           </div>
                         )}
 
-                        {/* Input */}
-                        <div className="flex gap-2">
-                          <div className="relative flex-1">
-                            <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                            <input
-                                type="text"
-                                value={neighborhoodInput}
-                                onChange={(e) => setNeighborhoodInput(e.target.value)}
-                                onKeyDown={handleNeighborhoodKeyDown}
-                                placeholder="Ej. Palermo, Belgrano, Recoleta..."
-                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none transition-all focus:bg-white"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={addNeighborhood}
-                            className="px-4 py-3 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 transition-colors"
-                          >
-                            Agregar
-                          </button>
+                        {/* Neighborhood pills */}
+                        <div className="flex flex-wrap gap-2 max-h-96 overflow-y-auto p-2 bg-gray-50 rounded-xl border border-gray-200">
+                          {NEIGHBORHOODS.map((neighborhood) => {
+                            const isSelected = (formData.searchParams.neighborhoods || []).includes(neighborhood);
+                            return (
+                              <button
+                                type="button"
+                                key={neighborhood}
+                                onClick={() => toggleNeighborhood(neighborhood)}
+                                className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                                  isSelected
+                                    ? 'bg-primary-50 text-primary-700 border-primary-300 shadow-sm'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-primary-200 hover:bg-primary-50/50'
+                                }`}
+                              >
+                                {neighborhood}
+                              </button>
+                            );
+                          })}
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">Presiona Enter o haz clic en Agregar para añadir un barrio</p>
+                        <p className="text-xs text-gray-500 mt-2">Haz clic en los barrios para seleccionar o deseleccionar</p>
                    </div>
 
                    <div className="h-px bg-gray-100"></div>
