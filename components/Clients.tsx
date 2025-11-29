@@ -13,6 +13,8 @@ import { Client } from '../types';
 import { obtenerUsuarios, eliminarUsuario } from '../lib/api/users';
 import { usuarioToClient } from '../lib/adapters';
 import { matchesNeighborhood } from '../lib/neighborhoods';
+import { obtenerConteoMatchesPorUsuario } from '../lib/api/matches';
+import { obtenerConteoInteresesPorUsuario } from '../lib/api/relationships';
 
 // Helper to format neighborhoods display
 const formatNeighborhoods = (neighborhoods?: string[], location?: string): string => {
@@ -57,8 +59,19 @@ export const Clients: React.FC = () => {
   const loadClients = async () => {
     try {
       setLoading(true);
-      const usuarios = await obtenerUsuarios();
-      const mappedClients: Client[] = usuarios.map(usuario => usuarioToClient(usuario));
+      const [usuarios, conteosMatches, conteosIntereses] = await Promise.all([
+        obtenerUsuarios(),
+        obtenerConteoMatchesPorUsuario(),
+        obtenerConteoInteresesPorUsuario()
+      ]);
+
+      const mappedClients: Client[] = usuarios.map(usuario => {
+        const client = usuarioToClient(usuario);
+        client.matchesCount = conteosMatches[usuario.id] || 0;
+        client.interesesCount = conteosIntereses[usuario.id] || 0;
+        return client;
+      });
+
       setClients(mappedClients);
     } catch (err) {
       console.error('Error loading clients:', err);
@@ -492,9 +505,8 @@ export const Clients: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {processedClients.map(client => {
-                // Simulated metrics for display based on activity score
-                const matchesCount = Math.max(1, Math.floor(client.activityScore * 0.8));
-                const interestsCount = Math.max(0, Math.floor(client.activityScore * 0.3));
+                const matchesCount = client.matchesCount || 0;
+                const interestsCount = client.interesesCount || 0;
 
                 return (
                 <div key={client.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 group flex flex-col overflow-hidden">

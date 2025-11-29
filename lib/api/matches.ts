@@ -190,3 +190,31 @@ export async function obtenerEstadisticasMatches() {
     matches_por_usuario
   };
 }
+
+export async function obtenerConteoMatchesPorUsuario(
+  porcentaje_minimo: number = 70
+): Promise<Record<string, number>> {
+  const [usuarios, todasPropiedades] = await Promise.all([
+    obtenerUsuarios(),
+    obtenerPropiedades()
+  ]);
+
+  const propiedades = todasPropiedades.filter(
+    p => p.visibilidad === 'Publica' && p.estado === 'Disponible'
+  );
+
+  const conteos: Record<string, number> = {};
+
+  for (const usuario of usuarios) {
+    conteos[usuario.id] = 0;
+
+    for (const propiedad of propiedades) {
+      const match = calcularMatch(propiedad, usuario);
+      if (match.porcentaje >= porcentaje_minimo) {
+        conteos[usuario.id]++;
+      }
+    }
+  }
+
+  return conteos;
+}

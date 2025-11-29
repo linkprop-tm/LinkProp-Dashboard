@@ -145,4 +145,6 @@ export interface Client {
   searchParams: SearchParams;
   activityScore: number;
   status: 'active' | 'inactive';
+  matchesCount?: number;
+  interesesCount?: number;
 }

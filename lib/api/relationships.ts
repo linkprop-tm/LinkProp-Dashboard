@@ -227,6 +227,23 @@ export async function contarRelacionesPorEtapa(etapa: EtapaRelacion) {
   return count || 0;
 }
 
+export async function obtenerConteoInteresesPorUsuario(): Promise<Record<string, number>> {
+  const { data, error } = await supabase
+    .from('propiedades_usuarios')
+    .select('usuario_id')
+    .eq('etapa', 'Interes');
+
+  if (error) throw error;
+
+  const conteos: Record<string, number> = {};
+
+  (data || []).forEach((rel) => {
+    conteos[rel.usuario_id] = (conteos[rel.usuario_id] || 0) + 1;
+  });
+
+  return conteos;
+}
+
 export async function obtenerVisitasPorPropiedad(): Promise<PropiedadConVisitantes[]> {
   const { data, error } = await supabase
     .from('propiedades_usuarios')
