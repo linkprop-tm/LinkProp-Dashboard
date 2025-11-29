@@ -1479,26 +1479,14 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                             {/* Area */}
                             <div className="space-y-3">
                                 <label className="text-sm font-medium text-gray-700 block">Metros Cuadrados (m²)</label>
-                                <div className="flex gap-3 items-center">
-                                    <div className="relative flex-1">
-                                        <input
-                                          type="text"
-                                          value={formatNumberWithDots(settingsM2Min)}
-                                          onChange={(e) => handleNumericChange(e.target.value, setSettingsM2Min)}
-                                          placeholder="Min"
-                                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
-                                        />
-                                    </div>
-                                    <span className="text-gray-300 font-medium">-</span>
-                                     <div className="relative flex-1">
-                                        <input
-                                          type="text"
-                                          value={formatNumberWithDots(settingsM2Max)}
-                                          onChange={(e) => handleNumericChange(e.target.value, setSettingsM2Max)}
-                                          placeholder="Max"
-                                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
-                                        />
-                                    </div>
+                                <div className="relative">
+                                    <input
+                                      type="text"
+                                      value={formatNumberWithDots(settingsM2Min)}
+                                      onChange={(e) => handleNumericChange(e.target.value, setSettingsM2Min)}
+                                      placeholder="Min"
+                                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
+                                    />
                                 </div>
                             </div>
                             

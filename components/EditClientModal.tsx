@@ -512,21 +512,13 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                             {/* Area */}
                             <div className="space-y-3">
                                 <label className="text-sm font-medium text-gray-600 block">Metros Cuadrados (m²)</label>
-                                <div className="flex gap-3">
-                                    <input 
-                                        type="number" 
+                                <div className="relative">
+                                    <input
+                                        type="number"
                                         value={formData.searchParams.minArea || ''}
                                         onChange={(e) => handleSearchParamChange('minArea', Number(e.target.value))}
-                                        placeholder="Min" 
-                                        className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all" 
-                                    />
-                                    <span className="text-gray-300 self-center">-</span>
-                                    <input 
-                                        type="number" 
-                                        value={formData.searchParams.maxArea || ''}
-                                        onChange={(e) => handleSearchParamChange('maxArea', Number(e.target.value))}
-                                        placeholder="Max" 
-                                        className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all" 
+                                        placeholder="Min"
+                                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
                                     />
                                 </div>
                             </div>
