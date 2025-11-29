@@ -93,6 +93,20 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
      handleSearchParamChange(field, newArray);
   };
   
+  // Helper for Operation Type - resets incompatible fields
+  const handleOperationTypeChange = (operationType: string) => {
+    setFormData(prev => ({
+      ...prev,
+      searchParams: {
+        ...prev.searchParams,
+        operationType,
+        // Reset incompatible fields
+        isCreditSuitable: operationType === 'Venta' ? prev.searchParams.isCreditSuitable : false,
+        isPetFriendly: operationType === 'Alquiler' ? prev.searchParams.isPetFriendly : false
+      }
+    }));
+  };
+
   // Helper for Property Type - supports multiple selection
   const handlePropertyTypeChange = (type: string) => {
       const currentTypes = formData.searchParams.propertyTypes || [];
@@ -387,10 +401,10 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                                 {['Venta', 'Alquiler'].map(op => {
                                     const isSelected = (formData.searchParams.operationType || 'Venta') === op;
                                     return (
-                                        <button 
+                                        <button
                                             type="button"
                                             key={op}
-                                            onClick={() => handleSearchParamChange('operationType', op)}
+                                            onClick={() => handleOperationTypeChange(op)}
                                             className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
                                                 isSelected
                                                 ? 'bg-white text-primary-600 shadow-sm border border-gray-100' 
