@@ -143,18 +143,14 @@ export const Clients: React.FC = () => {
   const processedClients = useMemo(() => {
     // 1. Filter
     let result = clients.filter(client => {
-      // Text Search (Name, Email, Location)
+      // Text Search (Name, Email, Phone - Profile data only)
       const searchLower = searchTerm.toLowerCase();
-      const neighborhoodsToSearch = client.searchParams.neighborhoods || [client.searchParams.location];
-      const locationMatch = neighborhoodsToSearch.length > 0
-        ? matchesNeighborhood(searchLower, neighborhoodsToSearch)
-        : true;
 
       const matchesSearch =
         searchTerm === '' ||
         client.name.toLowerCase().includes(searchLower) ||
         client.email.toLowerCase().includes(searchLower) ||
-        locationMatch;
+        (client.phone && client.phone.toLowerCase().includes(searchLower));
 
       // Status Filter
       const matchesStatus = filters.status === 'all' || client.status === filters.status;
@@ -328,7 +324,7 @@ export const Clients: React.FC = () => {
                  type="text" 
                  value={searchTerm}
                  onChange={(e) => setSearchTerm(e.target.value)}
-                 placeholder="Buscar por nombre, email, teléfono o presupuesto..." 
+                 placeholder="Buscar por nombre, email o teléfono..." 
                  className="flex-1 bg-transparent outline-none text-gray-700 placeholder:text-gray-400 text-sm font-medium h-12"
                />
                {searchTerm && (
