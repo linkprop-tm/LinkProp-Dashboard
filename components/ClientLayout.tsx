@@ -277,8 +277,6 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const [settingsM2Min, setSettingsM2Min] = useState<string>('');
   const [settingsM2Max, setSettingsM2Max] = useState<string>('');
   const [settingsAmbientes, setSettingsAmbientes] = useState<string>('');
-  const [settingsDormitorios, setSettingsDormitorios] = useState<string>('');
-  const [settingsBanos, setSettingsBanos] = useState<string>('');
 
   // Settings - Specific Features State
   const [settingsSpecifics, setSettingsSpecifics] = useState({
@@ -1498,33 +1496,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                                 <label className="text-sm font-medium text-gray-700 block">Ambientes</label>
                                 <div className="flex gap-1 bg-gray-50 rounded-xl p-1.5 border border-gray-200">
                                     {['1', '2', '3', '4', '5+'].map(val => (
-                                        <button 
-                                          key={val}
-                                          className="flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-900 hover:bg-white rounded-lg transition-all focus:bg-white focus:shadow-sm focus:text-primary-600"
-                                        >{val}</button>
-                                    ))}
-                                </div>
-                            </div>
-
-                             {/* Dormitorios */}
-                            <div className="space-y-3">
-                                <label className="text-sm font-medium text-gray-700 block">Dormitorios</label>
-                                <div className="flex gap-1 bg-gray-50 rounded-xl p-1.5 border border-gray-200">
-                                    {['1', '2', '3', '4', '5+'].map(val => (
-                                        <button 
-                                          key={val}
-                                          className="flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-900 hover:bg-white rounded-lg transition-all focus:bg-white focus:shadow-sm focus:text-primary-600"
-                                        >{val}</button>
-                                    ))}
-                                </div>
-                            </div>
-
-                             {/* Baños */}
-                            <div className="space-y-3">
-                                <label className="text-sm font-medium text-gray-700 block">Baños</label>
-                                <div className="flex gap-1 bg-gray-50 rounded-xl p-1.5 border border-gray-200">
-                                    {['1', '2', '3', '4+'].map(val => (
-                                        <button 
+                                        <button
                                           key={val}
                                           className="flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-900 hover:bg-white rounded-lg transition-all focus:bg-white focus:shadow-sm focus:text-primary-600"
                                         >{val}</button>
