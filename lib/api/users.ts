@@ -49,6 +49,18 @@ export async function obtenerClientesActivos() {
   return data as Usuario[];
 }
 
+export async function obtenerUltimosClientes(limite: number = 5) {
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('*')
+    .eq('rol', 'user')
+    .order('fecha_creacion', { ascending: false })
+    .limit(limite);
+
+  if (error) throw error;
+  return data as Usuario[];
+}
+
 export async function obtenerUsuarioPorId(id: string) {
   const { data, error } = await supabase
     .from('usuarios')

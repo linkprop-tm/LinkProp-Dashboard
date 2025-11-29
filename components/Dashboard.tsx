@@ -7,20 +7,24 @@ import {
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend } from 'recharts';
 import { METRICS, CHART_DATA, CONVERSION_DATA, CLIENTS_DATA, PROPERTIES_GRID_DATA } from '../constants';
 import { obtenerPropiedadesDisponibles } from '../lib/api/properties';
-import { obtenerClientesActivos } from '../lib/api/users';
+import { obtenerClientesActivos, obtenerUltimosClientes } from '../lib/api/users';
 import { contarRelacionesPorEtapa } from '../lib/api/relationships';
+import { usuarioToClient } from '../lib/adapters';
+import type { Client } from '../types';
 
 export const Dashboard: React.FC = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [propiedadesDisponibles, setPropiedadesDisponibles] = useState<number>(0);
   const [clientesActivos, setClientesActivos] = useState<number>(0);
   const [interesesMes, setInteresesMes] = useState<number>(0);
+  const [ultimosClientes, setUltimosClientes] = useState<Client[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
     loadPropiedadesDisponibles();
     loadClientesActivos();
     loadInteresesMes();
+    loadUltimosClientes();
   }, []);
 
   const loadPropiedadesDisponibles = async () => {
@@ -47,6 +51,16 @@ export const Dashboard: React.FC = () => {
       setInteresesMes(count);
     } catch (error) {
       console.error('Error loading intereses:', error);
+    }
+  };
+
+  const loadUltimosClientes = async () => {
+    try {
+      const usuarios = await obtenerUltimosClientes(5);
+      const clientes = usuarios.map(usuario => usuarioToClient(usuario));
+      setUltimosClientes(clientes);
+    } catch (error) {
+      console.error('Error loading ultimos clientes:', error);
     }
   };
 
@@ -203,26 +217,38 @@ export const Dashboard: React.FC = () => {
           </div>
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-3">
-            {CLIENTS_DATA.slice(0, 5).map((client, idx) => (
-              <div key={client.id} className="flex items-center gap-3 p-3 bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-100 hover:shadow-sm rounded-xl transition-all group cursor-pointer">
-                <div className="relative flex-shrink-0">
-                  <img src={client.avatar} alt={client.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-white" />
-                  <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white rounded-full ${client.status === 'active' ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-bold text-gray-900 truncate group-hover:text-primary-600 transition-colors">{client.name}</h4>
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
-                     <Mail size={10} />
-                     <span className="truncate">{client.email}</span>
+            {ultimosClientes.length > 0 ? (
+              ultimosClientes.map((client) => (
+                <div key={client.id} className="flex items-center gap-3 p-3 bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-100 hover:shadow-sm rounded-xl transition-all group cursor-pointer">
+                  <div className="relative flex-shrink-0">
+                    {client.avatar ? (
+                      <img src={client.avatar} alt={client.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-white" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full ring-2 ring-white bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-sm font-bold">
+                        {client.name?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                    )}
+                    <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white rounded-full ${client.status === 'active' ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-gray-900 truncate group-hover:text-primary-600 transition-colors">{client.name || 'Usuario sin nombre'}</h4>
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                       <Mail size={10} />
+                       <span className="truncate">{client.email || 'Sin email'}</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase bg-white px-2 py-1 rounded border border-gray-100">
+                      {client.date}
+                    </span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase bg-white px-2 py-1 rounded border border-gray-100">
-                    {client.date}
-                  </span>
-                </div>
+              ))
+            ) : (
+              <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                No hay clientes registrados
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
