@@ -14,17 +14,25 @@ import { obtenerUsuarios, eliminarUsuario } from '../lib/api/users';
 import { usuarioToClient } from '../lib/adapters';
 import { matchesNeighborhood } from '../lib/neighborhoods';
 
+// Helper to format neighborhoods display
+const formatNeighborhoods = (neighborhoods?: string[], location?: string): string => {
+  const barrios = neighborhoods && neighborhoods.length > 0 ? neighborhoods : (location ? [location] : []);
+  if (barrios.length === 0) return '';
+  if (barrios.length === 1) return barrios[0];
+  return barrios.join(' + ');
+};
+
 // Helper to parse dates like "06 Ene, 2025"
 const parseClientDate = (dateStr: string) => {
-  const months: {[key: string]: number} = { 
-    'Ene': 0, 'Feb': 1, 'Mar': 2, 'Abr': 3, 'May': 4, 'Jun': 5, 
-    'Jul': 6, 'Ago': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dic': 11 
+  const months: {[key: string]: number} = {
+    'Ene': 0, 'Feb': 1, 'Mar': 2, 'Abr': 3, 'May': 4, 'Jun': 5,
+    'Jul': 6, 'Ago': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dic': 11
   };
   try {
     // Remove comma and split
-    const parts = dateStr.replace(',', '').split(' '); 
+    const parts = dateStr.replace(',', '').split(' ');
     if (parts.length < 3) return 0;
-    
+
     const day = parseInt(parts[0]);
     const month = months[parts[1]];
     const year = parseInt(parts[2]);
@@ -546,12 +554,12 @@ export const Clients: React.FC = () => {
                              </div>
                              <div>
                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Búsqueda</p>
-                                 <div className="flex items-center gap-2">
-                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${client.searchParams.operationType === 'Alquiler' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                 <div className="flex items-start gap-2">
+                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase shrink-0 ${client.searchParams.operationType === 'Alquiler' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>
                                         {client.searchParams.operationType || 'Venta'}
                                      </span>
-                                     <p className="text-sm font-bold text-gray-700 leading-tight truncate">
-                                        {client.searchParams.type} en {client.searchParams.location}
+                                     <p className="text-sm font-bold text-gray-700 leading-tight">
+                                        {client.searchParams.type} en {formatNeighborhoods(client.searchParams.neighborhoods, client.searchParams.location)}
                                      </p>
                                  </div>
                              </div>
