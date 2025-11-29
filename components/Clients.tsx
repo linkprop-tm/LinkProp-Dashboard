@@ -548,8 +548,8 @@ export const Clients: React.FC = () => {
                     {/* Search Params Summary */}
                     <div className="p-6 space-y-4 flex-1">
                          {/* Location & Type */}
-                         <div className="flex items-start gap-2">
-                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase shrink-0 ${client.searchParams.operationType === 'Alquiler' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                         <div className="flex flex-col gap-2">
+                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase shrink-0 w-fit ${client.searchParams.operationType === 'Alquiler' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>
                                 {client.searchParams.operationType || 'Venta'}
                              </span>
                              <p className="text-sm font-bold text-gray-700 leading-tight">
