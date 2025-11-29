@@ -107,11 +107,13 @@ export const Interests: React.FC = () => {
 
   // Helper to format date nicely
   const formatDateVisual = (dateStr: string) => {
-      // Assuming dateStr is YYYY-MM-DD
-      const [year, month, day] = dateStr.split('-');
+      const date = new Date(dateStr);
       const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
-      const monthName = months[parseInt(month) - 1] || 'ENE';
-      
+
+      const day = date.getDate().toString().padStart(2, '0');
+      const monthName = months[date.getMonth()];
+      const year = date.getFullYear().toString();
+
       return { day, monthName, year };
   };
 
