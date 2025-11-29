@@ -14,9 +14,9 @@ import type { Client } from '../types';
 
 export const Dashboard: React.FC = () => {
   const [isMounted, setIsMounted] = useState(false);
-  const [propiedadesDisponibles, setPropiedadesDisponibles] = useState<number>(0);
-  const [clientesActivos, setClientesActivos] = useState<number>(0);
-  const [interesesMes, setInteresesMes] = useState<number>(0);
+  const [propiedadesDisponibles, setPropiedadesDisponibles] = useState<number | null>(null);
+  const [clientesActivos, setClientesActivos] = useState<number | null>(null);
+  const [interesesMes, setInteresesMes] = useState<number | null>(null);
   const [ultimosClientes, setUltimosClientes] = useState<Client[]>([]);
   const [ultimosIntereses, setUltimosIntereses] = useState<InteresReciente[]>([]);
 
@@ -92,12 +92,15 @@ export const Dashboard: React.FC = () => {
       {/* Section A: Metrics Cards (Modern Redesign) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {METRICS.map((metric, index) => {
-          const displayValue = index === 0 ? propiedadesDisponibles : index === 1 ? clientesActivos : index === 2 ? interesesMes : metric.value;
-          const Icon = 
+          const rawValue = index === 0 ? propiedadesDisponibles : index === 1 ? clientesActivos : index === 2 ? interesesMes : metric.value;
+          const isLoading = rawValue === null;
+          const displayValue = isLoading ? '--' : rawValue;
+
+          const Icon =
             metric.iconType === 'building' ? Building :
             metric.iconType === 'users' ? Users :
             metric.iconType === 'heart' ? Heart : TrendingUp;
-          
+
           // Color themes based on index/type
           const themes = [
             { bg: 'bg-blue-50', text: 'text-blue-600', shadow: 'shadow-blue-200', gradient: 'from-blue-500/10 to-transparent' },
@@ -105,13 +108,13 @@ export const Dashboard: React.FC = () => {
             { bg: 'bg-rose-50', text: 'text-rose-600', shadow: 'shadow-rose-200', gradient: 'from-rose-500/10 to-transparent' },
             { bg: 'bg-emerald-50', text: 'text-emerald-600', shadow: 'shadow-emerald-200', gradient: 'from-emerald-500/10 to-transparent' },
           ];
-          
+
           const t = themes[index % themes.length];
           const isUp = metric.trendDirection === 'up';
 
           return (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="relative overflow-hidden bg-white p-6 rounded-3xl border border-gray-100 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 group cursor-default"
             >
               {/* Decorative Background Blob */}
@@ -120,11 +123,11 @@ export const Dashboard: React.FC = () => {
               <div className="relative z-10 flex flex-col h-full justify-between">
                  {/* Header: Icon & Trend */}
                  <div className="flex justify-between items-start mb-4">
-                    <div className={`p-3.5 rounded-2xl ${t.bg} ${t.text} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
+                    <div className={`p-3.5 rounded-2xl ${t.bg} ${t.text} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 ${isLoading ? 'opacity-50' : ''}`}>
                        <Icon size={24} strokeWidth={2.5} />
                     </div>
-                    
-                    <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${isUp ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+
+                    <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${isUp ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'} ${isLoading ? 'opacity-50' : ''}`}>
                        {isUp ? <ArrowUpRight size={12} strokeWidth={3} /> : <ArrowDownRight size={12} strokeWidth={3} />}
                        {metric.trend}%
                     </div>
@@ -132,7 +135,9 @@ export const Dashboard: React.FC = () => {
 
                  {/* Content: Value & Label */}
                  <div>
-                    <h3 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-1">{displayValue}</h3>
+                    <h3 className={`text-4xl font-extrabold text-gray-900 tracking-tight mb-1 ${isLoading ? 'animate-pulse text-gray-300' : ''}`}>
+                      {displayValue}
+                    </h3>
                     <p className="text-sm font-medium text-gray-400 group-hover:text-gray-500 transition-colors">{metric.label}</p>
                  </div>
               </div>
