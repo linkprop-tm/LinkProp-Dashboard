@@ -334,7 +334,6 @@ export const Matching: React.FC = () => {
                                      <div className="text-3xl font-bold tracking-tight mb-1 shadow-sm">
                                         {match.property.currency} {match.property.price.toLocaleString()}
                                      </div>
-                                     <h3 className="text-lg font-bold leading-tight mb-1 shadow-sm">{match.property.title}</h3>
                                      <p className="text-xs font-medium text-white/80 flex items-center gap-1 mb-4">
                                         <MapPin size={12} /> {match.property.address}, {match.property.neighborhood}
                                      </p>
