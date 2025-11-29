@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Property } from '../types';
-import { 
-  ArrowLeft, MapPin, Bed, Bath, Ruler, Heart, Share2, Check, Phone, 
-  Calendar, ShieldCheck, Camera, ImageIcon, X, ChevronLeft, ChevronRight, 
+import {
+  ArrowLeft, MapPin, Bed, Bath, Ruler, Heart, Share2, Check, Phone,
+  Calendar, ShieldCheck, Camera, ImageIcon, X, ChevronLeft, ChevronRight,
   LayoutGrid, Car, Briefcase, CheckCircle2, Home, Compass
 } from 'lucide-react';
+import { useAdminProfile } from '../lib/hooks/useAdminProfile';
 
 interface PropertyDetailsProps {
   property: Property;
@@ -17,6 +18,7 @@ interface PropertyDetailsProps {
 export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, onBack, isFavorite = false, onToggleFavorite }) => {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const { adminName, adminPhoto } = useAdminProfile();
 
   const hasGarage = property.amenities?.some(a => 
     a.toLowerCase().includes('cochera') || a.toLowerCase().includes('garage')
@@ -339,9 +341,9 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, onBa
 
                    {/* Agent Info */}
                    <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                      <img src="https://i.pravatar.cc/100?img=47" alt="Karina Poblete" className="w-12 h-12 rounded-full object-cover ring-2 ring-white" />
+                      <img src={adminPhoto} alt={adminName} className="w-12 h-12 rounded-full object-cover ring-2 ring-white" />
                       <div>
-                         <p className="font-bold text-gray-900">Karina Poblete</p>
+                         <p className="font-bold text-gray-900">{adminName}</p>
                          <p className="text-xs text-gray-500">Agente Inmobiliario</p>
                          <div className="flex text-amber-400 text-xs mt-0.5">★★★★★</div>
                       </div>
