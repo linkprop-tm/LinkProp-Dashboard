@@ -6,7 +6,7 @@ import {
   Car, CreditCard, LayoutGrid, Briefcase, MapPin,
   UserCheck, Clock,
   Home, XCircle, Trash2, Users, ChevronDown, ChevronUp, X, RefreshCcw, DollarSign,
-  AlertTriangle, Activity, Zap, Heart, ArrowUpDown, Calendar, ArrowDown, ArrowUp
+  AlertTriangle, Activity, Zap, Heart, ArrowUpDown, Calendar, ArrowDown, ArrowUp, Cat
 } from 'lucide-react';
 import { EditClientModal } from './EditClientModal';
 import { Client } from '../types';
@@ -588,6 +588,11 @@ export const Clients: React.FC = () => {
                              {client.searchParams.isProfessionalSuitable && (
                                 <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase rounded-md border border-blue-100 flex items-center gap-1">
                                     <Briefcase size={10} /> Apto Profesional
+                                </span>
+                             )}
+                             {client.searchParams.isPetFriendly && (
+                                <span className="px-2 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase rounded-md border border-green-100 flex items-center gap-1">
+                                    <Cat size={10} /> Apto Mascotas
                                 </span>
                              )}
                          </div>
