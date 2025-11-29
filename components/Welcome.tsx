@@ -524,21 +524,23 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                 </div>
 
                                 {/* Features Grid */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {/* Credit */}
-                                    <div onClick={() => handleFeatureToggle('credit')} className={`flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all ${regData.features.credit ? 'bg-green-50 border-green-200' : 'border-gray-200 hover:bg-gray-50'}`}>
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${regData.features.credit ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'}`}><CheckCircle2 size={16}/></div>
-                                            <span className={`text-xs font-bold ${regData.features.credit ? 'text-green-800' : 'text-gray-600'}`}>Apto Crédito</span>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    {/* Dynamic: Credit or Pets based on Operation Type */}
+                                    {regData.operationType === 'Venta' ? (
+                                        <div onClick={() => handleFeatureToggle('credit')} className={`flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all ${regData.features.credit ? 'bg-green-50 border-green-200' : 'border-gray-200 hover:bg-gray-50'}`}>
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${regData.features.credit ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'}`}><CheckCircle2 size={16}/></div>
+                                                <span className={`text-xs font-bold ${regData.features.credit ? 'text-green-800' : 'text-gray-600'}`}>Apto Crédito</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    {/* Pets */}
-                                    <div onClick={() => handleFeatureToggle('pets')} className={`flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all ${regData.features.pets ? 'bg-green-50 border-green-200' : 'border-gray-200 hover:bg-gray-50'}`}>
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${regData.features.pets ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'}`}><Cat size={16}/></div>
-                                            <span className={`text-xs font-bold ${regData.features.pets ? 'text-green-800' : 'text-gray-600'}`}>Apto Mascotas</span>
+                                    ) : (
+                                        <div onClick={() => handleFeatureToggle('pets')} className={`flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all ${regData.features.pets ? 'bg-green-50 border-green-200' : 'border-gray-200 hover:bg-gray-50'}`}>
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${regData.features.pets ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'}`}><Cat size={16}/></div>
+                                                <span className={`text-xs font-bold ${regData.features.pets ? 'text-green-800' : 'text-gray-600'}`}>Apto Mascotas</span>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                     {/* Professional */}
                                     <div onClick={() => handleFeatureToggle('professional')} className={`flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all ${regData.features.professional ? 'bg-blue-50 border-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}>
                                         <div className="flex items-center gap-3">
