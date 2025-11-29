@@ -20,6 +20,21 @@ export interface PropiedadConInteresados {
   interesados: UsuarioInteresado[];
 }
 
+export interface VisitanteInfo {
+  usuario: Usuario;
+  relacion_id: string;
+  fecha_visita: string;
+  propiedad_id: string;
+  calificacion: number | null;
+  comentario_compartido: string;
+  nota_agente: string;
+}
+
+export interface PropiedadConVisitantes {
+  propiedad: Propiedad;
+  visitantes: VisitanteInfo[];
+}
+
 export interface UpdateRelacionData {
   id: string;
   etapa?: EtapaRelacion;
@@ -196,6 +211,53 @@ export async function obtenerInteresesPorPropiedad(): Promise<PropiedadConIntere
       relacion_id: rel.id,
       fecha_interes: rel.fecha_interes || new Date().toISOString(),
       propiedad_id: rel.propiedad_id
+    });
+  });
+
+  return Array.from(propiedadesMap.values());
+}
+
+export async function obtenerVisitasPorPropiedad(): Promise<PropiedadConVisitantes[]> {
+  const { data, error } = await supabase
+    .from('propiedades_usuarios')
+    .select(`
+      id,
+      propiedad_id,
+      usuario_id,
+      fecha_interes,
+      calificacion,
+      comentario_compartido,
+      nota_agente,
+      propiedades (*),
+      usuarios (*)
+    `)
+    .eq('etapa', 'Visitada')
+    .order('fecha_interes', { ascending: false });
+
+  if (error) throw error;
+
+  const propiedadesMap = new Map<string, PropiedadConVisitantes>();
+
+  (data || []).forEach((rel: any) => {
+    if (!rel.propiedades || !rel.usuarios) return;
+
+    const propId = rel.propiedad_id;
+
+    if (!propiedadesMap.has(propId)) {
+      propiedadesMap.set(propId, {
+        propiedad: rel.propiedades as Propiedad,
+        visitantes: []
+      });
+    }
+
+    propiedadesMap.get(propId)!.visitantes.push({
+      usuario: rel.usuarios as Usuario,
+      relacion_id: rel.id,
+      fecha_visita: rel.fecha_interes || new Date().toISOString(),
+      propiedad_id: rel.propiedad_id,
+      calificacion: rel.calificacion,
+      comentario_compartido: rel.comentario_compartido || '',
+      nota_agente: rel.nota_agente || ''
     });
   });
 

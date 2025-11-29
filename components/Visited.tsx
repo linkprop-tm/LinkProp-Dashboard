@@ -1,101 +1,14 @@
 
-import React, { useState } from 'react';
-import { 
-  MapPin, Star, ArrowRight, 
+import React, { useState, useEffect } from 'react';
+import {
+  MapPin, Star, ArrowRight,
   Lock, ArrowUp, ArrowDown, Check, Loader2, Quote, Eye,
   RotateCcw, AlertTriangle
 } from 'lucide-react';
-import { PROPERTIES_GRID_DATA } from '../constants';
 import { Property } from '../types';
 import { AddPropertyModal } from './AddPropertyModal';
-
-// Enhanced Mock Data with Client info
-const VISITS_MOCK_INITIAL = [
-  { 
-    id: 'v2', 
-    propertyId: '102', 
-    clientName: 'Ana García',
-    clientAvatar: 'https://picsum.photos/50/50?random=20',
-    date: '12 Ene', 
-    isoDate: '2024-01-12',
-    fullDate: '12 Enero 2024', 
-    time: '16:00', 
-    rating: 0, 
-    comment: '', 
-    privateNote: '',
-    status: 'offer' 
-  },
-  { 
-    id: 'v1', 
-    propertyId: '101', 
-    clientName: 'Carlos Ruiz',
-    clientAvatar: 'https://picsum.photos/50/50?random=21',
-    date: '15 Ene', 
-    isoDate: '2024-01-15',
-    fullDate: '15 Enero 2024', 
-    time: '14:30', 
-    rating: 0, 
-    comment: '', 
-    privateNote: '',
-    status: 'liked' 
-  },
-  { 
-    id: 'v5', 
-    propertyId: '106', 
-    clientName: 'María Gomez',
-    clientAvatar: 'https://picsum.photos/50/50?random=22',
-    date: '05 Ene', 
-    isoDate: '2024-01-05',
-    fullDate: '05 Enero 2024', 
-    time: '15:15', 
-    rating: 0, 
-    comment: '', 
-    privateNote: '',
-    status: 'liked' 
-  },
-  { 
-    id: 'v4', 
-    propertyId: '104', 
-    clientName: 'Jorge Pérez',
-    clientAvatar: 'https://picsum.photos/50/50?random=23',
-    date: '08 Ene', 
-    isoDate: '2024-01-08',
-    fullDate: '08 Enero 2024', 
-    time: '09:00', 
-    rating: 0, 
-    comment: '', 
-    privateNote: '',
-    status: 'maybe' 
-  },
-  { 
-    id: 'v3', 
-    propertyId: '103', 
-    clientName: 'Lucía Mendez',
-    clientAvatar: 'https://picsum.photos/50/50?random=24',
-    date: '10 Ene', 
-    isoDate: '2024-01-10',
-    fullDate: '10 Enero 2024', 
-    time: '11:30', 
-    rating: 0, 
-    comment: '', 
-    privateNote: '',
-    status: 'discarded' 
-  },
-  { 
-    id: 'v6', 
-    propertyId: '108', 
-    clientName: 'Miguel Torres',
-    clientAvatar: 'https://picsum.photos/50/50?random=25',
-    date: '02 Ene', 
-    isoDate: '2024-01-02',
-    fullDate: '02 Enero 2024', 
-    time: '10:00', 
-    rating: 0, 
-    comment: '', 
-    privateNote: '',
-    status: 'discarded' 
-  },
-];
+import { obtenerVisitasPorPropiedad, cambiarEtapa, actualizarRelacion, agregarNotaAgente, type PropiedadConVisitantes } from '../lib/api/relationships';
+import { propiedadToProperty } from '../lib/adapters';
 
 type SortOrder = 'desc' | 'asc';
 
@@ -104,52 +17,94 @@ interface VisitedProps {
 }
 
 export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
-  const isAgent = !onPropertyClick; // If onPropertyClick is missing, we assume it's the Agent interface
-  
+  const isAgent = !onPropertyClick;
+
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [visits, setVisits] = useState(VISITS_MOCK_INITIAL);
+  const [realVisits, setRealVisits] = useState<PropiedadConVisitantes[]>([]);
+  const [loadingVisits, setLoadingVisits] = useState(false);
+  const [visitsError, setVisitsError] = useState('');
   const [savingStatus, setSavingStatus] = useState<Record<string, 'idle' | 'saving' | 'saved'>>({});
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
 
-  // Undo / Unmark State
   const [showUndoModal, setShowUndoModal] = useState(false);
-  const [visitToUndo, setVisitToUndo] = useState<string | null>(null);
+  const [visitToUndo, setVisitToUndo] = useState<{propId: string, userId: string, relationId: string} | null>(null);
+  const [localNotes, setLocalNotes] = useState<Record<string, string>>({});
+  const [localComments, setLocalComments] = useState<Record<string, string>>({});
+  const [localRatings, setLocalRatings] = useState<Record<string, number>>({});
 
-  const getProp = (id: string) => PROPERTIES_GRID_DATA.find(p => p.id === id);
+  useEffect(() => {
+    fetchRealVisits();
+  }, []);
 
-  // Agent: Private Note Handlers
-  const handleChange = (visitId: string, value: string) => {
-    setVisits(prevVisits => 
-      prevVisits.map(v => v.id === visitId ? { ...v, privateNote: value } : v)
-    );
-    if (savingStatus[`${visitId}-privateNote`] === 'saved') {
-       setSavingStatus(prev => ({ ...prev, [`${visitId}-privateNote`]: 'idle' }));
+  const fetchRealVisits = async () => {
+    setLoadingVisits(true);
+    setVisitsError('');
+    try {
+      const visits = await obtenerVisitasPorPropiedad();
+      setRealVisits(visits);
+
+      const notes: Record<string, string> = {};
+      const comments: Record<string, string> = {};
+      const ratings: Record<string, number> = {};
+
+      visits.forEach(({ visitantes }) => {
+        visitantes.forEach((v) => {
+          notes[v.relacion_id] = v.nota_agente;
+          comments[v.relacion_id] = v.comentario_compartido;
+          if (v.calificacion !== null) {
+            ratings[v.relacion_id] = v.calificacion;
+          }
+        });
+      });
+
+      setLocalNotes(notes);
+      setLocalComments(comments);
+      setLocalRatings(ratings);
+    } catch (error) {
+      console.error('Error fetching visits:', error);
+      setVisitsError('Error al cargar las visitas');
+    } finally {
+      setLoadingVisits(false);
     }
   };
 
-  const handleSave = (visitId: string) => {
-      const key = `${visitId}-privateNote`;
-      setSavingStatus(prev => ({ ...prev, [key]: 'saving' }));
-      setTimeout(() => {
-         setSavingStatus(prev => ({ ...prev, [key]: 'saved' }));
-         setTimeout(() => {
-            setSavingStatus(prev => ({ ...prev, [key]: 'idle' }));
-         }, 2000);
-      }, 800);
+  const handleChange = (relationId: string, value: string) => {
+    setLocalNotes(prev => ({ ...prev, [relationId]: value }));
+    if (savingStatus[`${relationId}-privateNote`] === 'saved') {
+       setSavingStatus(prev => ({ ...prev, [`${relationId}-privateNote`]: 'idle' }));
+    }
   };
 
-  // Agent: Undo Visit Handlers
-  const handleUndoClick = (visitId: string) => {
-      setVisitToUndo(visitId);
+  const handleSave = async (relationId: string, propId: string, userId: string) => {
+      const key = `${relationId}-privateNote`;
+      setSavingStatus(prev => ({ ...prev, [key]: 'saving' }));
+      try {
+        await agregarNotaAgente(propId, userId, localNotes[relationId] || '');
+        setSavingStatus(prev => ({ ...prev, [key]: 'saved' }));
+        setTimeout(() => {
+           setSavingStatus(prev => ({ ...prev, [key]: 'idle' }));
+        }, 2000);
+      } catch (error) {
+        console.error('Error saving note:', error);
+        setSavingStatus(prev => ({ ...prev, [key]: 'idle' }));
+      }
+  };
+
+  const handleUndoClick = (propId: string, userId: string, relationId: string) => {
+      setVisitToUndo({ propId, userId, relationId });
       setShowUndoModal(true);
   };
 
-  const confirmUndo = () => {
+  const confirmUndo = async () => {
       if (visitToUndo) {
-          // Remove from list to simulate moving back to "Interest"
-          setVisits(prev => prev.filter(v => v.id !== visitToUndo));
-          setShowUndoModal(false);
-          setVisitToUndo(null);
+          try {
+            await cambiarEtapa(visitToUndo.propId, visitToUndo.userId, 'Interes');
+            await fetchRealVisits();
+            setShowUndoModal(false);
+            setVisitToUndo(null);
+          } catch (error) {
+            console.error('Error undoing visit:', error);
+          }
       }
   };
 
@@ -158,50 +113,57 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
       setVisitToUndo(null);
   };
 
-  // Client: Comment Handlers
-  const handleCommentChange = (visitId: string, value: string) => {
-    setVisits(prevVisits => 
-      prevVisits.map(v => v.id === visitId ? { ...v, comment: value } : v)
-    );
-    const key = `${visitId}-comment`;
+  const handleCommentChange = (relationId: string, value: string) => {
+    setLocalComments(prev => ({ ...prev, [relationId]: value }));
+    const key = `${relationId}-comment`;
     if (savingStatus[key] === 'saved') {
         setSavingStatus(prev => ({ ...prev, [key]: 'idle' }));
     }
   };
 
-  const handleSaveComment = (visitId: string) => {
-      const key = `${visitId}-comment`;
+  const handleSaveComment = async (relationId: string) => {
+      const key = `${relationId}-comment`;
       setSavingStatus(prev => ({ ...prev, [key]: 'saving' }));
-      setTimeout(() => {
-         setSavingStatus(prev => ({ ...prev, [key]: 'saved' }));
-         setTimeout(() => {
-            setSavingStatus(prev => ({ ...prev, [key]: 'idle' }));
-         }, 2000);
-      }, 800);
-  };
-
-  // Client: Rating Handler
-  const handleRatingChange = (visitId: string, rating: number) => {
-    setVisits(prevVisits => 
-      prevVisits.map(v => v.id === visitId ? { ...v, rating: rating } : v)
-    );
-    // Simulate auto-save
-    const key = `${visitId}-rating`;
-    setSavingStatus(prev => ({ ...prev, [key]: 'saving' }));
-    setTimeout(() => {
+      try {
+        await actualizarRelacion({
+          id: relationId,
+          comentario_compartido: localComments[relationId] || ''
+        });
         setSavingStatus(prev => ({ ...prev, [key]: 'saved' }));
         setTimeout(() => {
-            setSavingStatus(prev => ({ ...prev, [key]: 'idle' }));
+           setSavingStatus(prev => ({ ...prev, [key]: 'idle' }));
         }, 2000);
-    }, 500);
+      } catch (error) {
+        console.error('Error saving comment:', error);
+        setSavingStatus(prev => ({ ...prev, [key]: 'idle' }));
+      }
   };
 
-  const renderSaveButton = (visitId: string) => {
-      const status = savingStatus[`${visitId}-privateNote`] || 'idle';
+  const handleRatingChange = async (relationId: string, rating: number) => {
+    setLocalRatings(prev => ({ ...prev, [relationId]: rating }));
+    const key = `${relationId}-rating`;
+    setSavingStatus(prev => ({ ...prev, [key]: 'saving' }));
+    try {
+      await actualizarRelacion({
+        id: relationId,
+        calificacion: rating
+      });
+      setSavingStatus(prev => ({ ...prev, [key]: 'saved' }));
+      setTimeout(() => {
+          setSavingStatus(prev => ({ ...prev, [key]: 'idle' }));
+      }, 2000);
+    } catch (error) {
+      console.error('Error saving rating:', error);
+      setSavingStatus(prev => ({ ...prev, [key]: 'idle' }));
+    }
+  };
+
+  const renderSaveButton = (relationId: string, propId: string, userId: string) => {
+      const status = savingStatus[`${relationId}-privateNote`] || 'idle';
       
       return (
-        <button 
-          onClick={() => handleSave(visitId)}
+        <button
+          onClick={() => handleSave(relationId, propId, userId)}
           disabled={status !== 'idle'}
           className={`
             px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-all border shadow-sm
@@ -219,11 +181,11 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
       );
   };
 
-  const renderCommentSaveButton = (visitId: string) => {
-    const status = savingStatus[`${visitId}-comment`] || 'idle';
+  const renderCommentSaveButton = (relationId: string) => {
+    const status = savingStatus[`${relationId}-comment`] || 'idle';
     return (
-      <button 
-        onClick={() => handleSaveComment(visitId)}
+      <button
+        onClick={() => handleSaveComment(relationId)}
         disabled={status !== 'idle'}
         className={`
           text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all uppercase tracking-wide
@@ -248,9 +210,18 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
     }
   };
 
-  const sortedVisits = [...visits].sort((a, b) => {
-    const dateA = new Date(a.isoDate).getTime();
-    const dateB = new Date(b.isoDate).getTime();
+  const formatDateVisual = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+    const day = date.getDate().toString().padStart(2, '0');
+    const monthName = months[date.getMonth()];
+    const year = date.getFullYear().toString();
+    return { day, monthName, year };
+  };
+
+  const sortedVisits = [...realVisits].sort((a, b) => {
+    const dateA = a.visitantes[0]?.fecha_visita ? new Date(a.visitantes[0].fecha_visita).getTime() : 0;
+    const dateB = b.visitantes[0]?.fecha_visita ? new Date(b.visitantes[0].fecha_visita).getTime() : 0;
     return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
   });
 
@@ -299,14 +270,60 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
 
   // --- VIEW RENDERER ---
 
-  // Timeline / List View
-  const renderTimelineView = () => (
-    <div className="max-w-[1600px] mx-auto space-y-6">
-        {sortedVisits.map((visit) => {
-          const prop = getProp(visit.propertyId);
-          if (!prop) return null;
-          return (
-            <div key={visit.id} className="animate-fade-in-up">
+  const renderTimelineView = () => {
+    if (loadingVisits) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 size={48} className="animate-spin text-primary-600" />
+            <p className="text-gray-500 font-medium">Cargando visitas...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (visitsError) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <AlertTriangle size={48} className="text-red-500" />
+            <p className="text-gray-900 font-bold text-lg">Error al cargar las visitas</p>
+            <p className="text-gray-500">{visitsError}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (sortedVisits.length === 0) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center gap-4 text-center max-w-md">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
+              <Eye size={40} className="text-gray-400" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">Aún no hay propiedades visitadas</h3>
+            <p className="text-gray-500">
+              Las propiedades marcadas como visitadas desde "Interés en Visitar" aparecerán aquí.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="max-w-[1600px] mx-auto space-y-6">
+        {sortedVisits.map(({ propiedad, visitantes }) => {
+          const prop = propiedadToProperty(propiedad);
+
+          return visitantes.map((visitante) => {
+            const dateInfo = formatDateVisual(visitante.fecha_visita);
+            const avatarUrl = visitante.usuario.foto_perfil_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(visitante.usuario.full_name)}&background=6366f1&color=fff`;
+            const rating = localRatings[visitante.relacion_id] ?? visitante.calificacion ?? 0;
+            const comment = localComments[visitante.relacion_id] ?? visitante.comentario_compartido;
+            const privateNote = localNotes[visitante.relacion_id] ?? visitante.nota_agente;
+
+            return (
+              <div key={visitante.relacion_id} className="animate-fade-in-up">
                 
                 <div className="flex flex-col lg:flex-row gap-6 items-stretch">
                     
@@ -350,10 +367,10 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
                                       {isAgent ? (
                                         <>
                                             <div className="relative">
-                                                <img src={visit.clientAvatar} className="w-12 h-12 rounded-full object-cover ring-4 ring-gray-50" alt="Client"/>
+                                                <img src={avatarUrl} className="w-12 h-12 rounded-full object-cover ring-4 ring-gray-50" alt="Client"/>
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">{visit.clientName}</p>
+                                                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">{visitante.usuario.full_name}</p>
                                             </div>
                                         </>
                                       ) : (
@@ -381,17 +398,17 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
                                             type="button"
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              if (!isAgent) handleRatingChange(visit.id, star);
+                                              if (!isAgent) handleRatingChange(visitante.relacion_id, star);
                                             }}
                                             className={`transition-all duration-200 outline-none focus:outline-none ${!isAgent ? 'hover:scale-110 active:scale-95 cursor-pointer' : 'cursor-default'}`}
                                           >
                                             <Star 
                                               size={26} // Interactive size
                                               className={`transition-colors duration-200 outline-none focus:outline-none ${
-                                                  star <= visit.rating 
-                                                  ? 'fill-yellow-400 text-yellow-400' 
+                                                  star <= rating
+                                                  ? 'fill-yellow-400 text-yellow-400'
                                                   : 'fill-gray-100 text-gray-200'
-                                              } ${!isAgent && star > visit.rating ? 'hover:text-yellow-200' : ''}`} 
+                                              } ${!isAgent && star > rating ? 'hover:text-yellow-200' : ''}`} 
                                               strokeWidth={0} 
                                             />
                                           </button>
@@ -414,16 +431,16 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
 
                                         {/* The Input Card */}
                                         <div className="relative z-10 bg-gray-50/50 hover:bg-white focus-within:bg-white rounded-2xl border border-gray-100 focus-within:border-primary-200 focus-within:ring-4 focus-within:ring-primary-50/50 transition-all duration-300 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] focus-within:shadow-xl p-1">
-                                             <textarea 
-                                                value={visit.comment}
-                                                onChange={(e) => handleCommentChange(visit.id, e.target.value)}
+                                             <textarea
+                                                value={comment}
+                                                onChange={(e) => handleCommentChange(visitante.relacion_id, e.target.value)}
                                                 className="w-full bg-transparent border-none px-5 py-4 text-gray-700 font-medium text-base leading-relaxed outline-none resize-none placeholder:text-gray-400 min-h-[100px]"
                                                 placeholder="Contanos qué opinás sobre la propiedad…"
                                              />
 
                                              {/* Footer with Save Button */}
                                              <div className="flex justify-end items-center px-4 pb-3 pt-1 border-t border-transparent group-focus-within/input:border-gray-50 transition-colors">
-                                                 {renderCommentSaveButton(visit.id)}
+                                                 {renderCommentSaveButton(visitante.relacion_id)}
                                              </div>
                                         </div>
                                     </div>
@@ -433,7 +450,7 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
                                             <Quote size={28} className="fill-current transform scale-x-[-1]" />
                                          </div>
                                          <p className="text-gray-600 font-medium text-base leading-relaxed">
-                                            {visit.comment || <span className="text-gray-400 italic">Sin comentarios aún...</span>}
+                                            {comment || <span className="text-gray-400 italic">Sin comentarios aún...</span>}
                                          </p>
                                      </div>
                                  )}
@@ -455,16 +472,16 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
                                         <span className="text-xs font-bold uppercase tracking-wider text-gray-400 group-hover:text-gray-900 transition-colors">Nota Privada</span>
                                      </div>
                                      {/* Visual indicator of note content */}
-                                     {visit.privateNote && (
+                                     {privateNote && (
                                          <div className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse"></div>
                                      )}
                                  </div>
                                  
                                  {/* Content Area - Clean Slate */}
                                  <div className="flex-1 px-6 relative pb-2">
-                                    <textarea 
-                                      value={visit.privateNote}
-                                      onChange={(e) => handleChange(visit.id, e.target.value)}
+                                    <textarea
+                                      value={privateNote}
+                                      onChange={(e) => handleChange(visitante.relacion_id, e.target.value)}
                                       placeholder="Escribe lo que quieras..."
                                       className="w-full h-full min-h-[140px] bg-gray-50 hover:bg-gray-50/80 focus:bg-white border border-transparent focus:border-primary-100 rounded-xl p-4 text-sm text-gray-600 font-medium leading-relaxed outline-none resize-none placeholder:text-gray-400 focus:ring-4 focus:ring-primary-50/20 transition-all duration-300"
                                     />
@@ -473,7 +490,7 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
                                  {/* Footer Actions - With Undo Button */}
                                  <div className="px-6 py-4 flex items-center justify-between mt-auto border-t border-gray-50 bg-gray-50/30">
                                       <button
-                                        onClick={() => handleUndoClick(visit.id)}
+                                        onClick={() => handleUndoClick(visitante.propiedad_id, visitante.usuario.id, visitante.relacion_id)}
                                         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-red-100 text-red-600 shadow-sm hover:bg-red-50 hover:border-red-200 hover:shadow-md transition-all text-[10px] font-bold uppercase tracking-wider group"
                                       >
                                         <div className="p-1 bg-red-100 rounded-full group-hover:bg-red-200 transition-colors">
@@ -481,7 +498,7 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
                                         </div>
                                         Deshacer Visita
                                       </button>
-                                      {renderSaveButton(visit.id)}
+                                      {renderSaveButton(visitante.relacion_id, visitante.propiedad_id, visitante.usuario.id)}
                                  </div>
                              </div>
                         </div>
@@ -490,9 +507,11 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
                 </div>
             </div>
           );
-        })}
-    </div>
-  );
+        });
+      })}
+      </div>
+    );
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 animate-fade-in pb-32">
