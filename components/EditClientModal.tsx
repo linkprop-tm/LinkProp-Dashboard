@@ -547,12 +547,13 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                                 <label className="text-xs font-bold text-gray-500 uppercase mb-3 block">Antigüedad</label>
                                 <div className="flex flex-wrap gap-3">
                                     {['Indiferente', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Hasta 50 años'].map(val => {
-                                        const isSelected = (formData.searchParams.antiquity || []).includes(val);
+                                        const currentAntiquity = formData.searchParams.antiquity?.[0] || '';
+                                        const isSelected = currentAntiquity === val;
                                         return (
                                             <button
                                                 type="button"
                                                 key={val}
-                                                onClick={() => toggleArrayItem('antiquity', val)}
+                                                onClick={() => handleSearchParamChange('antiquity', [val])}
                                                 className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
                                                     isSelected
                                                     ? 'bg-primary-50 text-primary-600 border-primary-200'
