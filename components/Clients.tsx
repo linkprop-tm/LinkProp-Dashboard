@@ -15,6 +15,7 @@ import { usuarioToClient } from '../lib/adapters';
 import { matchesNeighborhood } from '../lib/neighborhoods';
 import { obtenerConteoMatchesPorUsuario } from '../lib/api/matches';
 import { obtenerConteoInteresesPorUsuario } from '../lib/api/relationships';
+import { SkeletonGrid } from './SkeletonCard';
 
 // Helper to format neighborhoods display
 const formatNeighborhoods = (neighborhoods?: string[], location?: string): string => {
@@ -282,7 +283,7 @@ export const Clients: React.FC = () => {
       {/* Quick Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Total */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 animate-fade-in-up stagger-1">
              <div className="p-3 rounded-xl bg-blue-50 text-primary-600">
                 <Users size={24} />
              </div>
@@ -293,7 +294,7 @@ export const Clients: React.FC = () => {
           </div>
 
           {/* Card 2: Activos */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 animate-fade-in-up stagger-2">
              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
                 <UserCheck size={24} />
              </div>
@@ -304,7 +305,7 @@ export const Clients: React.FC = () => {
           </div>
           
           {/* Card 3: Inactivos */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 animate-fade-in-up stagger-3">
              <div className="p-3 rounded-xl bg-red-50 text-red-600">
                 <XCircle size={24} />
              </div>
@@ -315,7 +316,7 @@ export const Clients: React.FC = () => {
           </div>
 
           {/* Card 4: Nuevos (Mes) */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 animate-fade-in-up stagger-4">
              <div className="p-3 rounded-xl bg-purple-50 text-purple-600">
                 <Clock size={24} />
              </div>
@@ -486,7 +487,9 @@ export const Clients: React.FC = () => {
       </div>
 
       {/* Grid of Clients */}
-      {processedClients.length === 0 ? (
+      {loading ? (
+        <SkeletonGrid items={6} variant="client" />
+      ) : processedClients.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 border-dashed">
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-6">
                 <Search size={40} strokeWidth={1.5} />
@@ -504,12 +507,12 @@ export const Clients: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {processedClients.map(client => {
+            {processedClients.map((client, idx) => {
                 const matchesCount = client.matchesCount || 0;
                 const interestsCount = client.interesesCount || 0;
 
                 return (
-                <div key={client.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 group flex flex-col overflow-hidden">
+                <div key={client.id} className={`bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 group flex flex-col overflow-hidden animate-fade-in-up stagger-${Math.min(idx + 1, 8)}`}>
                     
                     {/* Header: User Info */}
                     <div className="p-6 pb-4">

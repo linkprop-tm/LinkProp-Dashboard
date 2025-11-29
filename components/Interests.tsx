@@ -10,6 +10,7 @@ import { AddPropertyModal } from './AddPropertyModal';
 import { Property } from '../types';
 import { obtenerInteresesPorPropiedad, cambiarEtapa, type PropiedadConInteresados } from '../lib/api/relationships';
 import { propiedadToProperty } from '../lib/adapters';
+import { SkeletonTable } from './SkeletonCard';
 
 export const Interests: React.FC = () => {
   const [realInterests, setRealInterests] = useState<PropiedadConInteresados[]>([]);
@@ -159,8 +160,12 @@ export const Interests: React.FC = () => {
       <div className="space-y-8 animate-fade-in">
 
         {loadingInterests ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <div className="space-y-6 animate-fade-in">
+            <div className="text-center py-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Cargando intereses...</h3>
+              <p className="text-gray-500 text-sm">Organizando los datos por propiedad</p>
+            </div>
+            <SkeletonTable rows={8} />
           </div>
         ) : interestsError ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -187,11 +192,11 @@ export const Interests: React.FC = () => {
             </p>
           </div>
         ) : (
-          realInterests.map(({ propiedad, interesados }) => {
+          realInterests.map(({ propiedad, interesados }, idx) => {
             const prop = propiedadToProperty(propiedad);
 
             return (
-              <div key={prop.id} className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-primary-900/5 transition-all duration-300 border border-gray-100 flex flex-col md:flex-row min-h-[280px] group/card">
+              <div key={prop.id} className={`bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-primary-900/5 transition-all duration-300 border border-gray-100 flex flex-col md:flex-row min-h-[280px] group/card animate-fade-in-up stagger-${Math.min(idx + 1, 8)}`}>
 
                   {/* Left Side: Image Section (35%) - Fusion Style */}
                   <div

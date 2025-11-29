@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Sparkles, Check, ArrowRight, X, MapPin, ArrowDown, ArrowUp, Loader2
+  Sparkles, Check, ArrowRight, X, MapPin, ArrowDown, ArrowUp
 } from 'lucide-react';
 import { PieChart, Pie, Cell } from 'recharts';
 import { AddPropertyModal } from './AddPropertyModal';
@@ -8,6 +8,7 @@ import { Property, Client } from '../types';
 import { obtenerMatchesParaTodosLosUsuarios, UsuarioConMatches } from '../lib/api/matches';
 import { transformUsuarioToClient, transformPropiedadToProperty, MatchData, transformMatchToUI } from '../lib/adapters-matching';
 import { analizarTop3Criterios } from '../lib/matching';
+import { SkeletonGrid } from './SkeletonCard';
 
 export const Matching: React.FC = () => {
   const [clientModalOpen, setClientModalOpen] = useState<string | null>(null);
@@ -43,11 +44,12 @@ export const Matching: React.FC = () => {
   const renderClientView = () => {
     if (loading) {
       return (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-primary-600 mx-auto mb-4" />
-            <p className="text-gray-600 font-medium">Calculando matches...</p>
+        <div className="space-y-6 animate-fade-in">
+          <div className="text-center py-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Calculando matches perfectos...</h3>
+            <p className="text-gray-500 text-sm">Analizando preferencias y propiedades disponibles</p>
           </div>
+          <SkeletonGrid items={6} variant="property" />
         </div>
       );
     }

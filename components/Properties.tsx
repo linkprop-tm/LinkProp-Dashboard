@@ -7,6 +7,7 @@ import { AddPropertyModal } from './AddPropertyModal';
 import { Property } from '../types';
 import { useProperties } from '../lib/hooks/useProperties';
 import { cambiarVisibilidadPropiedad } from '../lib/api/properties';
+import { SkeletonGrid, SkeletonCard } from './SkeletonCard';
 
 // --- HELPER: Status Badge ---
 const getStatusBadge = (status: string) => {
@@ -41,11 +42,11 @@ const RenderLandscape: React.FC<{
   const isVisible = prop.isVisible;
 
   return (
-    <div 
+    <div
         onClick={() => onEdit(prop)}
-        className={`group relative aspect-video rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 bg-gray-900
+        className={`group relative aspect-video rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 bg-gray-900 animate-fade-in-up
             ${isVisible
-                ? 'shadow-md hover:shadow-2xl' 
+                ? 'shadow-md hover:shadow-2xl'
                 : 'shadow-inner border border-gray-200 opacity-90'
             }
         `}
@@ -133,9 +134,9 @@ const RenderRow: React.FC<{
     const isVisible = prop.isVisible;
 
     return (
-        <div 
+        <div
             onClick={() => onEdit(prop)}
-            className={`group bg-white p-3 rounded-2xl border border-gray-100 hover:border-primary-100 hover:shadow-lg hover:shadow-primary-900/5 transition-all duration-300 flex items-center gap-6 cursor-pointer
+            className={`group bg-white p-3 rounded-2xl border border-gray-100 hover:border-primary-100 hover:shadow-lg hover:shadow-primary-900/5 transition-all duration-300 flex items-center gap-6 cursor-pointer animate-fade-in
                 ${!isVisible ? 'opacity-70 bg-gray-50' : ''}
             `}
         >
@@ -287,11 +288,16 @@ export const Properties: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-8 max-w-[1920px] mx-auto flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Cargando propiedades...</p>
+      <div className="p-8 max-w-[1920px] mx-auto space-y-8 animate-fade-in">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Propiedades</h1>
+              <p className="text-gray-500 mt-1">Gestiona la visibilidad y detalles de las propiedades.</p>
+            </div>
+          </div>
         </div>
+        <SkeletonGrid items={9} variant="property" />
       </div>
     );
   }
@@ -356,7 +362,7 @@ export const Properties: React.FC = () => {
       {/* Content Rendering based on ViewMode */}
       {viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-             {getFilteredProperties().map(prop => (
+             {getFilteredProperties().map((prop, idx) => (
                 <RenderLandscape 
                     key={prop.id} 
                     prop={prop} 
@@ -374,8 +380,8 @@ export const Properties: React.FC = () => {
                 <div className="col-span-3">Características</div>
                 <div className="col-span-2 text-right">Acciones</div>
              </div>
-             
-             {getFilteredProperties().map(prop => (
+
+             {getFilteredProperties().map((prop, idx) => (
                 <RenderRow 
                     key={prop.id} 
                     prop={prop} 

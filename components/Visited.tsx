@@ -2,13 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import {
   MapPin, Star, ArrowRight,
-  Lock, ArrowUp, ArrowDown, Check, Loader2, Quote, Eye,
+  Lock, ArrowUp, ArrowDown, Check, Quote, Eye,
   RotateCcw, AlertTriangle
 } from 'lucide-react';
 import { Property } from '../types';
 import { AddPropertyModal } from './AddPropertyModal';
 import { obtenerVisitasPorPropiedad, cambiarEtapa, actualizarRelacion, agregarNotaAgente, type PropiedadConVisitantes } from '../lib/api/relationships';
 import { propiedadToProperty } from '../lib/adapters';
+import { SkeletonTable } from './SkeletonCard';
 
 type SortOrder = 'desc' | 'asc';
 
@@ -273,11 +274,12 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
   const renderTimelineView = () => {
     if (loadingVisits) {
       return (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 size={48} className="animate-spin text-primary-600" />
-            <p className="text-gray-500 font-medium">Cargando visitas...</p>
+        <div className="space-y-6 animate-fade-in">
+          <div className="text-center py-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Cargando visitas realizadas...</h3>
+            <p className="text-gray-500 text-sm">Organizando la información de cada propiedad</p>
           </div>
+          <SkeletonTable rows={6} />
         </div>
       );
     }

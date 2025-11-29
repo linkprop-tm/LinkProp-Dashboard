@@ -115,7 +115,7 @@ export const Dashboard: React.FC = () => {
           return (
             <div
               key={index}
-              className="relative overflow-hidden bg-white p-6 rounded-3xl border border-gray-100 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 group cursor-default"
+              className={`relative overflow-hidden bg-white p-6 rounded-3xl border border-gray-100 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 group cursor-default animate-fade-in-up stagger-${index + 1}`}
             >
               {/* Decorative Background Blob */}
               <div className={`absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gradient-to-br ${t.gradient} blur-3xl group-hover:scale-150 transition-transform duration-700 ease-out`}></div>
@@ -150,7 +150,7 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Chart */}
-        <div className="lg:col-span-7 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+        <div className="lg:col-span-7 bg-white p-6 rounded-xl border border-gray-100 shadow-sm animate-fade-in-left stagger-5">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
@@ -219,7 +219,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Latest Clients (Replaced Top Properties) */}
-        <div className="lg:col-span-5 bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col">
+        <div className="lg:col-span-5 bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col animate-fade-in-right stagger-5">
           <div className="flex items-center justify-between mb-6">
              <div className="flex items-center gap-3">
                  <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
@@ -234,8 +234,8 @@ export const Dashboard: React.FC = () => {
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-3">
             {ultimosClientes.length > 0 ? (
-              ultimosClientes.map((client) => (
-                <div key={client.id} className="flex items-center gap-3 p-3 bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-100 hover:shadow-sm rounded-xl transition-all group cursor-pointer">
+              ultimosClientes.map((client, idx) => (
+                <div key={client.id} className={`flex items-center gap-3 p-3 bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-100 hover:shadow-sm rounded-xl transition-all group cursor-pointer animate-fade-in-up stagger-${idx + 1}`}>
                   <div className="relative flex-shrink-0">
                     {client.avatar ? (
                       <img src={client.avatar} alt={client.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-white" />
@@ -273,7 +273,7 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Conversion Rate Chart */}
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm animate-fade-in-up stagger-6">
            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
@@ -313,7 +313,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Visit Requests (Replaced Recent Activity) -> Interés en visitar reciente */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-full">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-full animate-fade-in-up stagger-7">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
             <div className="flex items-center gap-3">
                <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
@@ -336,7 +336,7 @@ export const Dashboard: React.FC = () => {
                     const tituloPropiedad = interes.propiedad.titulo || 'Propiedad';
 
                     return (
-                      <div key={interes.id} className="p-4 hover:bg-gray-50 transition-colors flex items-center gap-4 group cursor-default">
+                      <div key={interes.id} className={`p-4 hover:bg-gray-50 transition-colors flex items-center gap-4 group cursor-default animate-fade-in stagger-${idx + 1}`}>
                         <div className="relative flex-shrink-0">
                           <img src={imagenPropiedad} className="w-12 h-12 rounded-lg object-cover shadow-sm ring-1 ring-gray-100" alt={tituloPropiedad} />
                           <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full ring-2 ring-white overflow-hidden shadow-sm">

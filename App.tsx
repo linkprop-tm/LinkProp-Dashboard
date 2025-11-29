@@ -28,9 +28,15 @@ const AppContent: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Cargando...</p>
+        <div className="text-center animate-fade-in">
+          <div className="w-20 h-20 mb-6 mx-auto relative">
+            <div className="absolute inset-0 bg-primary-100 rounded-full animate-pulse"></div>
+            <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 border-4 border-gray-200 border-t-primary-600 rounded-full animate-spin"></div>
+            </div>
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">Iniciando LinkProp</h3>
+          <p className="text-gray-500 text-sm">Preparando tu experiencia...</p>
         </div>
       </div>
     );
