@@ -370,7 +370,7 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
                                                 <img src={avatarUrl} className="w-12 h-12 rounded-full object-cover ring-4 ring-gray-50" alt="Client"/>
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">{visitante.usuario.full_name}</p>
+                                                <p className="text-sm font-bold text-gray-900 tracking-wide">{visitante.usuario.full_name}</p>
                                             </div>
                                         </>
                                       ) : (
