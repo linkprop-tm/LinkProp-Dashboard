@@ -38,7 +38,7 @@ export function usuarioToClient(usuario: Usuario): Client {
       isPetFriendly: usuario.preferencias_apto_mascotas || false
     },
     activityScore: 75,
-    status: 'active'
+    status: usuario.estado_usuario === 'Activo' ? 'active' : 'inactive'
   };
 }
 
@@ -48,6 +48,7 @@ export function clientToUsuario(client: Client): Partial<Usuario> {
     full_name: client.name,
     email: client.email,
     telefono: client.phone || '',
+    estado_usuario: client.status === 'active' ? 'Activo' : 'Inactivo',
     preferencias_tipo: client.searchParams.propertyTypes && client.searchParams.propertyTypes.length > 0
       ? client.searchParams.propertyTypes
       : (client.searchParams.type ? [client.searchParams.type] : []),

@@ -4,6 +4,7 @@ export type Moneda = 'USD' | 'ARS';
 export type EstadoPropiedad = 'Disponible' | 'Reservada' | 'Vendida';
 export type VisibilidadPropiedad = 'Publica' | 'Privada';
 export type EtapaRelacion = 'Explorar' | 'Interes' | 'Visitada';
+export type EstadoUsuario = 'Activo' | 'Inactivo';
 
 export interface Propiedad {
   id: string;
@@ -55,6 +56,7 @@ export interface Usuario {
   email: string;
   full_name: string;
   telefono: string;
+  estado_usuario: EstadoUsuario | null;
   preferencias_tipo: TipoPropiedad[];
   preferencias_operacion: TipoOperacion | null;
   preferencias_precio_min: number | null;
