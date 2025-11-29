@@ -795,7 +795,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
 
   // Logic for Sorting and Filtering
   const getProcessedProperties = () => {
-    const sourceProperties = matchedProperties.length > 0 ? matchedProperties : PROPERTIES_GRID_DATA;
+    const sourceProperties = matchedProperties;
 
     // 1. Filter by search
     let result = sourceProperties.filter(p =>
@@ -907,7 +907,19 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
 
             {/* Grid Content */}
             {processedProps.length === 0 ? (
-               <EmptyState icon={Search} title="No se encontraron propiedades" description="Intenta con otros términos de búsqueda." />
+               searchTerm ? (
+                  <EmptyState
+                     icon={Search}
+                     title="No se encontraron propiedades"
+                     description="Intenta con otros términos de búsqueda."
+                  />
+               ) : (
+                  <EmptyState
+                     icon={Building}
+                     title="Aún no hay propiedades disponibles"
+                     description="Tu agente inmobiliario está buscando propiedades que coincidan con tus preferencias. Te notificaremos cuando encuentre opciones para ti."
+                  />
+               )
             ) : isGrouped ? (
                // Grouped View by Neighborhood
                <div className="space-y-12">
