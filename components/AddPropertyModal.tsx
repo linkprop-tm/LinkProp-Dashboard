@@ -937,7 +937,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                            <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100 opacity-80">
                               <img src="https://picsum.photos/100/100?random=99" alt="Agent" className="w-12 h-12 rounded-full object-cover ring-2 ring-white" />
                               <div>
-                                 <p className="font-bold text-gray-900">Roberto Díaz</p>
+                                 <p className="font-bold text-gray-900">Karina Poblete</p>
                                  <p className="text-xs text-gray-500">Agente Inmobiliario</p>
                               </div>
                            </div>
