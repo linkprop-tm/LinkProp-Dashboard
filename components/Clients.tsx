@@ -580,29 +580,58 @@ export const Clients: React.FC = () => {
 
                          {/* Requirements Tags */}
                          <div className="grid grid-cols-2 gap-2 pt-2">
-                             <span className="px-2 py-1 bg-gray-50 text-gray-500 text-[10px] font-bold uppercase rounded-md border border-gray-100 flex items-center gap-1">
-                                 <LayoutGrid size={10} /> {client.searchParams.environments} amb
-                             </span>
-                             {client.searchParams.hasGarage ? (
-                                <span className="px-2 py-1 bg-orange-50 text-orange-600 text-[10px] font-bold uppercase rounded-md border border-orange-100 flex items-center gap-1">
-                                    <Car size={10} /> Cochera
-                                </span>
-                             ) : <div />}
-                             {client.searchParams.isCreditSuitable ? (
-                                <span className="px-2 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase rounded-md border border-green-100 flex items-center gap-1">
-                                    <CreditCard size={10} /> Apto Crédito
-                                </span>
-                             ) : <div />}
-                             {client.searchParams.isProfessionalSuitable ? (
-                                <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase rounded-md border border-blue-100 flex items-center gap-1">
-                                    <Briefcase size={10} /> Apto Profesional
-                                </span>
-                             ) : <div />}
-                             {client.searchParams.isPetFriendly && (
-                                <span className="px-2 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase rounded-md border border-green-100 flex items-center gap-1">
-                                    <Cat size={10} /> Apto Mascotas
-                                </span>
-                             )}
+                             {[
+                                 {
+                                     label: `${client.searchParams.environments} ambientes`,
+                                     icon: LayoutGrid,
+                                     bgColor: 'bg-gray-50',
+                                     textColor: 'text-gray-500',
+                                     borderColor: 'border-gray-100',
+                                     show: true
+                                 },
+                                 {
+                                     label: 'Cochera',
+                                     icon: Car,
+                                     bgColor: 'bg-orange-50',
+                                     textColor: 'text-orange-600',
+                                     borderColor: 'border-orange-100',
+                                     show: client.searchParams.hasGarage
+                                 },
+                                 {
+                                     label: 'Apto Crédito',
+                                     icon: CreditCard,
+                                     bgColor: 'bg-green-50',
+                                     textColor: 'text-green-600',
+                                     borderColor: 'border-green-100',
+                                     show: client.searchParams.isCreditSuitable
+                                 },
+                                 {
+                                     label: 'Apto Mascotas',
+                                     icon: Cat,
+                                     bgColor: 'bg-green-50',
+                                     textColor: 'text-green-600',
+                                     borderColor: 'border-green-100',
+                                     show: client.searchParams.isPetFriendly
+                                 },
+                                 {
+                                     label: 'Apto Profesional',
+                                     icon: Briefcase,
+                                     bgColor: 'bg-blue-50',
+                                     textColor: 'text-blue-600',
+                                     borderColor: 'border-blue-100',
+                                     show: client.searchParams.isProfessionalSuitable
+                                 }
+                             ].filter(tag => tag.show).map((tag, index) => {
+                                 const Icon = tag.icon;
+                                 return (
+                                     <span
+                                         key={index}
+                                         className={`px-2 py-1 ${tag.bgColor} ${tag.textColor} text-[10px] font-bold uppercase rounded-md border ${tag.borderColor} flex items-center gap-1`}
+                                     >
+                                         <Icon size={10} /> {tag.label}
+                                     </span>
+                                 );
+                             })}
                          </div>
                     </div>
 
