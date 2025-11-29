@@ -270,7 +270,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   // Settings State
   const [settingsPropertyTypes, setSettingsPropertyTypes] = useState<string[]>(['Departamento']);
   const [settingsAmenities, setSettingsAmenities] = useState<string[]>(['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Lavadero']);
-  const [settingsAntiquity, setSettingsAntiquity] = useState<string[]>(['Hasta 5 años']);
+  const [settingsAntiquity, setSettingsAntiquity] = useState<string[]>(['Indiferente']);
   const [settingsOperation, setSettingsOperation] = useState('Venta');
   const [settingsPriceMin, setSettingsPriceMin] = useState<string>('');
   const [settingsPriceMax, setSettingsPriceMax] = useState<string>('');
@@ -338,6 +338,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
           preferencias_precio_max,
           preferencias_ubicacion,
           preferencias_amenities,
+          preferencias_antiguedad,
           preferencias_m2_min,
           preferencias_ambientes,
           preferencias_apto_credito,
@@ -360,6 +361,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
         setSettingsPriceMax(data.preferencias_precio_max?.toString() || '');
         setSettingsNeighborhoods(data.preferencias_ubicacion || ['Palermo Soho', 'Belgrano']);
         setSettingsAmenities(data.preferencias_amenities || ['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Lavadero']);
+        setSettingsAntiquity(data.preferencias_antiguedad || ['Indiferente']);
         setSettingsM2Min(data.preferencias_m2_min?.toString() || '');
         setSettingsAmbientes(data.preferencias_ambientes || '');
 
@@ -432,6 +434,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
         preferencias_operacion: settingsOperation,
         preferencias_ubicacion: settingsNeighborhoods,
         preferencias_amenities: settingsAmenities,
+        preferencias_antiguedad: settingsAntiquity,
         preferencias_apto_credito: settingsSpecifics.credit,
         preferencias_apto_profesional: settingsSpecifics.professional,
         preferencias_cochera: settingsSpecifics.garage,
