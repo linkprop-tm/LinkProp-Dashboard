@@ -9,7 +9,7 @@ import { PROPERTIES_GRID_DATA } from '../constants';
 import { AddPropertyModal } from './AddPropertyModal';
 import { Property } from '../types';
 import { obtenerInteresesPorPropiedad, cambiarEtapa, type PropiedadConInteresados } from '../lib/api/relationships';
-import { convertPropiedadToProperty } from '../lib/adapters';
+import { propiedadToProperty } from '../lib/adapters';
 
 export const Interests: React.FC = () => {
   const [realInterests, setRealInterests] = useState<PropiedadConInteresados[]>([]);
@@ -86,24 +86,6 @@ export const Interests: React.FC = () => {
     }
   };
 
-  const convertToPropertyFormat = (propiedad: any): Property => {
-    const firstImage = propiedad.imagenes?.[0] || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800';
-    return {
-      id: propiedad.id,
-      title: propiedad.titulo,
-      price: propiedad.precio,
-      currency: propiedad.moneda === 'USD' ? 'USD' : '$',
-      address: propiedad.direccion,
-      neighborhood: propiedad.barrio,
-      bedrooms: propiedad.dormitorios,
-      bathrooms: propiedad.banos,
-      area: propiedad.m2_totales || propiedad.superficie,
-      imageUrl: firstImage,
-      status: propiedad.estado === 'Disponible' ? 'active' : propiedad.estado === 'Reservada' ? 'pending' : 'sold',
-      type: propiedad.tipo,
-      operation: propiedad.operacion
-    };
-  };
 
   // Helper to format date nicely
   const formatDateVisual = (dateStr: string) => {
@@ -206,7 +188,7 @@ export const Interests: React.FC = () => {
           </div>
         ) : (
           realInterests.map(({ propiedad, interesados }) => {
-            const prop = convertToPropertyFormat(propiedad);
+            const prop = propiedadToProperty(propiedad);
 
             return (
               <div key={prop.id} className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-primary-900/5 transition-all duration-300 border border-gray-100 flex flex-col md:flex-row min-h-[280px] group/card">
