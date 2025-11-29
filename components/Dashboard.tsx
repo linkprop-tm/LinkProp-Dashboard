@@ -22,56 +22,33 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     setIsMounted(true);
-    loadPropiedadesDisponibles();
-    loadClientesActivos();
-    loadInteresesMes();
-    loadUltimosClientes();
-    loadUltimosIntereses();
+    loadAllData();
   }, []);
 
-  const loadPropiedadesDisponibles = async () => {
+  const loadAllData = async () => {
     try {
-      const propiedades = await obtenerPropiedadesDisponibles();
+      // Execute all queries in parallel for faster loading
+      const [
+        propiedades,
+        clientes,
+        interesesCount,
+        usuarios,
+        intereses
+      ] = await Promise.all([
+        obtenerPropiedadesDisponibles(),
+        obtenerClientesActivos(),
+        contarRelacionesPorEtapa('Interes'),
+        obtenerUltimosClientes(5),
+        obtenerUltimosIntereses(5)
+      ]);
+
       setPropiedadesDisponibles(propiedades.length);
-    } catch (error) {
-      console.error('Error loading propiedades disponibles:', error);
-    }
-  };
-
-  const loadClientesActivos = async () => {
-    try {
-      const clientes = await obtenerClientesActivos();
       setClientesActivos(clientes.length);
-    } catch (error) {
-      console.error('Error loading clientes activos:', error);
-    }
-  };
-
-  const loadInteresesMes = async () => {
-    try {
-      const count = await contarRelacionesPorEtapa('Interes');
-      setInteresesMes(count);
-    } catch (error) {
-      console.error('Error loading intereses:', error);
-    }
-  };
-
-  const loadUltimosClientes = async () => {
-    try {
-      const usuarios = await obtenerUltimosClientes(5);
-      const clientes = usuarios.map(usuario => usuarioToClient(usuario));
-      setUltimosClientes(clientes);
-    } catch (error) {
-      console.error('Error loading ultimos clientes:', error);
-    }
-  };
-
-  const loadUltimosIntereses = async () => {
-    try {
-      const intereses = await obtenerUltimosIntereses(5);
+      setInteresesMes(interesesCount);
+      setUltimosClientes(usuarios.map(usuario => usuarioToClient(usuario)));
       setUltimosIntereses(intereses);
     } catch (error) {
-      console.error('Error loading ultimos intereses:', error);
+      console.error('Error loading dashboard data:', error);
     }
   };
 

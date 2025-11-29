@@ -188,7 +188,8 @@ export async function obtenerInteresesPorPropiedad(): Promise<PropiedadConIntere
       usuarios (*)
     `)
     .eq('etapa', 'Interes')
-    .order('fecha_interes', { ascending: false });
+    .order('fecha_interes', { ascending: false })
+    .limit(50);
 
   if (error) throw error;
 
@@ -313,7 +314,8 @@ export async function obtenerVisitasPorPropiedad(): Promise<PropiedadConVisitant
       usuarios (*)
     `)
     .eq('etapa', 'Visitada')
-    .order('fecha_interes', { ascending: false });
+    .order('fecha_interes', { ascending: false })
+    .limit(50);
 
   if (error) throw error;
 
