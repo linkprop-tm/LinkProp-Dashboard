@@ -110,6 +110,7 @@ export interface SearchParams {
   currency: string;
   environments: string | number; // '2' or '3+'
   location: string;
+  neighborhoods?: string[]; // Full array of neighborhoods
 
   // Extended fields for new UI
   operationType?: 'Venta' | 'Alquiler';

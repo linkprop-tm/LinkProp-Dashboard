@@ -23,6 +23,7 @@ export function usuarioToClient(usuario: Usuario): Client {
       currency: 'USD',
       environments: usuario.preferencias_ambientes || '',
       location: usuario.preferencias_ubicacion?.[0] || '',
+      neighborhoods: usuario.preferencias_ubicacion || [],
       operationType: usuario.preferencias_operacion || 'Venta',
       propertyTypes: usuario.preferencias_tipo || [],
       bedrooms: usuario.preferencias_dormitorios_min?.toString() || '',

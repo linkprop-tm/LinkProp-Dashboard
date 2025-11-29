@@ -12,6 +12,7 @@ import { EditClientModal } from './EditClientModal';
 import { Client } from '../types';
 import { obtenerUsuarios, eliminarUsuario } from '../lib/api/users';
 import { usuarioToClient } from '../lib/adapters';
+import { matchesNeighborhood } from '../lib/neighborhoods';
 
 // Helper to parse dates like "06 Ene, 2025"
 const parseClientDate = (dateStr: string) => {
@@ -136,11 +137,16 @@ export const Clients: React.FC = () => {
     let result = clients.filter(client => {
       // Text Search (Name, Email, Location)
       const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = 
+      const neighborhoodsToSearch = client.searchParams.neighborhoods || [client.searchParams.location];
+      const locationMatch = neighborhoodsToSearch.length > 0
+        ? matchesNeighborhood(searchLower, neighborhoodsToSearch)
+        : true;
+
+      const matchesSearch =
         searchTerm === '' ||
         client.name.toLowerCase().includes(searchLower) ||
         client.email.toLowerCase().includes(searchLower) ||
-        client.searchParams.location.toLowerCase().includes(searchLower);
+        locationMatch;
 
       // Status Filter
       const matchesStatus = filters.status === 'all' || client.status === filters.status;
@@ -149,7 +155,8 @@ export const Clients: React.FC = () => {
       const matchesType = filters.type === 'all' || client.searchParams.type === filters.type;
 
       // Location Filter (Specific Field)
-      const matchesLocation = filters.location === '' || client.searchParams.location.toLowerCase().includes(filters.location.toLowerCase());
+      const neighborhoodsToFilter = client.searchParams.neighborhoods || [client.searchParams.location];
+      const matchesLocation = filters.location === '' || matchesNeighborhood(filters.location, neighborhoodsToFilter);
 
       // Budget Filter (Clients looking for properties UP TO X, so if their maxPrice is >= our filter, they qualify)
       const budgetVal = parseInt(filters.minBudget);

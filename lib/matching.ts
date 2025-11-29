@@ -1,4 +1,5 @@
 import type { Propiedad, Usuario } from './database.types';
+import { expandNeighborhoods } from './neighborhoods';
 
 export interface MatchScore {
   porcentaje: number;
@@ -40,7 +41,8 @@ export function calcularMatch(propiedad: Propiedad, usuario: Usuario): MatchScor
   if (usuario.preferencias_ubicacion && usuario.preferencias_ubicacion.length > 0) {
     puntos_totales += 20;
     const ubicacionCompleta = `${propiedad.direccion} ${propiedad.barrio} ${propiedad.provincia}`.toLowerCase();
-    const ubicacion_match = usuario.preferencias_ubicacion.some(loc =>
+    const expandedNeighborhoods = expandNeighborhoods(usuario.preferencias_ubicacion);
+    const ubicacion_match = expandedNeighborhoods.some(loc =>
       ubicacionCompleta.includes(loc.toLowerCase())
     );
     if (ubicacion_match) {
