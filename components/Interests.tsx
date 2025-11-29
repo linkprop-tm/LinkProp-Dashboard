@@ -1,26 +1,20 @@
 
-import React, { useState, useMemo } from 'react';
-import { 
-  MapPin, Users, CheckCircle2, 
+import React, { useState, useEffect } from 'react';
+import {
+  MapPin, Users, CheckCircle2,
   ArrowRight, Clock,
-  RotateCcw
+  RotateCcw, AlertCircle
 } from 'lucide-react';
-import { PROPERTIES_GRID_DATA, CLIENTS_DATA } from '../constants';
+import { PROPERTIES_GRID_DATA } from '../constants';
 import { AddPropertyModal } from './AddPropertyModal';
 import { Property } from '../types';
-
-// Mocking the relationship data for visualization
-const INTERESTS_MOCK = [
-  { id: 'i1', clientId: '1', propertyId: '101', date: '2024-01-15', status: 'pending' },
-  { id: 'i2', clientId: '3', propertyId: '101', date: '2024-01-14', status: 'contacted' },
-  { id: 'i3', clientId: '2', propertyId: '102', date: '2024-01-12', status: 'visited' },
-  { id: 'i4', clientId: '5', propertyId: '102', date: '2024-01-10', status: 'pending' },
-  { id: 'i5', clientId: '4', propertyId: '103', date: '2024-01-09', status: 'pending' },
-  { id: 'i6', clientId: '1', propertyId: '104', date: '2024-01-08', status: 'contacted' },
-  { id: 'i7', clientId: '2', propertyId: '108', date: '2024-01-11', status: 'pending' },
-];
+import { obtenerInteresesPorPropiedad, cambiarEtapa, type PropiedadConInteresados } from '../lib/api/relationships';
+import { convertPropiedadToProperty } from '../lib/adapters';
 
 export const Interests: React.FC = () => {
+  const [realInterests, setRealInterests] = useState<PropiedadConInteresados[]>([]);
+  const [loadingInterests, setLoadingInterests] = useState(false);
+  const [interestsError, setInterestsError] = useState('');
   const [markedAsVisited, setMarkedAsVisited] = useState<string[]>([]);
   
   // State for Property Edit Modal
@@ -28,28 +22,53 @@ export const Interests: React.FC = () => {
 
   // State for Unmark Confirmation Modal
   const [showUnmarkModal, setShowUnmarkModal] = useState(false);
-  const [interestToUnmark, setInterestToUnmark] = useState<string | null>(null);
+  const [interestToUnmark, setInterestToUnmark] = useState<{propId: string, userId: string} | null>(null);
 
-  // Helper to get data
-  const getProp = (id: string) => PROPERTIES_GRID_DATA.find(p => p.id === id);
-  const getClient = (id: string) => CLIENTS_DATA.find(c => c.id === id);
+  useEffect(() => {
+    fetchRealInterests();
+  }, []);
 
-  const handleToggleVisited = (interestId: string) => {
-     if (markedAsVisited.includes(interestId)) {
-       // If currently visited, ask for confirmation to unmark
-       setInterestToUnmark(interestId);
+  const fetchRealInterests = async () => {
+    setLoadingInterests(true);
+    setInterestsError('');
+
+    try {
+      const data = await obtenerInteresesPorPropiedad();
+      setRealInterests(data);
+    } catch (error: any) {
+      console.error('Error fetching interests:', error);
+      setInterestsError(error.message || 'Error al cargar intereses');
+    } finally {
+      setLoadingInterests(false);
+    }
+  };
+
+  const handleToggleVisited = async (propiedadId: string, usuarioId: string, relacionId: string) => {
+     if (markedAsVisited.includes(relacionId)) {
+       setInterestToUnmark({ propId: propiedadId, userId: usuarioId });
        setShowUnmarkModal(true);
      } else {
-       // If not visited, mark immediately
-       setMarkedAsVisited([...markedAsVisited, interestId]);
+       try {
+         await cambiarEtapa(propiedadId, usuarioId, 'Visitada');
+         setMarkedAsVisited([...markedAsVisited, relacionId]);
+         await fetchRealInterests();
+       } catch (error: any) {
+         console.error('Error al marcar como visitada:', error);
+       }
      }
   };
 
-  const confirmUnmark = () => {
+  const confirmUnmark = async () => {
       if (interestToUnmark) {
-          setMarkedAsVisited(markedAsVisited.filter(id => id !== interestToUnmark));
-          setShowUnmarkModal(false);
-          setInterestToUnmark(null);
+          try {
+            await cambiarEtapa(interestToUnmark.propId, interestToUnmark.userId, 'Interes');
+            await fetchRealInterests();
+          } catch (error: any) {
+            console.error('Error al desmarcar:', error);
+          } finally {
+            setShowUnmarkModal(false);
+            setInterestToUnmark(null);
+          }
       }
   };
 
@@ -58,23 +77,32 @@ export const Interests: React.FC = () => {
       setInterestToUnmark(null);
   };
 
-  // Group Data Logic (Always by Property now)
-  const groupedData = useMemo(() => {
-      const groups: Record<string, typeof INTERESTS_MOCK> = {};
-      INTERESTS_MOCK.forEach(item => {
-        if (!groups[item.propertyId]) groups[item.propertyId] = [];
-        groups[item.propertyId].push(item);
-      });
-      return groups;
-  }, []);
-
   const getStatusBadge = (status: string) => {
     switch (status) {
-        case 'active': return <span className="bg-emerald-100/90 backdrop-blur-md text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1 shadow-sm"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Disponible</span>;
-        case 'pending': return <span className="bg-amber-100/90 backdrop-blur-md text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-200 flex items-center gap-1 shadow-sm"><div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Reservada</span>;
-        case 'sold': return <span className="bg-red-100/90 backdrop-blur-md text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-red-200 shadow-sm">Vendida</span>;
+        case 'Disponible': return <span className="bg-emerald-100/90 backdrop-blur-md text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1 shadow-sm"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Disponible</span>;
+        case 'Reservada': return <span className="bg-amber-100/90 backdrop-blur-md text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-200 flex items-center gap-1 shadow-sm"><div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Reservada</span>;
+        case 'Vendida': return <span className="bg-red-100/90 backdrop-blur-md text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-red-200 shadow-sm">Vendida</span>;
         default: return null;
     }
+  };
+
+  const convertToPropertyFormat = (propiedad: any): Property => {
+    const firstImage = propiedad.imagenes?.[0] || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800';
+    return {
+      id: propiedad.id,
+      title: propiedad.titulo,
+      price: propiedad.precio,
+      currency: propiedad.moneda === 'USD' ? 'USD' : '$',
+      address: propiedad.direccion,
+      neighborhood: propiedad.barrio,
+      bedrooms: propiedad.dormitorios,
+      bathrooms: propiedad.banos,
+      area: propiedad.m2_totales || propiedad.superficie,
+      imageUrl: firstImage,
+      status: propiedad.estado === 'Disponible' ? 'active' : propiedad.estado === 'Reservada' ? 'pending' : 'sold',
+      type: propiedad.tipo,
+      operation: propiedad.operacion
+    };
   };
 
   // Helper to format date nicely
@@ -145,27 +173,53 @@ export const Interests: React.FC = () => {
 
       {/* Content Area */}
       <div className="space-y-8 animate-fade-in">
-        
-        {/* ========================== VIEW MODE: PROPERTY (Default and Only) ========================== */}
-        {Object.keys(groupedData).map(propId => {
-            const prop = getProp(propId);
-            const interests = groupedData[propId];
-            if (!prop) return null;
-            
+
+        {loadingInterests ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          </div>
+        ) : interestsError ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mb-6">
+              <AlertCircle size={40} strokeWidth={1.5} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Error al cargar intereses</h3>
+            <p className="text-gray-500 max-w-md mx-auto mb-6">{interestsError}</p>
+            <button
+              onClick={fetchRealInterests}
+              className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary-600/20 active:scale-95 transition-all"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : realInterests.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 mb-6">
+              <Users size={40} strokeWidth={1.5} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No hay intereses registrados</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              Aún no hay usuarios interesados en ninguna propiedad.
+            </p>
+          </div>
+        ) : (
+          realInterests.map(({ propiedad, interesados }) => {
+            const prop = convertToPropertyFormat(propiedad);
+
             return (
               <div key={prop.id} className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-primary-900/5 transition-all duration-300 border border-gray-100 flex flex-col md:flex-row min-h-[280px] group/card">
-                  
+
                   {/* Left Side: Image Section (35%) - Fusion Style */}
-                  <div 
+                  <div
                     className="relative w-full md:w-[35%] h-56 md:h-auto overflow-hidden group/image cursor-pointer"
                     onClick={() => setEditingProperty(prop)}
                   >
                     <img src={prop.imageUrl} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-700" alt="" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-90"></div>
-                    
+
                     {/* Property Status Badge */}
                     <div className="absolute top-4 left-4">
-                        {getStatusBadge(prop.status)}
+                        {getStatusBadge(propiedad.estado)}
                     </div>
 
                     {/* Interactive Arrow Button */}
@@ -176,10 +230,10 @@ export const Interests: React.FC = () => {
                     <div className="absolute bottom-6 left-6 right-6 text-white pr-20">
                           {/* Price */}
                           <div className="text-3xl font-bold mb-1 tracking-tight">{prop.currency} {prop.price.toLocaleString()}</div>
-                          
+
                           {/* Title */}
                           <h3 className="text-lg font-medium leading-tight mb-2 truncate text-white/90">{prop.title}</h3>
-                          
+
                           {/* Address */}
                           <p className="text-white/70 text-xs font-medium flex items-center gap-1">
                               <MapPin size={12}/> {prop.address}, {prop.neighborhood}
@@ -189,13 +243,13 @@ export const Interests: React.FC = () => {
 
                   {/* Right Side: Content (65%) */}
                   <div className="flex-1 p-6 md:p-8 flex flex-col bg-white relative">
-                      
+
                       {/* Header Area */}
                       <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
                           <div className="flex items-center gap-2">
                               <Users className="text-primary-600" size={20} />
                               <h4 className="font-bold text-gray-900 uppercase tracking-wide text-xs">
-                                Clientes Interesados ({interests.length})
+                                Clientes Interesados ({interesados.length})
                               </h4>
                           </div>
                       </div>
@@ -203,26 +257,26 @@ export const Interests: React.FC = () => {
                       {/* Client Grid */}
                       <div className="flex-1 overflow-y-auto max-h-[400px] custom-scrollbar pr-2">
                           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
-                              {interests.map(interest => {
-                                  const client = getClient(interest.clientId);
-                                  if (!client) return null;
-                                  const isVisited = markedAsVisited.includes(interest.id) || interest.status === 'visited';
-                                  const dateInfo = formatDateVisual(interest.date);
+                              {interesados.map(interesado => {
+                                  const isVisited = markedAsVisited.includes(interesado.relacion_id);
+                                  const dateInfo = formatDateVisual(interesado.fecha_interes);
+
+                                  const avatarUrl = interesado.usuario.foto_perfil_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(interesado.usuario.full_name)}&background=6366f1&color=fff`;
 
                                   return (
-                                      <div key={interest.id} className="flex flex-col p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-primary-200 hover:bg-white hover:shadow-md transition-all group/client">
-                                          
+                                      <div key={interesado.relacion_id} className="flex flex-col p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-primary-200 hover:bg-white hover:shadow-md transition-all group/client">
+
                                           {/* Client Info */}
                                           <div className="flex items-center gap-3 mb-4">
                                               <div className="relative flex-shrink-0">
-                                                  <img src={client.avatar} className="w-10 h-10 rounded-full ring-2 ring-white object-cover" alt="" />
+                                                  <img src={avatarUrl} className="w-10 h-10 rounded-full ring-2 ring-white object-cover" alt="" />
                                               </div>
                                               <div className="flex-1 min-w-0">
-                                                  <p className="text-sm font-bold text-gray-900 truncate">{client.name}</p>
-                                                  <p className="text-xs text-gray-400 truncate">{client.email}</p>
+                                                  <p className="text-sm font-bold text-gray-900 truncate">{interesado.usuario.full_name}</p>
+                                                  <p className="text-xs text-gray-400 truncate">{interesado.usuario.email}</p>
                                               </div>
                                           </div>
-                                          
+
                                           {/* Date Widget (Same format as Client View) */}
                                           <div className="flex items-center gap-3 mb-4 p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
                                               <div className="bg-gray-50 border border-gray-100 rounded-lg p-1.5 min-w-[48px] flex flex-col items-center justify-center text-center">
@@ -238,16 +292,16 @@ export const Interests: React.FC = () => {
                                                   </span>
                                               </div>
                                           </div>
-                                          
+
                                           {/* Action Button - Prominent & Stable */}
-                                          <button 
+                                          <button
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleToggleVisited(interest.id);
+                                                handleToggleVisited(interesado.propiedad_id, interesado.usuario.id, interesado.relacion_id);
                                               }}
                                               className={`w-full h-10 rounded-xl text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2 mt-auto border-2 ${
-                                                  isVisited 
-                                                  ? 'bg-white border-emerald-100 text-emerald-600 hover:bg-emerald-50' 
+                                                  isVisited
+                                                  ? 'bg-white border-emerald-100 text-emerald-600 hover:bg-emerald-50'
                                                   : 'bg-gray-900 border-gray-900 text-white shadow-lg shadow-gray-900/10 hover:bg-gray-800'
                                               }`}
                                           >
@@ -263,7 +317,8 @@ export const Interests: React.FC = () => {
 
               </div>
             )
-        })}
+          })
+        )}
       </div>
       
       {/* Property Edit Modal - Conditionally Rendered */}

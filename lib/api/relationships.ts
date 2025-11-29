@@ -1,11 +1,23 @@
 import { supabase } from '../supabase';
-import type { PropiedadUsuario, EtapaRelacion } from '../database.types';
+import type { PropiedadUsuario, EtapaRelacion, Propiedad, Usuario } from '../database.types';
 
 export interface CreateRelacionData {
   propiedad_id: string;
   usuario_id: string;
   etapa?: EtapaRelacion;
   nota_agente?: string;
+}
+
+export interface UsuarioInteresado {
+  usuario: Usuario;
+  relacion_id: string;
+  fecha_interes: string;
+  propiedad_id: string;
+}
+
+export interface PropiedadConInteresados {
+  propiedad: Propiedad;
+  interesados: UsuarioInteresado[];
 }
 
 export interface UpdateRelacionData {
@@ -147,6 +159,47 @@ export async function obtenerPropiedadesPorEtapa(usuario_id: string, etapa: Etap
   if (error) throw error;
 
   return (data || []).map((rel: any) => rel.propiedades).filter(Boolean);
+}
+
+export async function obtenerInteresesPorPropiedad(): Promise<PropiedadConInteresados[]> {
+  const { data, error } = await supabase
+    .from('propiedades_usuarios')
+    .select(`
+      id,
+      propiedad_id,
+      usuario_id,
+      fecha_interes,
+      propiedades (*),
+      usuarios (*)
+    `)
+    .eq('etapa', 'Interes')
+    .order('fecha_interes', { ascending: false });
+
+  if (error) throw error;
+
+  const propiedadesMap = new Map<string, PropiedadConInteresados>();
+
+  (data || []).forEach((rel: any) => {
+    if (!rel.propiedades || !rel.usuarios) return;
+
+    const propId = rel.propiedad_id;
+
+    if (!propiedadesMap.has(propId)) {
+      propiedadesMap.set(propId, {
+        propiedad: rel.propiedades as Propiedad,
+        interesados: []
+      });
+    }
+
+    propiedadesMap.get(propId)!.interesados.push({
+      usuario: rel.usuarios as Usuario,
+      relacion_id: rel.id,
+      fecha_interes: rel.fecha_interes || new Date().toISOString(),
+      propiedad_id: rel.propiedad_id
+    });
+  });
+
+  return Array.from(propiedadesMap.values());
 }
 
 export async function eliminarRelacion(propiedad_id: string, usuario_id: string) {
