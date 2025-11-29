@@ -581,7 +581,7 @@ export const Clients: React.FC = () => {
                          {/* Requirements Tags */}
                          <div className="flex flex-wrap gap-2 pt-2">
                              <span className="px-2 py-1 bg-gray-50 text-gray-500 text-[10px] font-bold uppercase rounded-md border border-gray-100 flex items-center gap-1">
-                                 <LayoutGrid size={20} /> {client.searchParams.environments} amb
+                                 <LayoutGrid size={20} /> {client.searchParams.environments} Ambientes
                              </span>
                              {client.searchParams.hasGarage && (
                                 <span className="px-2 py-1 bg-orange-50 text-orange-600 text-[10px] font-bold uppercase rounded-md border border-orange-100 flex items-center gap-1">
