@@ -38,6 +38,17 @@ export async function obtenerUsuarios() {
   return data as Usuario[];
 }
 
+export async function obtenerClientesActivos() {
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('*')
+    .eq('rol', 'user')
+    .eq('estado_usuario', 'Activo');
+
+  if (error) throw error;
+  return data as Usuario[];
+}
+
 export async function obtenerUsuarioPorId(id: string) {
   const { data, error } = await supabase
     .from('usuarios')

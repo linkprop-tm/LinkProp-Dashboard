@@ -1,20 +1,23 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Building, Users, Heart, TrendingUp, MoreHorizontal, ArrowUpRight, ArrowDownRight, Eye, Clock, BarChart2, GitCompareArrows, Calendar, Mail, MapPin, Activity
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend } from 'recharts';
 import { METRICS, CHART_DATA, CONVERSION_DATA, CLIENTS_DATA, PROPERTIES_GRID_DATA } from '../constants';
 import { obtenerPropiedadesDisponibles } from '../lib/api/properties';
+import { obtenerClientesActivos } from '../lib/api/users';
 
 export const Dashboard: React.FC = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [propiedadesDisponibles, setPropiedadesDisponibles] = useState<number>(0);
+  const [clientesActivos, setClientesActivos] = useState<number>(0);
 
   useEffect(() => {
     setIsMounted(true);
     loadPropiedadesDisponibles();
+    loadClientesActivos();
   }, []);
 
   const loadPropiedadesDisponibles = async () => {
@@ -23,6 +26,15 @@ export const Dashboard: React.FC = () => {
       setPropiedadesDisponibles(propiedades.length);
     } catch (error) {
       console.error('Error loading propiedades disponibles:', error);
+    }
+  };
+
+  const loadClientesActivos = async () => {
+    try {
+      const clientes = await obtenerClientesActivos();
+      setClientesActivos(clientes.length);
+    } catch (error) {
+      console.error('Error loading clientes activos:', error);
     }
   };
 
@@ -43,7 +55,7 @@ export const Dashboard: React.FC = () => {
       {/* Section A: Metrics Cards (Modern Redesign) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {METRICS.map((metric, index) => {
-          const displayValue = index === 0 ? propiedadesDisponibles : metric.value;
+          const displayValue = index === 0 ? propiedadesDisponibles : index === 1 ? clientesActivos : metric.value;
           const Icon = 
             metric.iconType === 'building' ? Building :
             metric.iconType === 'users' ? Users :
