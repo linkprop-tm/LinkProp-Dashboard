@@ -546,7 +546,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                             <div>
                                 <label className="text-xs font-bold text-gray-500 uppercase mb-3 block">Antigüedad</label>
                                 <div className="flex flex-wrap gap-3">
-                                    {['Indiferente', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Más de 20 años'].map(val => {
+                                    {['Indiferente', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Hasta 50 años'].map(val => {
                                         const isSelected = (formData.searchParams.antiquity || []).includes(val);
                                         return (
                                             <button
