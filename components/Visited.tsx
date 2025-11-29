@@ -370,16 +370,16 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
                                                 <img src={avatarUrl} className="w-12 h-12 rounded-full object-cover ring-4 ring-gray-50" alt="Client"/>
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-gray-900 tracking-wide">{visitante.usuario.full_name}</p>
+                                                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">{visitante.usuario.full_name}</p>
                                             </div>
                                         </>
                                       ) : (
                                         <>
                                             <div className="relative">
-                                                <img src="https://mhfdfnhjdfmescizbzol.supabase.co/storage/v1/render/image/public/avatars/dd5d766c-6eb9-497b-88da-2fe1dadde019/profile.png?width=400&height=400&quality=80" className="w-12 h-12 rounded-full object-cover ring-4 ring-gray-50" alt="Agent"/>
+                                                <img src="https://picsum.photos/100/100?random=99" className="w-12 h-12 rounded-full object-cover ring-4 ring-gray-50" alt="Agent"/>
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">Karina Poblete</p>
+                                                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">Roberto Díaz</p>
                                                 <div className="flex items-center gap-1.5 mt-0.5">
                                                     <Eye size={12} className="text-gray-400"/>
                                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">puede ver tu comentario</p>
