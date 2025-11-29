@@ -346,19 +346,6 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                                 />
                             </div>
                         </div>
-                        <div className="md:col-span-2 space-y-1.5">
-                            <label className="text-xs font-bold text-gray-500 ml-1">Ubicación / Zona de Interés</label>
-                            <div className="relative">
-                                <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                <input 
-                                    type="text" 
-                                    value={formData.searchParams.location}
-                                    onChange={(e) => handleSearchParamChange('location', e.target.value)}
-                                    placeholder="Ej. Palermo Soho, Belgrano R, Colegiales..."
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none transition-all focus:bg-white"
-                                />
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
