@@ -532,49 +532,6 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                                 </div>
                             </div>
 
-                             {/* Dormitorios */}
-                            <div className="space-y-3">
-                                <label className="text-sm font-medium text-gray-600 block">Dormitorios</label>
-                                <div className="flex gap-1 bg-gray-50 rounded-xl p-1 border border-gray-200">
-                                    {['1', '2', '3', '4', '5+'].map(val => {
-                                        const isSelected = formData.searchParams.bedrooms == val;
-                                        return (
-                                            <button 
-                                                key={val}
-                                                type="button"
-                                                onClick={() => handleSearchParamChange('bedrooms', val)}
-                                                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all focus:outline-none ${
-                                                    isSelected 
-                                                    ? 'bg-white text-gray-900 shadow-sm' 
-                                                    : 'text-gray-400 hover:text-gray-600 hover:bg-white/50'
-                                                }`}
-                                            >{val}</button>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-
-                             {/* Baños */}
-                            <div className="space-y-3">
-                                <label className="text-sm font-medium text-gray-600 block">Baños</label>
-                                <div className="flex gap-1 bg-gray-50 rounded-xl p-1 border border-gray-200">
-                                    {['1', '2', '3', '4+'].map(val => {
-                                         const isSelected = formData.searchParams.bathrooms == val;
-                                         return (
-                                            <button 
-                                                key={val}
-                                                type="button"
-                                                onClick={() => handleSearchParamChange('bathrooms', val)}
-                                                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all focus:outline-none ${
-                                                    isSelected 
-                                                    ? 'bg-white text-gray-900 shadow-sm' 
-                                                    : 'text-gray-400 hover:text-gray-600 hover:bg-white/50'
-                                                }`}
-                                            >{val}</button>
-                                        )
-                                    })}
-                                </div>
-                            </div>
                          </div>
                    </div>
 
