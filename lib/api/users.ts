@@ -77,12 +77,30 @@ export async function actualizarUsuario(data: UpdateUsuarioData) {
 }
 
 export async function eliminarUsuario(id: string) {
-  const { error } = await supabase
-    .from('usuarios')
-    .delete()
-    .eq('id', id);
+  const { data: { session } } = await supabase.auth.getSession();
 
-  if (error) throw error;
+  if (!session) {
+    throw new Error('No active session');
+  }
+
+  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`;
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userId: id }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to delete user');
+  }
+
+  const result = await response.json();
+  return result;
 }
 
 export async function actualizarPreferencias(
