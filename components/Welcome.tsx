@@ -28,9 +28,25 @@ const CABA_NEIGHBORHOODS = [
 ];
 
 const GBA_NEIGHBORHOODS = [
-  "Vicente López", "San Martín", "San Isidro", "San Fernando", 
+  "Vicente López", "San Martín", "San Isidro", "San Fernando",
   "Tres de Febrero", "San Miguel", "Tigre", "Escobar", "Pilar", "José C. Paz"
   ];
+
+const formatNumberWithDots = (value: string): string => {
+  if (!value) return '';
+  const numericOnly = value.replace(/\D/g, '');
+  if (!numericOnly) return '';
+  return numericOnly.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
+const parseNumericInput = (value: string): string => {
+  return value.replace(/\D/g, '');
+};
+
+const handleNumericChange = (value: string, setter: (value: string) => void) => {
+  const numericOnly = value.replace(/\D/g, '');
+  setter(numericOnly);
+};
 
 export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
   const { signIn, signUp } = useAuthContext();
@@ -483,9 +499,9 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                         <DollarSign size={16} className="text-gray-400" /> Rango de Precios (USD)
                                     </label>
                                     <div className="flex items-center gap-4">
-                                        <input type="number" placeholder="Desde" value={regData.minPrice} onChange={e => handleRegChange('minPrice', e.target.value)} className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50" />
+                                        <input type="text" placeholder="Desde" value={formatNumberWithDots(regData.minPrice)} onChange={e => handleNumericChange(e.target.value, (val) => handleRegChange('minPrice', val))} className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50" />
                                         <span className="text-gray-300">-</span>
-                                        <input type="number" placeholder="Hasta" value={regData.maxPrice} onChange={e => handleRegChange('maxPrice', e.target.value)} className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50" />
+                                        <input type="text" placeholder="Hasta" value={formatNumberWithDots(regData.maxPrice)} onChange={e => handleNumericChange(e.target.value, (val) => handleRegChange('maxPrice', val))} className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50" />
                                     </div>
                                 </div>
                                 
