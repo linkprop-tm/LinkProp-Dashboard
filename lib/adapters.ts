@@ -55,9 +55,9 @@ export function clientToUsuario(client: Client): Partial<Usuario> {
     preferencias_operacion: client.searchParams.operationType || 'Venta',
     preferencias_precio_min: client.searchParams.minPrice || null,
     preferencias_precio_max: client.searchParams.maxPrice || null,
-    preferencias_ubicacion: client.searchParams.location
-      ? [client.searchParams.location]
-      : [],
+    preferencias_ubicacion: client.searchParams.neighborhoods && client.searchParams.neighborhoods.length > 0
+      ? client.searchParams.neighborhoods
+      : (client.searchParams.location ? [client.searchParams.location] : []),
     preferencias_m2_min: client.searchParams.minArea || null,
     preferencias_ambientes: client.searchParams.environments?.toString() || null,
     preferencias_amenities: client.searchParams.amenities || [],
