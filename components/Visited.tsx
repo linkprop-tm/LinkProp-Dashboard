@@ -379,7 +379,7 @@ export const Visited: React.FC<VisitedProps> = ({ onPropertyClick }) => {
                                                 <img src="https://picsum.photos/100/100?random=99" className="w-12 h-12 rounded-full object-cover ring-4 ring-gray-50" alt="Agent"/>
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">Roberto Díaz</p>
+                                                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">Karina Poblete</p>
                                                 <div className="flex items-center gap-1.5 mt-0.5">
                                                     <Eye size={12} className="text-gray-400"/>
                                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">puede ver tu comentario</p>
