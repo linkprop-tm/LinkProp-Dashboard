@@ -19,6 +19,9 @@ import { supabase } from '../lib/supabase';
 import { useAuthContext } from '../lib/contexts/AuthContext';
 import { Avatar } from './Avatar';
 import { UploadPhotoModal } from './UploadPhotoModal';
+import { obtenerMatchesParaUsuario } from '../lib/api/matches';
+import { crearRelacion, obtenerRelacion } from '../lib/api/relationships';
+import type { Propiedad, PropiedadConRelacion } from '../lib/database.types';
 
 interface ClientLayoutProps {
   onLogout: () => void;
@@ -297,6 +300,12 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const [isHoodDropdownOpen, setIsHoodDropdownOpen] = useState(false);
   const hoodInputRef = useRef<HTMLInputElement>(null);
 
+  // Matched Properties State
+  const [matchedProperties, setMatchedProperties] = useState<Property[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(false);
+  const [matchesError, setMatchesError] = useState('');
+  const [usuarioId, setUsuarioId] = useState<string | null>(null);
+
   // Loading and Save States
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingPreferences, setLoadingPreferences] = useState(false);
@@ -326,6 +335,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
       const { data, error } = await supabase
         .from('usuarios')
         .select(`
+          id,
           full_name,
           email,
           telefono,
@@ -348,6 +358,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
         .maybeSingle();
 
       if (data && !error) {
+        setUsuarioId(data.id);
         setName(data.full_name || '');
         setEmail(data.email || user.email || '');
         setPhone(data.telefono || '');
@@ -388,6 +399,87 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
       setLoadingPreferences(false);
     }
   };
+
+  const convertPropiedadToProperty = (propiedad: Propiedad): Property => {
+    const statusMap: Record<string, 'active' | 'pending' | 'sold'> = {
+      'Disponible': 'active',
+      'Reservada': 'pending',
+      'Vendida': 'sold'
+    };
+
+    return {
+      id: propiedad.id,
+      title: propiedad.titulo,
+      address: propiedad.direccion || propiedad.barrio || 'Dirección no especificada',
+      price: Number(propiedad.precio),
+      currency: propiedad.moneda,
+      imageUrl: propiedad.imagenes && propiedad.imagenes.length > 0
+        ? propiedad.imagenes[0]
+        : 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800',
+      views: 0,
+      matchesCount: 0,
+      interestedClients: 0,
+      status: statusMap[propiedad.estado] || 'active',
+      isVisible: propiedad.visibilidad === 'Publica',
+      addedAt: propiedad.fecha_creacion,
+      propertyType: propiedad.tipo,
+      operationType: propiedad.operacion,
+      description: propiedad.descripcion,
+      images: propiedad.imagenes,
+      totalArea: propiedad.m2_totales ? Number(propiedad.m2_totales) : undefined,
+      coveredArea: propiedad.m2_cubiertos ? Number(propiedad.m2_cubiertos) : undefined,
+      environments: propiedad.ambientes,
+      bedrooms: propiedad.dormitorios,
+      bathrooms: propiedad.banos,
+      antiquity: propiedad.antiguedad ? Number(propiedad.antiguedad) || 0 : undefined,
+      expenses: Number(propiedad.expensas),
+      isCreditSuitable: propiedad.apto_credito,
+      isProfessionalSuitable: propiedad.apto_profesional,
+      amenities: propiedad.amenities,
+      orientation: propiedad.orientacion,
+      hasGarage: propiedad.cochera,
+      neighborhood: propiedad.barrio,
+      province: propiedad.provincia,
+      fullAddress: propiedad.direccion,
+      sourceUrl: propiedad.url_original,
+      sourcePortal: propiedad.portal_original
+    };
+  };
+
+  const fetchMatchedProperties = async () => {
+    if (!usuarioId) return;
+
+    setLoadingMatches(true);
+    setMatchesError('');
+
+    try {
+      const matchesResult = await obtenerMatchesParaUsuario(usuarioId);
+      const convertedProperties = matchesResult.propiedades_match.map(convertPropiedadToProperty);
+      setMatchedProperties(convertedProperties);
+
+      for (const propMatch of matchesResult.propiedades_match) {
+        const relacionExistente = await obtenerRelacion(propMatch.id, usuarioId);
+        if (!relacionExistente) {
+          await crearRelacion({
+            propiedad_id: propMatch.id,
+            usuario_id: usuarioId,
+            etapa: 'Explorar'
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error('Error fetching matched properties:', error);
+      setMatchesError(error.message || 'Error al cargar propiedades');
+    } finally {
+      setLoadingMatches(false);
+    }
+  };
+
+  useEffect(() => {
+    if (usuarioId && currentView === 'explore') {
+      fetchMatchedProperties();
+    }
+  }, [usuarioId, currentView]);
 
   const handlePhotoUploadSuccess = (newPhotoUrl: string) => {
     setPhotoUrl(newPhotoUrl);
@@ -461,6 +553,10 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
 
       setPreferencesSaveSuccess(true);
       setTimeout(() => setPreferencesSaveSuccess(false), 3000);
+
+      if (usuarioId) {
+        await fetchMatchedProperties();
+      }
     } catch (error: any) {
       console.error('Error saving preferences:', error);
       setPreferencesSaveError(error.message || 'Error al guardar las preferencias');
@@ -699,9 +795,11 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
 
   // Logic for Sorting and Filtering
   const getProcessedProperties = () => {
+    const sourceProperties = matchedProperties.length > 0 ? matchedProperties : PROPERTIES_GRID_DATA;
+
     // 1. Filter by search
-    let result = PROPERTIES_GRID_DATA.filter(p => 
-      p.address.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    let result = sourceProperties.filter(p =>
+      p.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.neighborhood?.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -724,12 +822,37 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const renderContent = () => {
     switch (currentView) {
       case 'explore':
+        if (loadingMatches) {
+          return (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
+              <p className="text-gray-600">Cargando propiedades...</p>
+            </div>
+          );
+        }
+
+        if (matchesError) {
+          return (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <AlertCircle size={48} className="text-red-500 mb-4" />
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Error al cargar propiedades</h3>
+              <p className="text-gray-500 mb-4">{matchesError}</p>
+              <button
+                onClick={fetchMatchedProperties}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800"
+              >
+                Reintentar
+              </button>
+            </div>
+          );
+        }
+
         const processedProps = getProcessedProperties();
         const isGrouped = sortOption === 'neighborhood_group';
 
         return (
           <div className="space-y-8 animate-fade-in pb-24">
-            
+
             {/* Minimalist Symmetric Header */}
             <div className="flex flex-col items-center justify-center pt-4">
                <div className="w-full max-w-3xl relative group z-20">

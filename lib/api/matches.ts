@@ -23,15 +23,16 @@ export interface MatchesParaPropiedad {
 
 export async function obtenerMatchesParaUsuario(
   usuario_id: string,
-  porcentaje_minimo: number = 50
+  porcentaje_minimo: number = 70
 ): Promise<MatchesParaUsuario> {
   const usuario = await obtenerUsuarioPorId(usuario_id);
   if (!usuario) {
     throw new Error('Usuario no encontrado');
   }
 
-  const propiedades = await obtenerPropiedades({ estado: 'Disponible' });
-  const propiedades_match = filtrarPropiedadesPorMatch(propiedades, usuario, porcentaje_minimo);
+  const propiedades = await obtenerPropiedades();
+  const propiedadesPublicas = propiedades.filter(p => p.visibilidad === 'Publica');
+  const propiedades_match = filtrarPropiedadesPorMatch(propiedadesPublicas, usuario, porcentaje_minimo);
 
   return {
     usuario,
@@ -81,10 +82,12 @@ export async function calcularMatchIndividual(
 }
 
 export async function obtenerEstadisticasMatches() {
-  const [propiedades, usuarios] = await Promise.all([
-    obtenerPropiedades({ estado: 'Disponible' }),
+  const [todasPropiedades, usuarios] = await Promise.all([
+    obtenerPropiedades(),
     obtenerUsuarios()
   ]);
+
+  const propiedades = todasPropiedades.filter(p => p.visibilidad === 'Publica');
 
   let total_matches = 0;
   let matches_por_propiedad: Record<string, number> = {};
@@ -96,7 +99,7 @@ export async function obtenerEstadisticasMatches() {
     for (const usuario of usuarios) {
       const match = calcularMatch(propiedad, usuario);
 
-      if (match.porcentaje >= 50) {
+      if (match.porcentaje >= 70) {
         total_matches++;
         matches_por_propiedad[propiedad.id]++;
         matches_por_usuario[usuario.id] = (matches_por_usuario[usuario.id] || 0) + 1;

@@ -35,6 +35,7 @@ export interface Propiedad {
   // Aptitudes booleanas
   apto_credito: boolean;
   apto_profesional: boolean;
+  apto_mascotas: boolean;
   cochera: boolean;
 
   // Ubicación detallada
