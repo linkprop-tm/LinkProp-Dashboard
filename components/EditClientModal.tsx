@@ -489,42 +489,6 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                         </div>
                    </div>
 
-                   {/* Ubicación / Barrios */}
-                   <div>
-                        <label className="flex items-center gap-2 mb-3 text-gray-900 font-bold text-sm">
-                            <MapPin size={16} className="text-gray-400" /> Ubicación / Barrios de Preferencia
-                        </label>
-
-                        {/* Selected neighborhoods count */}
-                        {formData.searchParams.neighborhoods && formData.searchParams.neighborhoods.length > 0 && (
-                          <div className="mb-3 text-xs text-gray-500">
-                            {formData.searchParams.neighborhoods.length} barrio{formData.searchParams.neighborhoods.length !== 1 ? 's' : ''} seleccionado{formData.searchParams.neighborhoods.length !== 1 ? 's' : ''}
-                          </div>
-                        )}
-
-                        {/* Neighborhood pills */}
-                        <div className="flex flex-wrap gap-2 max-h-96 overflow-y-auto p-2 bg-gray-50 rounded-xl border border-gray-200">
-                          {NEIGHBORHOODS.map((neighborhood) => {
-                            const isSelected = (formData.searchParams.neighborhoods || []).includes(neighborhood);
-                            return (
-                              <button
-                                type="button"
-                                key={neighborhood}
-                                onClick={() => toggleNeighborhood(neighborhood)}
-                                className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-                                  isSelected
-                                    ? 'bg-primary-50 text-primary-700 border-primary-300 shadow-sm'
-                                    : 'bg-white text-gray-600 border-gray-200 hover:border-primary-200 hover:bg-primary-50/50'
-                                }`}
-                              >
-                                {neighborhood}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">Haz clic en los barrios para seleccionar o deseleccionar</p>
-                   </div>
-
                    <div className="h-px bg-gray-100"></div>
 
                    {/* Dimensions & Distribution */}
@@ -751,6 +715,42 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                                          {formData.searchParams.hasGarage && <Check size={14} strokeWidth={3}/>}
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Ubicación / Barrios */}
+                            <div className="md:col-span-3">
+                                <label className="flex items-center gap-2 mb-3 text-gray-900 font-bold text-sm">
+                                    <MapPin size={16} className="text-gray-400" /> Ubicación / Barrios de Preferencia
+                                </label>
+
+                                {/* Selected neighborhoods count */}
+                                {formData.searchParams.neighborhoods && formData.searchParams.neighborhoods.length > 0 && (
+                                  <div className="mb-3 text-xs text-gray-500">
+                                    {formData.searchParams.neighborhoods.length} barrio{formData.searchParams.neighborhoods.length !== 1 ? 's' : ''} seleccionado{formData.searchParams.neighborhoods.length !== 1 ? 's' : ''}
+                                  </div>
+                                )}
+
+                                {/* Neighborhood pills */}
+                                <div className="flex flex-wrap gap-2 max-h-96 overflow-y-auto p-2 bg-gray-50 rounded-xl border border-gray-200">
+                                  {NEIGHBORHOODS.map((neighborhood) => {
+                                    const isSelected = (formData.searchParams.neighborhoods || []).includes(neighborhood);
+                                    return (
+                                      <button
+                                        type="button"
+                                        key={neighborhood}
+                                        onClick={() => toggleNeighborhood(neighborhood)}
+                                        className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                                          isSelected
+                                            ? 'bg-primary-50 text-primary-700 border-primary-300 shadow-sm'
+                                            : 'bg-white text-gray-600 border-gray-200 hover:border-primary-200 hover:bg-primary-50/50'
+                                        }`}
+                                      >
+                                        {neighborhood}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">Haz clic en los barrios para seleccionar o deseleccionar</p>
                             </div>
                         </div>
                    </div>
