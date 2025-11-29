@@ -19,7 +19,7 @@ const formatNeighborhoods = (neighborhoods?: string[], location?: string): strin
   const barrios = neighborhoods && neighborhoods.length > 0 ? neighborhoods : (location ? [location] : []);
   if (barrios.length === 0) return '';
   if (barrios.length === 1) return barrios[0];
-  return barrios.join(' + ');
+  return barrios.join(' o ');
 };
 
 // Helper to parse dates like "06 Ene, 2025"
