@@ -306,7 +306,7 @@ export const Dashboard: React.FC = () => {
           <div className="flex-1 overflow-y-auto max-h-[350px] p-0">
             <div className="divide-y divide-gray-50">
                 {ultimosIntereses.length > 0 ? (
-                  ultimosIntereses.map((interes) => {
+                  ultimosIntereses.map((interes, idx) => {
                     const imagenPropiedad = interes.propiedad.imagenes?.[0] || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
                     const avatarUsuario = interes.usuario.foto_perfil_url;
                     const nombreUsuario = interes.usuario.full_name || 'Usuario';
