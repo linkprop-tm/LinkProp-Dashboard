@@ -5,7 +5,7 @@ import { ActivityItem, Metric, Property, Client } from './types';
 export const METRICS: Metric[] = [
   { label: 'Propiedades Disponibles', value: 42, trend: 12, trendDirection: 'up', iconType: 'building' },
   { label: 'Clientes Activos', value: 156, trend: 8, trendDirection: 'up', iconType: 'users' },
-  { label: 'Interés en visitar', value: 112, trend: 15, trendDirection: 'up', iconType: 'heart' },
+  { label: 'Propiedades para visitar', value: 112, trend: 15, trendDirection: 'up', iconType: 'heart' },
   { label: 'Tasa de Conversión (Match vs Visita)', value: '3.2%', trend: 0.5, trendDirection: 'up', iconType: 'chart' },
 ];
 
