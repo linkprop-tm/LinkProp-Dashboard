@@ -83,24 +83,41 @@ export async function eliminarUsuario(id: string) {
     throw new Error('No active session');
   }
 
-  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`;
+  const { data: userToDelete, error: fetchError } = await supabase
+    .from('usuarios')
+    .select('auth_id')
+    .eq('id', id)
+    .maybeSingle();
 
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ userId: id }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to delete user');
+  if (fetchError) {
+    throw new Error('Failed to fetch user data');
   }
 
-  const result = await response.json();
-  return result;
+  const { error: deleteDbError } = await supabase
+    .from('usuarios')
+    .delete()
+    .eq('id', id);
+
+  if (deleteDbError) {
+    throw new Error('Failed to delete user from database');
+  }
+
+  if (userToDelete?.auth_id) {
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`;
+
+    fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId: id, authId: userToDelete.auth_id }),
+    }).catch(err => {
+      console.error('Background auth deletion error:', err);
+    });
+  }
+
+  return { success: true };
 }
 
 export async function actualizarPreferencias(

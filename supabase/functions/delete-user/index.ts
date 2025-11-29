@@ -65,37 +65,11 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { userId } = await req.json();
+    const { authId } = await req.json();
 
-    if (!userId) {
+    if (!authId) {
       return new Response(
-        JSON.stringify({ error: 'userId is required' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    const { data: userToDelete, error: fetchError } = await supabaseClient
-      .from('usuarios')
-      .select('auth_id')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (fetchError || !userToDelete) {
-      return new Response(
-        JSON.stringify({ error: 'User not found in database' }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    if (!userToDelete.auth_id) {
-      return new Response(
-        JSON.stringify({ error: 'User has no auth_id' }),
+        JSON.stringify({ error: 'authId is required' }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -110,31 +84,13 @@ Deno.serve(async (req: Request) => {
       },
     });
 
-    const { error: deleteDbError } = await supabaseAdmin
-      .from('usuarios')
-      .delete()
-      .eq('id', userId);
-
-    if (deleteDbError) {
-      console.error('Database deletion error:', deleteDbError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to delete user from database', details: deleteDbError.message }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(
-      userToDelete.auth_id
-    );
+    const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(authId);
 
     if (deleteAuthError) {
       console.error('Auth deletion error:', deleteAuthError);
       return new Response(
         JSON.stringify({ 
-          error: 'User deleted from database but failed to delete from auth', 
+          error: 'Failed to delete from auth', 
           details: deleteAuthError.message 
         }),
         {
@@ -147,7 +103,7 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'User completely deleted from database and auth system' 
+        message: 'User deleted from auth system' 
       }),
       {
         status: 200,

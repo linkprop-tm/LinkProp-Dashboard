@@ -117,16 +117,16 @@ export const Clients: React.FC = () => {
     setClientToDelete(id);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (clientToDelete) {
-      try {
-        await eliminarUsuario(clientToDelete);
-        setClients(prevClients => prevClients.filter(c => c.id !== clientToDelete));
-        setClientToDelete(null);
-      } catch (err) {
-        console.error('Error deleting client:', err);
-        alert('Error al eliminar el cliente');
-      }
+      const clientId = clientToDelete;
+
+      setClients(prevClients => prevClients.filter(c => c.id !== clientId));
+      setClientToDelete(null);
+
+      eliminarUsuario(clientId).catch(err => {
+        console.error('Error deleting client in background:', err);
+      });
     }
   };
 
