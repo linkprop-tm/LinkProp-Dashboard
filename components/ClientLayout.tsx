@@ -20,7 +20,7 @@ import { useAuthContext } from '../lib/contexts/AuthContext';
 import { Avatar } from './Avatar';
 import { UploadPhotoModal } from './UploadPhotoModal';
 import { obtenerMatchesParaUsuario } from '../lib/api/matches';
-import { crearRelacion, obtenerRelacion } from '../lib/api/relationships';
+import { crearRelacion, obtenerRelacion, marcarComoInteres, cambiarEtapa, obtenerPropiedadesPorEtapa } from '../lib/api/relationships';
 import type { Propiedad, PropiedadConRelacion } from '../lib/database.types';
 
 interface ClientLayoutProps {
@@ -245,9 +245,13 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const { user } = useAuthContext();
   const [currentView, setCurrentView] = useState<ClientView>('explore');
   const [searchTerm, setSearchTerm] = useState('');
-  // Expanded favorites list for demo purposes
-  const [favorites, setFavorites] = useState<string[]>(['101', '102', '103', '104', '106', '108']);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+
+  // Interested Properties State
+  const [interestedProperties, setInterestedProperties] = useState<Property[]>([]);
+  const [loadingInterests, setLoadingInterests] = useState(false);
+  const [interestsError, setInterestsError] = useState('');
 
   // Unmark Confirmation State
   const [showUnmarkModal, setShowUnmarkModal] = useState(false);
@@ -467,6 +471,10 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
           });
         }
       }
+
+      const propiedadesInteres = await obtenerPropiedadesPorEtapa(usuarioId, 'Interes');
+      const favoritesIds = propiedadesInteres.map(p => p.id);
+      setFavorites(favoritesIds);
     } catch (error: any) {
       console.error('Error fetching matched properties:', error);
       setMatchesError(error.message || 'Error al cargar propiedades');
@@ -478,6 +486,31 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   useEffect(() => {
     if (usuarioId && currentView === 'explore') {
       fetchMatchedProperties();
+    }
+  }, [usuarioId, currentView]);
+
+  const fetchInterestedProperties = async () => {
+    if (!usuarioId) return;
+
+    setLoadingInterests(true);
+    setInterestsError('');
+
+    try {
+      const propiedadesInteres = await obtenerPropiedadesPorEtapa(usuarioId, 'Interes');
+      const convertedProperties = propiedadesInteres.map(convertPropiedadToProperty);
+      setInterestedProperties(convertedProperties);
+      setFavorites(convertedProperties.map(p => p.id));
+    } catch (error: any) {
+      console.error('Error fetching interested properties:', error);
+      setInterestsError(error.message || 'Error al cargar propiedades de interés');
+    } finally {
+      setLoadingInterests(false);
+    }
+  };
+
+  useEffect(() => {
+    if (usuarioId && currentView === 'interests') {
+      fetchInterestedProperties();
     }
   }, [usuarioId, currentView]);
 
@@ -618,23 +651,42 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   };
 
 
-  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+  const toggleFavorite = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (favorites.includes(id)) {
-      // If already favorite, ask for confirmation
       setPropertyToUnmark(id);
       setShowUnmarkModal(true);
     } else {
-      // If not favorite, add immediately
-      setFavorites([...favorites, id]);
+      if (!usuarioId) return;
+
+      try {
+        await marcarComoInteres(id, usuarioId);
+        setFavorites([...favorites, id]);
+
+        if (currentView === 'interests') {
+          await fetchInterestedProperties();
+        }
+      } catch (error: any) {
+        console.error('Error al marcar como interés:', error);
+      }
     }
   };
 
-  const confirmUnmark = () => {
-    if (propertyToUnmark) {
-      setFavorites(favorites.filter(fid => fid !== propertyToUnmark));
-      setShowUnmarkModal(false);
-      setPropertyToUnmark(null);
+  const confirmUnmark = async () => {
+    if (propertyToUnmark && usuarioId) {
+      try {
+        await cambiarEtapa(propertyToUnmark, usuarioId, 'Explorar');
+        setFavorites(favorites.filter(fid => fid !== propertyToUnmark));
+
+        if (currentView === 'interests') {
+          await fetchInterestedProperties();
+        }
+      } catch (error: any) {
+        console.error('Error al cambiar etapa a Explorar:', error);
+      } finally {
+        setShowUnmarkModal(false);
+        setPropertyToUnmark(null);
+      }
     }
   };
 
@@ -969,23 +1021,40 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
         );
 
       case 'interests':
-        const interestedProps = PROPERTIES_GRID_DATA.filter(p => favorites.includes(p.id));
         return (
           <div className="space-y-8 animate-fade-in pb-24">
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
               <div>
                 <h2 className="text-3xl font-bold text-gray-900">Favoritos e Intereses</h2>
                 <p className="text-gray-500 mt-2">
-                   Tienes <span className="font-bold text-gray-900">{interestedProps.length}</span> propiedades marcadas.
+                   Tienes <span className="font-bold text-gray-900">{interestedProperties.length}</span> propiedades marcadas.
                 </p>
               </div>
             </div>
-            {interestedProps.length === 0 ? (
+            {loadingInterests ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+              </div>
+            ) : interestsError ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mb-6">
+                  <AlertCircle size={40} strokeWidth={1.5} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Error al cargar propiedades</h3>
+                <p className="text-gray-500 max-w-md mx-auto mb-6">{interestsError}</p>
+                <button
+                  onClick={fetchInterestedProperties}
+                  className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary-600/20 active:scale-95 transition-all"
+                >
+                  Reintentar
+                </button>
+              </div>
+            ) : interestedProperties.length === 0 ? (
                <EmptyState icon={Heart} title="Aún no tienes favoritos" description="Marca propiedades con 'Me interesa' para verlas aquí." />
             ) : (
               <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
-                  {interestedProps.map(prop => (
-                    <PropertyCardVariant3 
+                  {interestedProperties.map(prop => (
+                    <PropertyCardVariant3
                         key={prop.id}
                         prop={prop}
                         isFavorite={true}
@@ -1813,11 +1882,11 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                   >
                      <item.icon size={20} strokeWidth={currentView === item.id ? 2.5 : 2} />
                      {item.label}
-                     {item.id === 'interests' && favorites.length > 0 && (
+                     {item.id === 'interests' && interestedProperties.length > 0 && (
                         <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           currentView === 'interests' ? 'bg-white text-rose-600' : 'bg-rose-100 text-rose-600'
                         }`}>
-                           {favorites.length}
+                           {interestedProperties.length}
                         </span>
                      )}
                      {item.id === 'compare' && comparisonList.length > 0 && (

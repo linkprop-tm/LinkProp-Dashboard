@@ -133,6 +133,22 @@ export async function agregarNotaAgente(
   }
 }
 
+export async function obtenerPropiedadesPorEtapa(usuario_id: string, etapa: EtapaRelacion) {
+  const { data, error } = await supabase
+    .from('propiedades_usuarios')
+    .select(`
+      *,
+      propiedades (*)
+    `)
+    .eq('usuario_id', usuario_id)
+    .eq('etapa', etapa)
+    .order('fecha_interes', { ascending: false });
+
+  if (error) throw error;
+
+  return (data || []).map((rel: any) => rel.propiedades).filter(Boolean);
+}
+
 export async function eliminarRelacion(propiedad_id: string, usuario_id: string) {
   const { error } = await supabase
     .from('propiedades_usuarios')
