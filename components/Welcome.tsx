@@ -607,7 +607,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                     <span>+650 Clientes satisfechos</span>
                 </div>
 
-                <h1 className="text-5xl md:text-6xl font-bold text-white leading-[1.1] tracking-tight">
+                <h1 className="text-4xl md:text-5xl font-bold text-white leading-[1.1] tracking-tight">
                    Encontrá tu propiedad<br/>
                    <span className="text-white border-b-4 border-red-500 pb-2 inline-block">con Karina Poblete.</span>
                 </h1>
