@@ -310,7 +310,7 @@ export const Dashboard: React.FC = () => {
                     const imagenPropiedad = interes.propiedad.imagenes?.[0] || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
                     const avatarUsuario = interes.usuario.foto_perfil_url;
                     const nombreUsuario = interes.usuario.full_name || 'Usuario';
-                    const tituloPropiedad = interes.propiedad.titulo || 'Propiedad';
+                    const tituloPropiedad = `${interes.propiedad.tipo} en ${interes.propiedad.barrio || interes.propiedad.provincia || 'Sin ubicación'}`;
 
                     return (
                       <div key={interes.id} className={`p-4 hover:bg-gray-50 transition-colors flex items-center gap-4 group cursor-default animate-fade-in stagger-${idx + 1}`}>

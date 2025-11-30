@@ -413,7 +413,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
 
     return {
       id: propiedad.id,
-      title: propiedad.titulo,
+      title: `${propiedad.tipo} en ${propiedad.barrio || propiedad.provincia || 'Sin ubicación'}`,
       address: propiedad.direccion || propiedad.barrio || 'Dirección no especificada',
       price: Number(propiedad.precio),
       currency: propiedad.moneda,

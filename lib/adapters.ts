@@ -78,7 +78,7 @@ export function propiedadToProperty(propiedad: Propiedad, matchCount?: number, i
 
   return {
     id: propiedad.id,
-    title: propiedad.titulo,
+    title: `${propiedad.tipo} en ${propiedad.barrio || propiedad.provincia || 'Sin ubicación'}`,
     address: propiedad.direccion,
     price: propiedad.precio,
     currency: propiedad.moneda,
@@ -115,15 +115,13 @@ export function propiedadToProperty(propiedad: Propiedad, matchCount?: number, i
 }
 
 export function propertyToPropiedad(property: Partial<Property>): Partial<Propiedad> {
-  const estadoMap: Record<string, 'Disponible' | 'Reservada' | 'Vendida'> = {
+  const estadoMap: Record<string, 'Disponible' | 'Reservada' | 'No disponible'> = {
     'active': 'Disponible',
     'pending': 'Reservada',
-    'sold': 'Vendida'
+    'sold': 'No disponible'
   };
 
   const result: Partial<Propiedad> = {};
-
-  if (property.title) result.titulo = property.title;
   if (property.description) result.descripcion = property.description;
   if (property.propertyType) result.tipo = property.propertyType as Propiedad['tipo'];
   if (property.operationType) result.operacion = property.operationType;

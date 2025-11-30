@@ -2,7 +2,6 @@ import { supabase } from '../supabase';
 import type { Propiedad, PropiedadUsuario, EstadoPropiedad } from '../database.types';
 
 export interface CreatePropiedadData {
-  titulo: string;
   descripcion?: string;
   tipo: Propiedad['tipo'];
   operacion: Propiedad['operacion'];
@@ -107,6 +106,25 @@ export async function obtenerPropiedadesDisponibles() {
 
 export async function cambiarEstadoPropiedad(id: string, estado: EstadoPropiedad) {
   return actualizarPropiedad({ id, estado });
+}
+
+export async function actualizarEstadoPropiedadManual(
+  id: string,
+  estado: EstadoPropiedad,
+  estadoManual: boolean = true
+) {
+  const { data, error } = await supabase
+    .from('propiedades')
+    .update({
+      estado,
+      estado_manual: estadoManual,
+    })
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as Propiedad;
 }
 
 export async function cambiarVisibilidadPropiedad(id: string, visibilidad: 'Publica' | 'Privada') {

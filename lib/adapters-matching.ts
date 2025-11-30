@@ -38,7 +38,7 @@ export function transformPropiedadToProperty(propiedad: Propiedad): Property {
 
   return {
     id: propiedad.id,
-    title: propiedad.titulo,
+    title: `${propiedad.tipo} en ${propiedad.barrio || propiedad.provincia || 'Sin ubicación'}`,
     description: propiedad.descripcion,
     address: propiedad.direccion,
     price: propiedad.precio,

@@ -208,7 +208,6 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
         const createData = propertyToPropiedad(propertyData);
         console.log('Create data to send to Supabase:', createData);
         await crearPropiedad({
-          titulo: createData.titulo || '',
           tipo: createData.tipo || 'Departamento',
           operacion: createData.operacion || 'Venta',
           precio: createData.precio || 0,
@@ -302,14 +301,14 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
 
       const data = await response.json();
 
-      if (!data.titulo || !data.precio || !data.tipo || !data.operacion) {
+      if (!data.precio || !data.tipo || !data.operacion) {
         throw new Error('La respuesta del webhook no contiene los campos requeridos');
       }
 
       const parsedAntiquity = data.antiguedad ? parseInt(String(data.antiguedad).replace(/[^0-9]/g, '')) || 0 : 0;
 
       setScrapedData({
-        title: data.titulo,
+        title: `${data.tipo} en ${data.barrio || data.provincia || 'Sin ubicación'}`,
         price: String(data.precio),
         address: data.direccion || '',
         description: data.descripcion || '',
