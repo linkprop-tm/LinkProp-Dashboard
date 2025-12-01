@@ -1,19 +1,19 @@
 import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { Propiedad } from '../lib/database.types';
+import { Property } from '../types';
 
 interface PropertyMarkerProps {
-  property: Propiedad;
-  onClick?: (property: Propiedad) => void;
+  property: Property;
+  onClick?: (property: Property) => void;
   isSelected?: boolean;
 }
 
-function getMarkerIcon(property: Propiedad, isSelected: boolean): L.Icon {
+function getMarkerIcon(property: Property, isSelected: boolean): L.Icon {
   const color = isSelected
     ? '#3b82f6'
-    : property.estado === 'Disponible'
+    : property.status === 'active'
       ? '#22c55e'
-      : property.estado === 'Reservada'
+      : property.status === 'pending'
         ? '#f59e0b'
         : '#ef4444';
 
@@ -36,7 +36,7 @@ function getMarkerIcon(property: Propiedad, isSelected: boolean): L.Icon {
         font-size: 12px;
         font-weight: bold;
       ">
-        ${property.moneda}
+        ${property.currency}
       </span>
     </div>
   `;
@@ -63,12 +63,12 @@ export default function PropertyMarker({ property, onClick, isSelected = false }
 
   const precioFormateado = new Intl.NumberFormat('es-AR', {
     style: 'currency',
-    currency: property.moneda === 'USD' ? 'USD' : 'ARS',
+    currency: property.currency === 'USD' ? 'USD' : 'ARS',
     maximumFractionDigits: 0
-  }).format(property.precio);
+  }).format(property.price);
 
-  const thumbnailUrl = property.imagenes && property.imagenes.length > 0
-    ? property.imagenes[0]
+  const thumbnailUrl = property.images && property.images.length > 0
+    ? property.images[0]
     : 'https://via.placeholder.com/200x150?text=Sin+Imagen';
 
   return (
@@ -84,7 +84,7 @@ export default function PropertyMarker({ property, onClick, isSelected = false }
           <div style={{ marginBottom: '8px' }}>
             <img
               src={thumbnailUrl}
-              alt={property.tipo}
+              alt={property.propertyType || 'Propiedad'}
               style={{
                 width: '100%',
                 height: '120px',
@@ -103,23 +103,23 @@ export default function PropertyMarker({ property, onClick, isSelected = false }
             </div>
 
             <div style={{ color: '#666', marginBottom: '4px' }}>
-              {property.tipo} en {property.operacion}
+              {property.propertyType} en {property.operationType}
             </div>
 
             <div style={{ marginBottom: '4px', display: 'flex', gap: '8px', fontSize: '12px', color: '#888' }}>
-              {property.dormitorios > 0 && (
-                <span>{property.dormitorios} dorm</span>
+              {property.bedrooms && property.bedrooms > 0 && (
+                <span>{property.bedrooms} dorm</span>
               )}
-              {property.banos > 0 && (
-                <span>{property.banos} baños</span>
+              {property.bathrooms && property.bathrooms > 0 && (
+                <span>{property.bathrooms} baños</span>
               )}
-              {property.superficie > 0 && (
-                <span>{property.superficie} m²</span>
+              {property.totalArea && property.totalArea > 0 && (
+                <span>{property.totalArea} m²</span>
               )}
             </div>
 
             <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>
-              {property.barrio}, {property.provincia}
+              {property.neighborhood}{property.province ? `, ${property.province}` : ''}
             </div>
 
             <div style={{
@@ -128,18 +128,18 @@ export default function PropertyMarker({ property, onClick, isSelected = false }
               fontSize: '11px',
               fontWeight: '500',
               display: 'inline-block',
-              background: property.estado === 'Disponible'
+              background: property.status === 'active'
                 ? '#dcfce7'
-                : property.estado === 'Reservada'
+                : property.status === 'pending'
                   ? '#fef3c7'
                   : '#fee2e2',
-              color: property.estado === 'Disponible'
+              color: property.status === 'active'
                 ? '#166534'
-                : property.estado === 'Reservada'
+                : property.status === 'pending'
                   ? '#92400e'
                   : '#991b1b'
             }}>
-              {property.estado}
+              {property.status === 'active' ? 'Disponible' : property.status === 'pending' ? 'Reservada' : 'Vendida'}
             </div>
           </div>
         </div>

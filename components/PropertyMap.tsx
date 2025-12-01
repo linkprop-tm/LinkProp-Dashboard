@@ -4,7 +4,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import { Propiedad } from '../lib/database.types';
+import { Property } from '../types';
 import { isValidCoordinate, loadMapPosition, saveMapPosition, Coordinate, Polygon } from '../lib/geo-utils';
 import PropertyMarker from './PropertyMarker';
 import DrawControl from './DrawControl';
@@ -17,8 +17,8 @@ L.Icon.Default.mergeOptions({
 });
 
 interface PropertyMapProps {
-  properties: Propiedad[];
-  onPropertyClick?: (property: Propiedad) => void;
+  properties: Property[];
+  onPropertyClick?: (property: Property) => void;
   selectedPropertyId?: string | null;
   drawnPolygon?: Coordinate[] | null;
   onPolygonDrawn?: (polygon: Polygon) => void;
