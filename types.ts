@@ -46,6 +46,10 @@ export interface Property {
   province?: string;
   fullAddress?: string; // Dirección completa
 
+  // Geolocation
+  latitud?: number | null;
+  longitud?: number | null;
+
   // Source tracking
   sourceUrl?: string; // URL original
   sourcePortal?: string; // Portal original

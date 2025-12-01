@@ -107,6 +107,8 @@ export function propiedadToProperty(propiedad: Propiedad, matchCount?: number, i
     neighborhood: propiedad.barrio,
     province: propiedad.provincia || undefined,
     fullAddress: propiedad.direccion || undefined,
+    latitud: propiedad.latitud ? Number(propiedad.latitud) : null,
+    longitud: propiedad.longitud ? Number(propiedad.longitud) : null,
     sourceUrl: propiedad.url_original || undefined,
     sourcePortal: propiedad.portal_original || undefined,
     amenities: propiedad.amenities || [],
