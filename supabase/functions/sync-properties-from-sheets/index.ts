@@ -19,8 +19,6 @@ interface PropertyRow {
   direccion: string;
   barrio: string;
   provincia: string;
-  latitud: number | null;
-  longitud: number | null;
   ambientes: number | null;
   dormitorios: number;
   banos: number;
@@ -130,9 +128,6 @@ function validateAndTransformRow(row: Record<string, string>, rowNumber: number)
     return { property: null, error: { row: rowNumber, id_original: row.id_original, field: 'moneda', error: `Moneda inválida: "${row.moneda}". Debe ser: USD o ARS` } };
   }
 
-  const latitud = parseNumber(row.latitud);
-  const longitud = parseNumber(row.longitud);
-
   const property: PropertyRow = {
     id_original: row.id_original.trim(),
     tipo: row.tipo,
@@ -146,10 +141,6 @@ function validateAndTransformRow(row: Record<string, string>, rowNumber: number)
     direccion: row.direccion || '',
     barrio: row.barrio || '',
     provincia: row.provincia || '',
-    latitud:
-      latitud !== null && latitud >= -55 && latitud <= -21 ? latitud : null,
-    longitud:
-      longitud !== null && longitud >= -73 && longitud <= -53 ? longitud : null,
     ambientes: parseNumber(row.ambientes),
     dormitorios: parseNumber(row.dormitorios) || 0,
     banos: parseNumber(row.banos) || 0,
@@ -293,8 +284,6 @@ Deno.serve(async (req: Request) => {
             direccion: property.direccion,
             barrio: property.barrio,
             provincia: property.provincia,
-            latitud: property.latitud,
-            longitud: property.longitud,
             ambientes: property.ambientes,
             dormitorios: property.dormitorios,
             banos: property.banos,
