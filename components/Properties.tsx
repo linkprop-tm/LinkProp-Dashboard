@@ -1,8 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   Search, MapPin, Eye, EyeOff, LayoutGrid, List, Bed, Bath, Ruler, Edit2, Building2, Plus
 } from 'lucide-react';
+import MapControlPanel from './MapControlPanel';
+import { useMapFilter } from '../lib/hooks/useMapFilter';
+import DrawControl from './DrawControl';
+
+const PropertyMap = lazy(() => import('./PropertyMap'));
 import { AddPropertyModal } from './AddPropertyModal';
 import { Property } from '../types';
 import { useProperties } from '../lib/hooks/useProperties';
@@ -235,10 +240,21 @@ const RenderRow: React.FC<{
 export const Properties: React.FC = () => {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'map'>('grid');
 
   const { properties: dbProperties, loading, error, refetch } = useProperties();
   const [properties, setProperties] = useState<Property[]>([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+
+  const {
+    drawnPolygon,
+    filteredProperties,
+    handlePolygonDrawn,
+    handlePolygonCleared,
+    clearFilter,
+    hasActiveFilter,
+    filterCount
+  } = useMapFilter(properties);
 
   useEffect(() => {
     if (dbProperties.length > 0) {
@@ -279,12 +295,21 @@ export const Properties: React.FC = () => {
   };
 
   const getFilteredProperties = () => {
-     return properties.filter(p => 
-        p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+     const baseFiltered = hasActiveFilter && viewMode === 'map' ? filteredProperties : properties;
+
+     return baseFiltered.filter(p =>
+        p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.neighborhood?.toLowerCase().includes(searchTerm.toLowerCase())
      );
-  }
+  };
+
+  const handlePropertyClick = (property: Property) => {
+    setSelectedPropertyId(property.id);
+    setEditingProperty(property);
+  };
+
+  const displayProperties = getFilteredProperties();
 
   if (loading) {
     return (
@@ -315,6 +340,18 @@ export const Properties: React.FC = () => {
   return (
     <div className="p-8 max-w-[1920px] mx-auto space-y-8 animate-fade-in pb-24">
       
+      {/* Map Control Panel */}
+      {viewMode === 'map' && (
+        <MapControlPanel
+          viewMode={viewMode}
+          onViewModeChange={(mode) => setViewMode(mode as 'list' | 'map')}
+          hasActiveFilter={hasActiveFilter}
+          filterCount={filterCount}
+          totalCount={properties.length}
+          onClearFilter={clearFilter}
+        />
+      )}
+
       {/* Header Section */}
       <div className="flex flex-col gap-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -324,20 +361,26 @@ export const Properties: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-3 w-full md:w-auto">
-               
+
                {/* View Toggle */}
                <div className="bg-white border border-gray-200 rounded-lg p-1 flex items-center shadow-sm">
-                  <button 
+                  <button
                     onClick={() => setViewMode('grid')}
                     className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-gray-100 text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                   >
                      <LayoutGrid size={18} strokeWidth={viewMode === 'grid' ? 2.5 : 2}/>
                   </button>
-                  <button 
+                  <button
                     onClick={() => setViewMode('list')}
                     className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-gray-100 text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                   >
                      <List size={18} strokeWidth={viewMode === 'list' ? 2.5 : 2}/>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('map')}
+                    className={`p-2 rounded-md transition-all ${viewMode === 'map' ? 'bg-gray-100 text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                  >
+                     <MapPin size={18} strokeWidth={viewMode === 'map' ? 2.5 : 2}/>
                   </button>
                </div>
 
@@ -360,9 +403,31 @@ export const Properties: React.FC = () => {
       </div>
 
       {/* Content Rendering based on ViewMode */}
-      {viewMode === 'grid' ? (
+      {viewMode === 'map' ? (
+        <Suspense fallback={
+          <div style={{
+            height: '600px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#f5f5f5',
+            borderRadius: '8px'
+          }}>
+            <p>Cargando mapa...</p>
+          </div>
+        }>
+          <PropertyMap
+            properties={displayProperties}
+            onPropertyClick={handlePropertyClick}
+            selectedPropertyId={selectedPropertyId}
+            drawnPolygon={drawnPolygon}
+            onPolygonDrawn={handlePolygonDrawn}
+            onPolygonCleared={handlePolygonCleared}
+          />
+        </Suspense>
+      ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-             {getFilteredProperties().map((prop, idx) => (
+             {displayProperties.map((prop, idx) => (
                 <RenderLandscape 
                     key={prop.id} 
                     prop={prop} 
@@ -381,7 +446,7 @@ export const Properties: React.FC = () => {
                 <div className="col-span-2 text-right">Acciones</div>
              </div>
 
-             {getFilteredProperties().map((prop, idx) => (
+             {displayProperties.map((prop, idx) => (
                 <RenderRow 
                     key={prop.id} 
                     prop={prop} 

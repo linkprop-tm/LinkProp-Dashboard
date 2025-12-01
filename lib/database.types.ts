@@ -42,6 +42,8 @@ export interface Propiedad {
   direccion: string;
   barrio: string;
   provincia: string;
+  latitud: number | null;
+  longitud: number | null;
 
   // Visibilidad y origen
   visibilidad: VisibilidadPropiedad;
