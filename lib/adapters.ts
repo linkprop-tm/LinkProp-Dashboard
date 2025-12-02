@@ -24,6 +24,7 @@ export function usuarioToClient(usuario: Usuario): Client {
       environments: usuario.preferencias_ambientes || '',
       location: usuario.preferencias_ubicacion?.[0] || '',
       neighborhoods: usuario.preferencias_ubicacion || [],
+      geographicZone: usuario.preferencias_zona_geografica || undefined,
       operationType: usuario.preferencias_operacion || 'Venta',
       propertyTypes: usuario.preferencias_tipo || [],
       bedrooms: '',
@@ -58,6 +59,7 @@ export function clientToUsuario(client: Client): Partial<Usuario> {
     preferencias_ubicacion: client.searchParams.neighborhoods && client.searchParams.neighborhoods.length > 0
       ? client.searchParams.neighborhoods
       : (client.searchParams.location ? [client.searchParams.location] : []),
+    preferencias_zona_geografica: client.searchParams.geographicZone || null,
     preferencias_m2_min: client.searchParams.minArea || null,
     preferencias_ambientes: client.searchParams.environments?.toString() || null,
     preferencias_amenities: client.searchParams.amenities || [],

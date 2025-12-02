@@ -110,6 +110,7 @@ export function useAuth() {
           preferencias_precio_min: profileData.preferences.min_price || null,
           preferencias_precio_max: profileData.preferences.max_price || null,
           preferencias_ubicacion: profileData.preferences.neighborhoods || [],
+          preferencias_zona_geografica: profileData.preferences.geographic_zone || null,
           preferencias_m2_min: profileData.preferences.min_area ? parseFloat(profileData.preferences.min_area) : null,
           preferencias_ambientes: profileData.preferences.environments || null,
           preferencias_amenities: profileData.preferences.amenities || [],

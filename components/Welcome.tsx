@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { UserRole } from '../App';
 import { useAuthContext } from '../lib/contexts/AuthContext';
+import { MapZoneDrawer } from './MapZoneDrawer';
 
 interface WelcomeProps {
   onLogin: () => void;
@@ -81,6 +82,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
       amenities: [] as string[],
       region: 'CABA' as 'CABA' | 'GBA',
       neighborhoods: [] as string[],
+      geographicZone: null as any,
       minPrice: '',
       maxPrice: '',
       minArea: '',
@@ -191,7 +193,11 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
           throw new Error('Por favor selecciona al menos un tipo de propiedad');
         }
 
-        if (regData.neighborhoods.length === 0) {
+        if (regData.region === 'CABA' && !regData.geographicZone) {
+          throw new Error('Por favor dibuja una zona de interés en el mapa');
+        }
+
+        if (regData.region === 'GBA' && regData.neighborhoods.length === 0) {
           throw new Error('Por favor selecciona al menos un barrio de interés');
         }
 
@@ -200,6 +206,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
           operation_type: regData.operationType,
           property_types: regData.propertyTypes,
           neighborhoods: regData.neighborhoods,
+          geographic_zone: regData.geographicZone,
           min_price: regData.minPrice ? parseFloat(regData.minPrice) : null,
           max_price: regData.maxPrice ? parseFloat(regData.maxPrice) : null,
           min_area: regData.minArea || null,
@@ -233,6 +240,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
           amenities: [],
           region: 'CABA',
           neighborhoods: [],
+          geographicZone: null,
           minPrice: '',
           maxPrice: '',
           minArea: '',
@@ -457,12 +465,30 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                             <MapPin size={16} className="text-gray-400" /> Zona de Interés
                                         </div>
                                      </div>
-                                     <div className="flex gap-4">
-                                         <div className="w-1/3 bg-gray-50 p-1 rounded-xl flex border border-gray-200 h-10">
-                                            {['CABA', 'GBA'].map(r => (
-                                                <button key={r} onClick={() => handleRegChange('region', r)} className={`flex-1 text-xs font-bold rounded-lg ${regData.region === r ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500'}`}>{r}</button>
-                                            ))}
-                                         </div>
+
+                                     <div className="mb-4 bg-gray-50 p-1 rounded-xl flex border border-gray-200 w-fit">
+                                        {['CABA', 'GBA'].map(r => (
+                                            <button
+                                                key={r}
+                                                onClick={() => handleRegChange('region', r)}
+                                                className={`px-6 py-2 text-xs font-bold rounded-lg transition-all ${
+                                                    regData.region === r
+                                                    ? 'bg-white text-primary-600 shadow-sm'
+                                                    : 'text-gray-500 hover:text-gray-700'
+                                                }`}
+                                            >
+                                                {r}
+                                            </button>
+                                        ))}
+                                     </div>
+
+                                     {regData.region === 'CABA' ? (
+                                        <MapZoneDrawer
+                                            initialZone={regData.geographicZone}
+                                            onZoneChange={(zone) => handleRegChange('geographicZone', zone)}
+                                            height="350px"
+                                        />
+                                     ) : (
                                          <div className="relative flex-1 group">
                                             <div className="flex flex-wrap gap-2 absolute left-3 top-1/2 -translate-y-1/2 z-10">
                                                 {regData.neighborhoods.map(h => (
@@ -471,9 +497,9 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                                     </span>
                                                 ))}
                                             </div>
-                                            <input 
+                                            <input
                                                 ref={hoodInputRef}
-                                                type="text" 
+                                                type="text"
                                                 value={hoodSearch}
                                                 onChange={(e) => { setHoodSearch(e.target.value); setIsHoodDropdownOpen(true); }}
                                                 onFocus={() => setIsHoodDropdownOpen(true)}
@@ -490,7 +516,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                                 </div>
                                             )}
                                          </div>
-                                     </div>
+                                     )}
                                 </div>
 
                                 {/* Price */}

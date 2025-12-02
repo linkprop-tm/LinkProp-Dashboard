@@ -111,6 +111,7 @@ export interface SearchParams {
   environments: string | number; // '2' or '3+'
   location: string;
   neighborhoods?: string[]; // Full array of neighborhoods
+  geographicZone?: any; // GeoJSON polygon drawn by user on map
 
   // Extended fields for new UI
   operationType?: 'Venta' | 'Alquiler';
