@@ -422,7 +422,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                             <Sparkles size={16} /> Amenities
                                         </label>
                                         <div className="flex flex-wrap gap-2">
-                                            {['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Seguridad 24hs', 'Balcón'].map(item => (
+                                            {['Pileta', 'SUM', 'Gimnasio', 'Balcón / Terraza'].map(item => (
                                                 <button
                                                     key={item}
                                                     onClick={() => toggleArrayItem('amenities', item)}
