@@ -76,7 +76,9 @@ function parseJsonArray(value: string | undefined): string[] {
 
 function parseNumber(value: string | undefined): number | null {
   if (!value || value === '' || value.toUpperCase() === 'N/A') return null;
-  const parsed = parseFloat(value);
+
+  const cleaned = value.toString().trim().replace(/,/g, '.');
+  const parsed = parseFloat(cleaned);
   return isNaN(parsed) ? null : parsed;
 }
 
@@ -167,44 +169,68 @@ function validateAndTransformRow(row: Record<string, string>, rowNumber: number)
   const validDisposicion = ['Frente', 'Contrafrente', 'Lateral', 'Interno'];
   const validConfiabilidad = ['Alta', 'Media'];
 
-  if (!row.id_original || row.id_original.trim() === '') {
+  const normalizeString = (str: string | undefined): string => {
+    return str ? str.toString().trim() : '';
+  };
+
+  const id_original = normalizeString(row.id_original);
+  if (!id_original) {
     return { property: null, error: { row: rowNumber, field: 'id_original', error: 'id_original es requerido' } };
   }
 
-  if (!validTipos.includes(row.tipo)) {
-    return { property: null, error: { row: rowNumber, id_original: row.id_original, field: 'tipo', error: `Tipo inválido: "${row.tipo}". Debe ser uno de: ${validTipos.join(', ')}` } };
+  const tipo = normalizeString(row.tipo);
+  if (!tipo) {
+    return { property: null, error: { row: rowNumber, id_original, field: 'tipo', error: 'tipo es requerido' } };
+  }
+  if (!validTipos.includes(tipo)) {
+    return { property: null, error: { row: rowNumber, id_original, field: 'tipo', error: `Tipo inválido: "${tipo}". Debe ser uno de: ${validTipos.join(', ')}` } };
   }
 
-  if (!validOperaciones.includes(row.operacion)) {
-    return { property: null, error: { row: rowNumber, id_original: row.id_original, field: 'operacion', error: `Operación inválida: "${row.operacion}". Debe ser: Venta o Alquiler` } };
+  const operacion = normalizeString(row.operacion);
+  if (!operacion) {
+    return { property: null, error: { row: rowNumber, id_original, field: 'operacion', error: 'operacion es requerida' } };
+  }
+  if (!validOperaciones.includes(operacion)) {
+    return { property: null, error: { row: rowNumber, id_original, field: 'operacion', error: `Operación inválida: "${operacion}". Debe ser: Venta o Alquiler` } };
   }
 
-  if (!validEstados.includes(row.estado)) {
-    return { property: null, error: { row: rowNumber, id_original: row.id_original, field: 'estado', error: `Estado inválido: "${row.estado}". Debe ser: Disponible, Reservada o No disponible` } };
+  const estado = normalizeString(row.estado);
+  if (!estado) {
+    return { property: null, error: { row: rowNumber, id_original, field: 'estado', error: 'estado es requerido' } };
+  }
+  if (!validEstados.includes(estado)) {
+    return { property: null, error: { row: rowNumber, id_original, field: 'estado', error: `Estado inválido: "${estado}". Debe ser: Disponible, Reservada o No disponible` } };
   }
 
   const precio = parseNumber(row.precio);
   if (precio === null || precio <= 0) {
-    return { property: null, error: { row: rowNumber, id_original: row.id_original, field: 'precio', error: 'Precio debe ser mayor a 0' } };
+    return { property: null, error: { row: rowNumber, id_original, field: 'precio', error: `Precio debe ser mayor a 0 (valor recibido: "${row.precio}")` } };
   }
 
-  if (!validMonedas.includes(row.moneda)) {
-    return { property: null, error: { row: rowNumber, id_original: row.id_original, field: 'moneda', error: `Moneda inválida: "${row.moneda}". Debe ser: USD o ARS` } };
+  const moneda = normalizeString(row.moneda);
+  if (!moneda) {
+    return { property: null, error: { row: rowNumber, id_original, field: 'moneda', error: 'moneda es requerida' } };
   }
+  if (!validMonedas.includes(moneda)) {
+    return { property: null, error: { row: rowNumber, id_original, field: 'moneda', error: `Moneda inválida: "${moneda}". Debe ser: USD o ARS` } };
+  }
+
+  const disposicion_normalized = normalizeString(row.disposicion);
+  const confiabilidad_normalized = normalizeString(row.confiabilidad);
 
   const property: PropertyRow = {
-    id_original: row.id_original.trim(),
-    operacion: row.operacion,
-    tipo: row.tipo,
-    estado: row.estado,
+    id_original,
+    operacion,
+    tipo,
+    estado,
     precio,
-    moneda: row.moneda,
+    moneda,
     piso: parseNumber(row.piso),
     imagenes: parseJsonArray(row.imagenes),
     avenida: parseBool(row.avenida),
-    direccion: row.direccion || '',
-    barrio: row.barrio || '',
-    provincia: row.provincia || '',
+    direccion: normalizeString(row.direccion),
+    barrio: normalizeString(row.barrio),
+    provincia: normalizeString(row.provincia),
     latitud: parseNumber(row.latitud),
     longitud: parseNumber(row.longitud),
     ambientes: parseNumber(row.ambientes),
@@ -212,18 +238,18 @@ function validateAndTransformRow(row: Record<string, string>, rowNumber: number)
     banos: parseNumber(row.banos) || 0,
     m2_totales: parseNumber(row.m2_totales),
     m2_cubiertos: parseNumber(row.m2_cubiertos),
-    antiguedad: row.antiguedad || '',
-    orientacion: row.orientacion || '',
-    disposicion: validDisposicion.includes(row.disposicion) ? row.disposicion : '',
+    antiguedad: normalizeString(row.antiguedad),
+    orientacion: normalizeString(row.orientacion),
+    disposicion: validDisposicion.includes(disposicion_normalized) ? disposicion_normalized : '',
     expensas: parseNumber(row.expensas),
     apto_credito: parseBool(row.apto_credito),
     apto_profesional: parseBool(row.apto_profesional),
     cochera: parseBool(row.cochera),
     apto_mascotas: parseBool(row.apto_mascotas),
     amenities: parseJsonArray(row.amenities),
-    portal_original: row.portal_original || '',
-    url_original: row.url_original || '',
-    confiabilidad: validConfiabilidad.includes(row.confiabilidad) ? row.confiabilidad : '',
+    portal_original: normalizeString(row.portal_original),
+    url_original: normalizeString(row.url_original),
+    confiabilidad: validConfiabilidad.includes(confiabilidad_normalized) ? confiabilidad_normalized : '',
     fecha_scraping: parseDate(row.fecha_scraping),
   };
 
@@ -309,7 +335,7 @@ Deno.serve(async (req: Request) => {
         errors.push(error);
         stats.errors++;
         stats.skipped++;
-        console.log(`Row ${rowNumber} validation error:`, error.error);
+        console.log(`Row ${rowNumber} [${error.id_original || 'NO_ID'}] validation error on field '${error.field}': ${error.error}`);
         continue;
       }
 
@@ -343,7 +369,10 @@ Deno.serve(async (req: Request) => {
 
           stats.inserted++;
           stats.processed++;
-          console.log(`Row ${rowNumber}: Inserted new property ${property.id_original}`);
+          const coordsInfo = property.latitud && property.longitud
+            ? ` at (${property.latitud}, ${property.longitud})`
+            : ' (no coordinates)';
+          console.log(`Row ${rowNumber}: Inserted new property ${property.id_original}${coordsInfo}`);
         } else {
           const shouldUpdateEstado =
             property.estado === 'No disponible' ||
@@ -417,6 +446,13 @@ Deno.serve(async (req: Request) => {
     const executionTime = Date.now() - startTime;
     console.log(`Sync completed in ${executionTime}ms`);
     console.log(`Stats: ${stats.processed} processed, ${stats.inserted} inserted, ${stats.updated} updated, ${stats.skipped} skipped, ${stats.errors} errors`);
+
+    if (errors.length > 0) {
+      console.log(`\nErrors summary (${errors.length} total):`);
+      errors.forEach(err => {
+        console.log(`  - Row ${err.row}${err.id_original ? ` [${err.id_original}]` : ''}: ${err.field ? `field '${err.field}' - ` : ''}${err.error}`);
+      });
+    }
 
     return new Response(
       JSON.stringify({
