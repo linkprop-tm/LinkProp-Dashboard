@@ -188,8 +188,8 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
           throw new Error('Por favor selecciona al menos un tipo de propiedad');
         }
 
-        if (regData.region === 'CABA' && !regData.geographicZone) {
-          throw new Error('Por favor dibuja una zona de interés en el mapa');
+        if (regData.region === 'CABA' && !regData.geographicZone && regData.neighborhoods.length === 0) {
+          throw new Error('Por favor dibuja una zona en el mapa o selecciona al menos un barrio');
         }
 
         if (regData.region === 'GBA' && regData.neighborhoods.length === 0) {
@@ -463,13 +463,8 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                         ))}
                                      </div>
 
-                                     {regData.region === 'CABA' ? (
-                                        <MapZoneDrawer
-                                            initialZone={regData.geographicZone}
-                                            onZoneChange={(zone) => handleRegChange('geographicZone', zone)}
-                                            height="350px"
-                                        />
-                                     ) : (
+                                     <div className="space-y-4">
+                                         {/* Neighborhood search bar (for both CABA and GBA) */}
                                          <div className="relative flex-1 group">
                                             <div className="flex flex-wrap gap-2 absolute left-3 top-1/2 -translate-y-1/2 z-10">
                                                 {regData.neighborhoods.map(h => (
@@ -497,7 +492,16 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                                 </div>
                                             )}
                                          </div>
-                                     )}
+
+                                         {/* Map for CABA only */}
+                                         {regData.region === 'CABA' && (
+                                            <MapZoneDrawer
+                                                initialZone={regData.geographicZone}
+                                                onZoneChange={(zone) => handleRegChange('geographicZone', zone)}
+                                                height="350px"
+                                            />
+                                         )}
+                                     </div>
                                 </div>
 
                                 {/* Price */}
