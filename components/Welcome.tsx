@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Eye, EyeOff, Mail, Lock, ArrowRight, User, Briefcase,
   Building2, Sparkles, MapPin, DollarSign, PlusCircle, X,
-  Phone, Check, CheckCircle2, Car, Cat, Camera, ChevronRight, AlertCircle
+  Check, CheckCircle2, Car, Cat, Camera, ChevronRight, AlertCircle
 } from 'lucide-react';
 import { UserRole } from '../App';
 import { useAuthContext } from '../lib/contexts/AuthContext';
@@ -168,11 +168,6 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
 
       if (!regData.password || regData.password.length < 6) {
         setRegisterError('La contraseña debe tener al menos 6 caracteres');
-        return;
-      }
-
-      if (!regData.phone.trim()) {
-        setRegisterError('Por favor ingresa tu número de teléfono');
         return;
       }
 
@@ -354,25 +349,11 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                     <label className="text-xs font-bold text-gray-500 uppercase ml-1">Contraseña</label>
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                        <input 
-                                            type="password" 
+                                        <input
+                                            type="password"
                                             value={regData.password}
                                             onChange={(e) => handleRegChange('password', e.target.value)}
                                             placeholder="••••••••"
-                                            className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 focus:border-primary-300 outline-none transition-all"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Celular</label>
-                                    <div className="relative">
-                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                        <input 
-                                            type="tel" 
-                                            value={regData.phone}
-                                            onChange={(e) => handleRegChange('phone', e.target.value)}
-                                            placeholder="+54 9 11..."
                                             className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 focus:border-primary-300 outline-none transition-all"
                                         />
                                     </div>
