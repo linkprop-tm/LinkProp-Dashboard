@@ -8,19 +8,17 @@ const corsHeaders = {
 
 interface PropertyRow {
   id_original: string;
-  tipo: string;
   operacion: string;
+  tipo: string;
   estado: string;
-  visibilidad: string;
   precio: number;
   moneda: string;
-  descripcion: string;
+  piso: number | null;
   imagenes: string[];
+  avenida: boolean;
   direccion: string;
   barrio: string;
   provincia: string;
-  piso: number | null;
-  avenida: boolean;
   latitud: number | null;
   longitud: number | null;
   ambientes: number | null;
@@ -32,10 +30,10 @@ interface PropertyRow {
   orientacion: string;
   disposicion: string;
   expensas: number | null;
-  apto_mascotas: boolean;
   apto_credito: boolean;
   apto_profesional: boolean;
   cochera: boolean;
+  apto_mascotas: boolean;
   amenities: string[];
   portal_original: string;
   url_original: string;
@@ -118,7 +116,6 @@ function validateAndTransformRow(row: Record<string, string>, rowNumber: number)
   const validOperaciones = ['Venta', 'Alquiler'];
   const validEstados = ['Disponible', 'Reservada', 'No disponible'];
   const validMonedas = ['USD', 'ARS'];
-  const validVisibilidad = ['Publica', 'Privada'];
   const validDisposicion = ['Frente', 'Contrafrente', 'Lateral', 'Interno'];
   const validConfiabilidad = ['Alta', 'Media'];
 
@@ -149,19 +146,17 @@ function validateAndTransformRow(row: Record<string, string>, rowNumber: number)
 
   const property: PropertyRow = {
     id_original: row.id_original.trim(),
-    tipo: row.tipo,
     operacion: row.operacion,
+    tipo: row.tipo,
     estado: row.estado,
-    visibilidad: validVisibilidad.includes(row.visibilidad) ? row.visibilidad : 'Publica',
     precio,
     moneda: row.moneda,
-    descripcion: row.descripcion || '',
+    piso: parseNumber(row.piso),
     imagenes: parseJsonArray(row.imagenes),
+    avenida: parseBool(row.avenida),
     direccion: row.direccion || '',
     barrio: row.barrio || '',
     provincia: row.provincia || '',
-    piso: parseNumber(row.piso),
-    avenida: parseBool(row.avenida),
     latitud: parseNumber(row.latitud),
     longitud: parseNumber(row.longitud),
     ambientes: parseNumber(row.ambientes),
@@ -173,10 +168,10 @@ function validateAndTransformRow(row: Record<string, string>, rowNumber: number)
     orientacion: row.orientacion || '',
     disposicion: validDisposicion.includes(row.disposicion) ? row.disposicion : '',
     expensas: parseNumber(row.expensas),
-    apto_mascotas: parseBool(row.apto_mascotas),
     apto_credito: parseBool(row.apto_credito),
     apto_profesional: parseBool(row.apto_profesional),
     cochera: parseBool(row.cochera),
+    apto_mascotas: parseBool(row.apto_mascotas),
     amenities: parseJsonArray(row.amenities),
     portal_original: row.portal_original || '',
     url_original: row.url_original || '',
@@ -301,17 +296,16 @@ Deno.serve(async (req: Request) => {
             (existing.estado_manual && property.estado !== 'Disponible');
 
           const updateData: any = {
-            tipo: property.tipo,
             operacion: property.operacion,
+            tipo: property.tipo,
             precio: property.precio,
             moneda: property.moneda,
-            descripcion: property.descripcion,
+            piso: property.piso,
             imagenes: property.imagenes,
+            avenida: property.avenida,
             direccion: property.direccion,
             barrio: property.barrio,
             provincia: property.provincia,
-            piso: property.piso,
-            avenida: property.avenida,
             latitud: property.latitud,
             longitud: property.longitud,
             ambientes: property.ambientes,
@@ -323,11 +317,10 @@ Deno.serve(async (req: Request) => {
             orientacion: property.orientacion,
             disposicion: property.disposicion,
             expensas: property.expensas,
-            visibilidad: property.visibilidad,
-            apto_mascotas: property.apto_mascotas,
             apto_credito: property.apto_credito,
             apto_profesional: property.apto_profesional,
             cochera: property.cochera,
+            apto_mascotas: property.apto_mascotas,
             amenities: property.amenities,
             portal_original: property.portal_original,
             url_original: property.url_original,
