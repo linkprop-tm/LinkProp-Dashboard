@@ -46,7 +46,44 @@ Para que la sincronización funcione, tu hoja de Google Sheets debe ser accesibl
 
 Tu hoja debe tener las siguientes columnas en el orden especificado (la primera fila debe contener los nombres de las columnas):
 
-### Columnas Obligatorias:
+### Orden de Columnas (IMPORTANTE):
+
+Las columnas deben estar en este orden exacto:
+
+1. `id_original`
+2. `operacion`
+3. `tipo`
+4. `estado`
+5. `precio`
+6. `moneda`
+7. `piso`
+8. `imagenes`
+9. `avenida`
+10. `direccion`
+11. `barrio`
+12. `provincia`
+13. `latitud`
+14. `longitud`
+15. `ambientes`
+16. `dormitorios`
+17. `banos`
+18. `m2_totales`
+19. `m2_cubiertos`
+20. `antiguedad`
+21. `orientacion`
+22. `disposicion`
+23. `expensas`
+24. `apto_credito`
+25. `apto_profesional`
+26. `cochera`
+27. `apto_mascotas`
+28. `amenities`
+29. `portal_original`
+30. `url_original`
+31. `confiabilidad`
+32. `fecha_scraping`
+
+### Descripción de Columnas:
 
 | Columna | Tipo | Descripción | Valores Válidos |
 |---------|------|-------------|-----------------|
@@ -56,7 +93,7 @@ Tu hoja debe tener las siguientes columnas en el orden especificado (la primera 
 | `estado` | Texto | Estado de la propiedad | `Disponible`, `Reservada`, `No disponible` |
 | `precio` | Número | Precio de la propiedad | Mayor a 0 |
 | `moneda` | Texto | Moneda del precio | `USD`, `ARS` |
-| `piso` | Número | Número de piso | NULL o número ≥ 0 |
+| `piso` | Número | Número de piso | Vacío o número ≥ 0 |
 | `imagenes` | Array JSON | URLs de imágenes | `["url1", "url2"]` o vacío: `[]` |
 | `avenida` | Booleano | Si está en avenida | `TRUE`, `FALSE`, `1`, `0`, `SI`, `YES` |
 | `direccion` | Texto | Dirección completa | Cualquier texto |
@@ -64,15 +101,15 @@ Tu hoja debe tener las siguientes columnas en el orden especificado (la primera 
 | `provincia` | Texto | Provincia | Cualquier texto |
 | `latitud` | Número | Latitud | Entre -55 y -21 (rango Argentina) |
 | `longitud` | Número | Longitud | Entre -73 y -53 (rango Argentina) |
-| `ambientes` | Número | Cantidad de ambientes | NULL o número ≥ 0 |
-| `dormitorios` | Número | Cantidad de dormitorios | NULL o número ≥ 0 |
-| `banos` | Número | Cantidad de baños | NULL o número ≥ 0 |
-| `m2_totales` | Número | Metros cuadrados totales | NULL o número ≥ 0 |
-| `m2_cubiertos` | Número | Metros cuadrados cubiertos | NULL o número ≥ 0 |
+| `ambientes` | Número | Cantidad de ambientes | Vacío o número ≥ 0 |
+| `dormitorios` | Número | Cantidad de dormitorios | Vacío o número ≥ 0 |
+| `banos` | Número | Cantidad de baños | Vacío o número ≥ 0 |
+| `m2_totales` | Número | Metros cuadrados totales | Vacío o número ≥ 0 |
+| `m2_cubiertos` | Número | Metros cuadrados cubiertos | Vacío o número ≥ 0 |
 | `antiguedad` | Texto | Antigüedad del inmueble | `A estrenar`, `Hasta 5 años`, etc. |
 | `orientacion` | Texto | Orientación | `Norte`, `Sur`, `Este`, `Oeste`, etc. |
 | `disposicion` | Texto | Disposición | `Frente`, `Contrafrente`, `Lateral`, `Interno` |
-| `expensas` | Número | Monto de expensas | NULL o número ≥ 0 |
+| `expensas` | Número | Monto de expensas | Vacío o número ≥ 0 |
 | `apto_credito` | Booleano | Apto crédito | `TRUE`, `FALSE`, `1`, `0` |
 | `apto_profesional` | Booleano | Apto uso profesional | `TRUE`, `FALSE`, `1`, `0` |
 | `cochera` | Booleano | Tiene cochera | `TRUE`, `FALSE`, `1`, `0` |
@@ -82,6 +119,8 @@ Tu hoja debe tener las siguientes columnas en el orden especificado (la primera 
 | `url_original` | Texto | URL de la publicación | URL completa |
 | `confiabilidad` | Texto | Nivel de confianza | `Alta`, `Media` |
 | `fecha_scraping` | Fecha | Fecha del scraping | Formato ISO: `2024-01-15T10:30:00Z` |
+
+**Nota**: Las columnas vacías al final de cada fila son permitidas. No es necesario llenar todas las columnas si no tienes los datos.
 
 ### Ejemplo de Fila de Datos:
 

@@ -80,22 +80,70 @@ function parseNumber(value: string | undefined): number | null {
   return isNaN(parsed) ? null : parsed;
 }
 
+function parseCSVLine(line: string): string[] {
+  const values: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      values.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  values.push(current.trim());
+  return values;
+}
+
 function parseCSV(csvText: string): Record<string, string>[] {
   const lines = csvText.split('\n').filter(line => line.trim() !== '');
-  if (lines.length < 2) return [];
+  if (lines.length < 2) {
+    console.log('CSV has less than 2 lines (header + data)');
+    return [];
+  }
 
-  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+  const headers = parseCSVLine(lines[0]);
+  console.log(`Found ${headers.length} columns: ${headers.slice(0, 5).join(', ')}...`);
+
   const rows: Record<string, string>[] = [];
+  let skippedRows = 0;
 
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-    if (values.length !== headers.length) continue;
+    const values = parseCSVLine(lines[i]);
+
+    if (values.length < headers.length) {
+      while (values.length < headers.length) {
+        values.push('');
+      }
+    }
+
+    if (values.every(v => v === '')) {
+      skippedRows++;
+      continue;
+    }
 
     const row: Record<string, string> = {};
     headers.forEach((header, index) => {
-      row[header] = values[index];
+      row[header] = index < values.length ? values[index] : '';
     });
     rows.push(row);
+  }
+
+  if (skippedRows > 0) {
+    console.log(`Skipped ${skippedRows} empty rows`);
   }
 
   return rows;
@@ -231,6 +279,13 @@ Deno.serve(async (req: Request) => {
 
     const rows = parseCSV(csvText);
     console.log(`Parsed ${rows.length} rows from CSV`);
+
+    if (rows.length > 0) {
+      const firstRow = rows[0];
+      const sampleFields = ['id_original', 'tipo', 'operacion', 'estado', 'precio', 'moneda'];
+      const sample = sampleFields.map(f => `${f}: "${firstRow[f] || 'MISSING'}"`).join(', ');
+      console.log(`First row sample: ${sample}`);
+    }
 
     const stats: SyncStats = {
       total_rows: rows.length,
