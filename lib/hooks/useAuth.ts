@@ -101,6 +101,7 @@ export function useAuth() {
         email,
         rol: dbRole,
         full_name: profileData.name,
+        telefono: profileData.phone,
         estado_usuario: 'Activo',
         // If client, add preferences
         ...(role === 'client' && profileData.preferences ? {
