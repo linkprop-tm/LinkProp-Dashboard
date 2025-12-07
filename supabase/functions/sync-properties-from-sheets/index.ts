@@ -19,6 +19,10 @@ interface PropertyRow {
   direccion: string;
   barrio: string;
   provincia: string;
+  piso: number | null;
+  avenida: boolean;
+  latitud: number | null;
+  longitud: number | null;
   ambientes: number | null;
   dormitorios: number;
   banos: number;
@@ -26,6 +30,7 @@ interface PropertyRow {
   m2_cubiertos: number | null;
   antiguedad: string;
   orientacion: string;
+  disposicion: string;
   expensas: number | null;
   apto_mascotas: boolean;
   apto_credito: boolean;
@@ -34,6 +39,8 @@ interface PropertyRow {
   amenities: string[];
   portal_original: string;
   url_original: string;
+  confiabilidad: string;
+  fecha_scraping: string | null;
 }
 
 interface SyncError {
@@ -96,12 +103,24 @@ function parseCSV(csvText: string): Record<string, string>[] {
   return rows;
 }
 
+function parseDate(value: string | undefined): string | null {
+  if (!value || value === '' || value.toUpperCase() === 'N/A') return null;
+  try {
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? null : date.toISOString();
+  } catch {
+    return null;
+  }
+}
+
 function validateAndTransformRow(row: Record<string, string>, rowNumber: number): { property: PropertyRow | null; error: SyncError | null } {
   const validTipos = ['Casa', 'Departamento', 'PH', 'Local', 'Oficina', 'Galpon', 'Terreno', 'Comercial'];
   const validOperaciones = ['Venta', 'Alquiler'];
   const validEstados = ['Disponible', 'Reservada', 'No disponible'];
   const validMonedas = ['USD', 'ARS'];
   const validVisibilidad = ['Publica', 'Privada'];
+  const validDisposicion = ['Frente', 'Contrafrente', 'Lateral', 'Interno'];
+  const validConfiabilidad = ['Alta', 'Media'];
 
   if (!row.id_original || row.id_original.trim() === '') {
     return { property: null, error: { row: rowNumber, field: 'id_original', error: 'id_original es requerido' } };
@@ -141,6 +160,10 @@ function validateAndTransformRow(row: Record<string, string>, rowNumber: number)
     direccion: row.direccion || '',
     barrio: row.barrio || '',
     provincia: row.provincia || '',
+    piso: parseNumber(row.piso),
+    avenida: parseBool(row.avenida),
+    latitud: parseNumber(row.latitud),
+    longitud: parseNumber(row.longitud),
     ambientes: parseNumber(row.ambientes),
     dormitorios: parseNumber(row.dormitorios) || 0,
     banos: parseNumber(row.banos) || 0,
@@ -148,6 +171,7 @@ function validateAndTransformRow(row: Record<string, string>, rowNumber: number)
     m2_cubiertos: parseNumber(row.m2_cubiertos),
     antiguedad: row.antiguedad || '',
     orientacion: row.orientacion || '',
+    disposicion: validDisposicion.includes(row.disposicion) ? row.disposicion : '',
     expensas: parseNumber(row.expensas),
     apto_mascotas: parseBool(row.apto_mascotas),
     apto_credito: parseBool(row.apto_credito),
@@ -156,6 +180,8 @@ function validateAndTransformRow(row: Record<string, string>, rowNumber: number)
     amenities: parseJsonArray(row.amenities),
     portal_original: row.portal_original || '',
     url_original: row.url_original || '',
+    confiabilidad: validConfiabilidad.includes(row.confiabilidad) ? row.confiabilidad : '',
+    fecha_scraping: parseDate(row.fecha_scraping),
   };
 
   return { property, error: null };
@@ -284,6 +310,10 @@ Deno.serve(async (req: Request) => {
             direccion: property.direccion,
             barrio: property.barrio,
             provincia: property.provincia,
+            piso: property.piso,
+            avenida: property.avenida,
+            latitud: property.latitud,
+            longitud: property.longitud,
             ambientes: property.ambientes,
             dormitorios: property.dormitorios,
             banos: property.banos,
@@ -291,6 +321,7 @@ Deno.serve(async (req: Request) => {
             m2_cubiertos: property.m2_cubiertos,
             antiguedad: property.antiguedad,
             orientacion: property.orientacion,
+            disposicion: property.disposicion,
             expensas: property.expensas,
             visibilidad: property.visibilidad,
             apto_mascotas: property.apto_mascotas,
@@ -300,6 +331,8 @@ Deno.serve(async (req: Request) => {
             amenities: property.amenities,
             portal_original: property.portal_original,
             url_original: property.url_original,
+            confiabilidad: property.confiabilidad,
+            fecha_scraping: property.fecha_scraping,
           };
 
           if (shouldUpdateEstado) {

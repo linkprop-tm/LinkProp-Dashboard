@@ -3,6 +3,8 @@ export type TipoOperacion = 'Venta' | 'Alquiler';
 export type Moneda = 'USD' | 'ARS';
 export type EstadoPropiedad = 'Disponible' | 'Reservada' | 'No disponible';
 export type VisibilidadPropiedad = 'Publica' | 'Privada';
+export type DisposicionPropiedad = 'Frente' | 'Contrafrente' | 'Lateral' | 'Interno';
+export type ConfiabilidadPropiedad = 'Alta' | 'Media';
 export type EtapaRelacion = 'Explorar' | 'Interes' | 'Visitada';
 export type EstadoUsuario = 'Activo' | 'Inactivo';
 
@@ -42,12 +44,21 @@ export interface Propiedad {
   direccion: string;
   barrio: string;
   provincia: string;
+  piso: number | null;
+  avenida: boolean;
+  latitud: number | null;
+  longitud: number | null;
+
+  // Características adicionales
+  disposicion: string;
 
   // Visibilidad y origen
   visibilidad: VisibilidadPropiedad;
   id_original: string;
   url_original: string;
   portal_original: string;
+  confiabilidad: string;
+  fecha_scraping: string | null;
 
   // Amenities y comodidades
   amenities: string[];

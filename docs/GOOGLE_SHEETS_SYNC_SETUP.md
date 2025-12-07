@@ -93,38 +93,43 @@ SYNC_SECRET_KEY=YksV4azcC25qBhhbLH^y2tJwb$N1k%1RYBqt%Tshedw=
 
 ```
 A:  id_original
-B:  tipo
-C:  operacion
+B:  operacion
+C:  tipo
 D:  estado
-E:  visibilidad
-F:  precio
-G:  moneda
-H:  descripcion
-I:  imagenes
+E:  precio
+F:  moneda
+G:  piso
+H:  imagenes
+I:  avenida
 J:  direccion
 K:  barrio
 L:  provincia
-M:  ambientes
-N:  dormitorios
-O:  banos
-P:  m2_totales
-Q:  m2_cubiertos
-R:  antiguedad
-S:  orientacion
-T:  expensas
-U:  apto_mascotas
-V:  apto_credito
-W:  apto_profesional
-X:  cochera
-Y:  amenities
-Z:  portal_original
-AA: url_original
+M:  latitud
+N:  longitud
+O:  ambientes
+P:  dormitorios
+Q:  banos
+R:  m2_totales
+S:  m2_cubiertos
+T:  antiguedad
+U:  orientacion
+V:  disposicion
+W:  expensas
+X:  apto_credito
+Y:  apto_profesional
+Z:  cochera
+AA: apto_mascotas
+AB: amenities
+AC: portal_original
+AD: url_original
+AE: confiabilidad
+AF: fecha_scraping
 ```
 
 #### **Fila 2+ - Datos de Ejemplo:**
 
 ```
-ML-123 | Casa | Venta | Disponible | Publica | 150000 | USD | Hermosa casa con jardín | ['img1.jpg','img2.jpg'] | Av. Libertador 1234 | Palermo | CABA | 3 | 2 | 1 | 120 | 100 | 5 años | Norte | 15000 | TRUE | TRUE | FALSE | TRUE | ['Pileta','SUM'] | Mercado Libre | https://...
+ML-123 | Venta | Casa | Disponible | 150000 | USD | 3 | ['img1.jpg','img2.jpg'] | TRUE | Av. Libertador 1234 | Palermo | CABA | -34.5731 | -58.4270 | 3 | 2 | 1 | 120 | 100 | 5 años | Norte | Frente | 15000 | TRUE | FALSE | TRUE | FALSE | ['Pileta','SUM'] | Mercado Libre | https://... | Alta | 2025-12-07
 ```
 
 ---
@@ -133,7 +138,7 @@ ML-123 | Casa | Venta | Disponible | Publica | 150000 | USD | Hermosa casa con j
 
 #### **Campos Booleanos:**
 Usa `TRUE` o `FALSE` (nativo de Google Sheets):
-- Columnas: `apto_mascotas`, `apto_credito`, `apto_profesional`, `cochera`
+- Columnas: `avenida`, `apto_mascotas`, `apto_credito`, `apto_profesional`, `cochera`
 - Valores válidos: `TRUE`, `FALSE`, `1`, `0`, vacío (= false)
 
 #### **Campos de Array (JSON):**
@@ -154,6 +159,14 @@ Usa formato JSON con comillas simples:
 - `estado`: Disponible | Reservada | No disponible
 - `precio`: Número mayor a 0
 - `moneda`: USD | ARS
+
+#### **Campos Nuevos:**
+- `piso`: Número entero (1, 2, 3, etc.) o vacío para planta baja/sin dato
+- `avenida`: TRUE/FALSE - indica si está en una avenida principal
+- `latitud` y `longitud`: Coordenadas geográficas en formato decimal (-34.5731, -58.4270)
+- `disposicion`: Frente | Contrafrente | Lateral | Interno (o vacío)
+- `confiabilidad`: Alta | Media (o vacío)
+- `fecha_scraping`: Fecha en formato YYYY-MM-DD o timestamp ISO 8601
 
 #### **Campos Opcionales:**
 Todos los demás campos pueden estar vacíos
