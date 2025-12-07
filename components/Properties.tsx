@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Search, MapPin, Eye, EyeOff, LayoutGrid, List, Bed, Bath, Ruler, Edit2, Building2, Plus
+  Search, MapPin, Eye, EyeOff, LayoutGrid, List, Bed, Bath, Ruler, Edit2, Building2, Plus, RefreshCw
 } from 'lucide-react';
 import { AddPropertyModal } from './AddPropertyModal';
 import { Property } from '../types';
 import { useProperties } from '../lib/hooks/useProperties';
 import { cambiarVisibilidadPropiedad } from '../lib/api/properties';
 import { SkeletonGrid, SkeletonCard } from './SkeletonCard';
+import { PROPERTIES_GRID_DATA } from '../constants';
 
 // --- HELPER: Status Badge ---
 const getStatusBadge = (status: string) => {
@@ -236,6 +237,8 @@ export const Properties: React.FC = () => {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<any>(null);
 
   const { properties: dbProperties, loading, error, refetch } = useProperties();
   const [properties, setProperties] = useState<Property[]>([]);
@@ -276,6 +279,54 @@ export const Properties: React.FC = () => {
             )
         );
       }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const syncSecret = prompt('Por favor ingresa el SYNC_SECRET_KEY configurado en Supabase:');
+
+      if (!syncSecret) {
+        setSyncing(false);
+        return;
+      }
+
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/sync-properties-from-sheets`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-sync-secret': syncSecret,
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setSyncResult(result);
+        await refetch();
+      } else {
+        setSyncResult({
+          success: false,
+          error: result.error || 'Error desconocido',
+          details: result.details
+        });
+      }
+    } catch (err) {
+      console.error('Error syncing properties:', err);
+      setSyncResult({
+        success: false,
+        error: 'Error de conexión',
+        details: err instanceof Error ? err.message : String(err)
+      });
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const getFilteredProperties = () => {
@@ -322,18 +373,32 @@ export const Properties: React.FC = () => {
                <h1 className="text-3xl font-bold text-gray-900">Propiedades</h1>
                <p className="text-gray-500 mt-1">Gestiona la visibilidad y detalles de las propiedades.</p>
             </div>
-            
+
             <div className="flex items-center gap-3 w-full md:w-auto">
-               
+
+               {/* Sync Button */}
+               <button
+                 onClick={handleSync}
+                 disabled={syncing}
+                 className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 shadow-sm ${
+                   syncing
+                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                     : 'bg-primary-600 text-white hover:bg-primary-700 hover:shadow-md'
+                 }`}
+               >
+                 <RefreshCw size={18} className={syncing ? 'animate-spin' : ''} />
+                 {syncing ? 'Sincronizando...' : 'Sincronizar'}
+               </button>
+
                {/* View Toggle */}
                <div className="bg-white border border-gray-200 rounded-lg p-1 flex items-center shadow-sm">
-                  <button 
+                  <button
                     onClick={() => setViewMode('grid')}
                     className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-gray-100 text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                   >
                      <LayoutGrid size={18} strokeWidth={viewMode === 'grid' ? 2.5 : 2}/>
                   </button>
-                  <button 
+                  <button
                     onClick={() => setViewMode('list')}
                     className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-gray-100 text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                   >
@@ -346,12 +411,12 @@ export const Properties: React.FC = () => {
                   <div className="absolute inset-0 bg-primary-100/30 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <div className="relative bg-white shadow-sm border border-gray-200 rounded-full p-2.5 pl-5 flex items-center gap-3 transition-all focus-within:ring-2 focus-within:ring-primary-100 focus-within:border-primary-300">
                       <Search className="text-gray-400" size={18} />
-                      <input 
-                        type="text" 
-                        placeholder="Buscar por dirección, barrio..." 
+                      <input
+                        type="text"
+                        placeholder="Buscar por dirección, barrio..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="flex-1 bg-transparent outline-none text-gray-700 text-sm h-full" 
+                        className="flex-1 bg-transparent outline-none text-gray-700 text-sm h-full"
                       />
                   </div>
                </div>
@@ -390,6 +455,91 @@ export const Properties: React.FC = () => {
                 />
              ))}
           </div>
+      )}
+
+      {/* Sync Result Modal */}
+      {syncResult && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 animate-fade-in-up">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {syncResult.success ? '✓ Sincronización Exitosa' : '✗ Error en Sincronización'}
+              </h2>
+              <button
+                onClick={() => setSyncResult(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <span className="text-gray-400 text-xl">×</span>
+              </button>
+            </div>
+
+            {syncResult.success ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+                    <div className="text-emerald-600 font-bold text-2xl">{syncResult.stats.inserted}</div>
+                    <div className="text-emerald-700 text-sm font-medium">Insertadas</div>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <div className="text-blue-600 font-bold text-2xl">{syncResult.stats.updated}</div>
+                    <div className="text-blue-700 text-sm font-medium">Actualizadas</div>
+                  </div>
+                  <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                    <div className="text-amber-600 font-bold text-2xl">{syncResult.stats.skipped}</div>
+                    <div className="text-amber-700 text-sm font-medium">Omitidas</div>
+                  </div>
+                  <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                    <div className="text-red-600 font-bold text-2xl">{syncResult.stats.errors}</div>
+                    <div className="text-red-700 text-sm font-medium">Errores</div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="text-sm text-gray-600">
+                    <strong>Total procesado:</strong> {syncResult.stats.processed} de {syncResult.stats.total_rows} filas
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <strong>Tiempo de ejecución:</strong> {syncResult.execution_time_ms}ms
+                  </div>
+                </div>
+
+                {syncResult.errors && syncResult.errors.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="font-bold text-gray-900">Detalles de errores:</h3>
+                    <div className="max-h-40 overflow-y-auto space-y-2">
+                      {syncResult.errors.map((err: any, idx: number) => (
+                        <div key={idx} className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm">
+                          <div className="text-red-700 font-medium">Fila {err.row}</div>
+                          {err.id_original && <div className="text-red-600">ID: {err.id_original}</div>}
+                          {err.field && <div className="text-red-600">Campo: {err.field}</div>}
+                          <div className="text-red-600">{err.error}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="text-red-700 font-bold">{syncResult.error}</div>
+                  {syncResult.details && (
+                    <div className="text-red-600 text-sm mt-2">{syncResult.details}</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setSyncResult(null)}
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Edit Property Modal - Conditionally Rendered to force remount and clean state init */}
