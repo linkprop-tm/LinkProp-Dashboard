@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, User, Mail, MapPin, DollarSign,
-  Briefcase, Sparkles, Building2, Trash2, Phone, Loader2, Heart, Eye, CheckCircle,
+  Briefcase, Sparkles, Building2, Trash2, Loader2, Heart, Eye, CheckCircle,
   Car, Check, Cat
 } from 'lucide-react';
 import { Client, SearchParams } from '../types';
@@ -362,19 +362,6 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                                 {validationErrors.email && (
                                     <p className="text-xs text-red-500 mt-1">{validationErrors.email}</p>
                                 )}
-                            </div>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-gray-500 ml-1">Teléfono</label>
-                            <div className="relative">
-                                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                <input
-                                    type="tel"
-                                    value={formData.phone || ''}
-                                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                                    placeholder="Ej. +54 11 1234-5678"
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none transition-all focus:bg-white"
-                                />
                             </div>
                         </div>
                     </div>

@@ -5,7 +5,7 @@ import {
   Compass, History, Scale, Settings, HelpCircle, Menu,
   ChevronRight, Calendar, Check, X, PlusCircle, DollarSign, Ruler, LayoutGrid,
   Car, Briefcase, Bed, Bath, PenTool, Quote, StickyNote, Star,
-  User, Mail, Phone, Camera, Save, Sparkles, Building, Minus, Plus,
+  User, Mail, Camera, Save, Sparkles, Building, Minus, Plus,
   ArrowUpDown, ArrowDownUp, Layers, AlignLeft, Users, Lock,
   List, Image as ImageIcon, Table as TableIcon, Columns, MoreHorizontal, Send, CheckCircle2,
   Monitor, Grid, Smartphone, Trash2, AlertCircle, HeartOff, Shield, Key, ArrowUp, ArrowDown, Map,
@@ -270,7 +270,6 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   // Profile State
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
@@ -342,7 +341,6 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
           id,
           full_name,
           email,
-          telefono,
           foto_perfil_url,
           preferencias_tipo,
           preferencias_operacion,
@@ -365,7 +363,6 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
         setUsuarioId(data.id);
         setName(data.full_name || '');
         setEmail(data.email || user.email || '');
-        setPhone(data.telefono || '');
         setPhotoUrl(data.foto_perfil_url || null);
 
         setSettingsPropertyTypes(data.preferencias_tipo || ['Departamento']);
@@ -530,7 +527,6 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
         .from('usuarios')
         .update({
           full_name: name,
-          telefono: phone,
         })
         .eq('auth_id', user?.id);
 
@@ -1347,19 +1343,6 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                                       readOnly
                                       disabled
                                       className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 cursor-not-allowed"
-                                    />
-                                </div>
-                            </div>
-                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Teléfono</label>
-                                <div className="relative">
-                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                    <input
-                                      type="tel"
-                                      value={phone}
-                                      onChange={(e) => setPhone(e.target.value)}
-                                      placeholder="+54 9 11..."
-                                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none"
                                     />
                                 </div>
                             </div>

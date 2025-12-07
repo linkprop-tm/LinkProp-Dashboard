@@ -57,7 +57,6 @@ export interface Usuario {
   id: string;
   email: string;
   full_name: string;
-  telefono: string;
   estado_usuario: EstadoUsuario | null;
   preferencias_tipo: TipoPropiedad[];
   preferencias_operacion: TipoOperacion | null;
@@ -85,7 +84,6 @@ export interface Admin {
   email: string;
   full_name: string;
   rol: 'admin' | 'agente';
-  telefono: string;
   fecha_creacion: string;
 }
 

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Camera, Save, LogOut, Shield, Key, ChevronRight, AlertCircle } from 'lucide-react';
+import { User, Mail, Camera, Save, LogOut, Shield, Key, ChevronRight, AlertCircle } from 'lucide-react';
 import { useAuthContext } from '../lib/contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Avatar } from './Avatar';
@@ -14,7 +14,6 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
   const { user } = useAuthContext();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,14 +31,13 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
 
     const { data, error } = await supabase
       .from('usuarios')
-      .select('full_name, email, telefono, foto_perfil_url')
+      .select('full_name, email, foto_perfil_url')
       .eq('auth_id', user.id)
       .maybeSingle();
 
     if (data && !error) {
       setName(data.full_name || '');
       setEmail(data.email || user.email || '');
-      setPhone(data.telefono || '');
       setPhotoUrl(data.foto_perfil_url || null);
     } else {
       setEmail(user.email || '');
@@ -62,7 +60,6 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
         .from('usuarios')
         .update({
           full_name: name,
-          telefono: phone,
         })
         .eq('auth_id', user?.id);
 
@@ -148,21 +145,6 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
                                     readOnly
                                     disabled
                                     className="w-full pl-12 pr-4 py-3.5 bg-gray-100 border border-gray-200 rounded-2xl text-gray-600 font-medium cursor-not-allowed"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Phone Field */}
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Teléfono</label>
-                                <div className="relative group">
-                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-600 transition-colors" size={20} />
-                                    <input
-                                    type="tel"
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
-                                    placeholder="+54 9 11..."
-                                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-medium placeholder:text-gray-400 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-200 outline-none transition-all"
                                     />
                                 </div>
                             </div>

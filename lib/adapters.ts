@@ -7,7 +7,7 @@ export function usuarioToClient(usuario: Usuario): Client {
     name: usuario.full_name || 'Usuario sin nombre',
     email: usuario.email || '',
     avatar: usuario.foto_perfil_url || '',
-    phone: usuario.telefono || '',
+    phone: '',
     date: usuario.fecha_creacion
       ? new Date(usuario.fecha_creacion).toLocaleDateString('es-ES', {
           day: '2-digit',
@@ -48,7 +48,6 @@ export function clientToUsuario(client: Client): Partial<Usuario> {
     id: client.id,
     full_name: client.name,
     email: client.email,
-    telefono: client.phone || '',
     estado_usuario: client.status === 'active' ? 'Activo' : 'Inactivo',
     preferencias_tipo: client.searchParams.propertyTypes && client.searchParams.propertyTypes.length > 0
       ? client.searchParams.propertyTypes
