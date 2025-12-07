@@ -398,7 +398,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                             <Building2 size={16} className="text-gray-400" /> Tipo de Propiedad
                                         </label>
                                         <div className="flex flex-wrap gap-2">
-                                            {['Departamento', 'Casa', 'PH', 'Terreno', 'Local', 'Oficina'].map(type => (
+                                            {['Departamento', 'Casa', 'PH', 'Terreno', 'Local', 'Quinta', 'Oficina', 'Galpón'].map(type => (
                                                 <button
                                                     key={type}
                                                     onClick={() => toggleArrayItem('propertyTypes', type)}
