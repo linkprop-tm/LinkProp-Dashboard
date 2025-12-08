@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X, User, Mail, MapPin, DollarSign,
-  Briefcase, Sparkles, Building2, Trash2, Phone, Loader2, Heart, Eye, CheckCircle,
-  Car, Check, Cat
+  Briefcase, Sparkles, Building2, Trash2, Loader2, Heart, Eye, CheckCircle,
+  Car, Check, Cat, PlusCircle, Map, Ruler
 } from 'lucide-react';
 import { Client, SearchParams } from '../types';
 import { obtenerUsuarioPorId, actualizarUsuario, obtenerRelacionesPorUsuario } from '../lib/api/users';
@@ -11,6 +11,26 @@ import { clientToUsuario, usuarioToClient } from '../lib/adapters';
 import type { PropiedadUsuario } from '../lib/database.types';
 import { NEIGHBORHOODS } from '../lib/neighborhoods';
 import { MapZoneDrawer } from './MapZoneDrawer';
+
+// Constants for neighborhoods
+const CABA_NEIGHBORHOODS = [
+  "Puerto Madero", "Palermo Chico", "Recoleta", "Palermo Botánico", "Las Cañitas",
+  "Palermo", "Palermo Nuevo", "Palermo Soho", "Palermo Hollywood", "Belgrano",
+  "Núñez", "Colegiales", "Villa Devoto", "Villa Urquiza", "Retiro", "Saavedra",
+  "Coghlan", "Chacarita", "Villa Crespo", "Villa Pueyrredón", "Caballito",
+  "Villa del Parque", "Parque Chas", "Agronomía", "Villa Ortúzar", "Versalles",
+  "Villa Real", "Flores", "Floresta", "Villa Luro", "Monte Castro",
+  "Villa Santa Rita", "Villa General Mitre", "Boedo", "San Telmo", "Monserrat",
+  "San Nicolás", "Balvanera", "Almagro", "Barracas", "Parque Patricios",
+  "Constitución", "San Cristóbal", "La Paternal", "Parque Chacabuco",
+  "Nueva Pompeya", "Parque Avellaneda", "Mataderos", "Liniers", "La Boca",
+  "Villa Riachuelo", "Villa Lugano", "Villa Soldati"
+];
+
+const GBA_NEIGHBORHOODS = [
+  "Vicente López", "San Martín", "San Isidro", "San Fernando",
+  "Tres de Febrero", "San Miguel", "Tigre", "Escobar", "Pilar", "José C. Paz"
+];
 
 interface EditClientModalProps {
   isOpen: boolean;
@@ -33,6 +53,22 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
     relaciones: any[];
   } | null>(null);
 
+  // Department preferences states
+  const [pisoMinimo, setPisoMinimo] = useState<string>('Indiferente');
+  const [avenida, setAvenida] = useState<string>('Indiferente');
+  const [orientacion, setOrientacion] = useState<string>('Indiferente');
+
+  // Region and neighborhoods states
+  const [region, setRegion] = useState<'CABA' | 'GBA'>('CABA');
+  const [neighborhoodSearchTerm, setNeighborhoodSearchTerm] = useState('');
+  const [isHoodDropdownOpen, setIsHoodDropdownOpen] = useState(false);
+  const hoodInputRef = useRef<HTMLInputElement>(null);
+
+  // Number formatting states
+  const [priceMinFormatted, setPriceMinFormatted] = useState('');
+  const [priceMaxFormatted, setPriceMaxFormatted] = useState('');
+  const [m2MinFormatted, setM2MinFormatted] = useState('');
+
   // Load full user data from database
   useEffect(() => {
     if (isOpen && client.id) {
@@ -47,7 +83,21 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
 
       const usuario = await obtenerUsuarioPorId(client.id);
       if (usuario) {
-        setFormData(usuarioToClient(usuario));
+        const clientData = usuarioToClient(usuario);
+        setFormData(clientData);
+
+        // Load department preferences
+        setPisoMinimo(clientData.searchParams.pisoMinimo || 'Indiferente');
+        setAvenida(clientData.searchParams.avenida || 'Indiferente');
+        setOrientacion(clientData.searchParams.orientacion || 'Indiferente');
+
+        // Load region
+        setRegion(clientData.searchParams.region || 'CABA');
+
+        // Format numbers
+        setPriceMinFormatted(formatNumberWithDots(String(clientData.searchParams.minPrice || '')));
+        setPriceMaxFormatted(formatNumberWithDots(String(clientData.searchParams.maxPrice || '')));
+        setM2MinFormatted(formatNumberWithDots(String(clientData.searchParams.minArea || '')));
       }
 
       const relaciones = await obtenerRelacionesPorUsuario(client.id);
@@ -69,6 +119,45 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
       setLoading(false);
     }
   };
+
+  // Utility functions for number formatting
+  const formatNumberWithDots = (value: string | number): string => {
+    if (!value) return '';
+    const numericOnly = String(value).replace(/\D/g, '');
+    if (!numericOnly) return '';
+    return numericOnly.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  const handleNumericChange = (value: string, setter: (value: string) => void, field: keyof SearchParams) => {
+    const numericOnly = value.replace(/\D/g, '');
+    setter(formatNumberWithDots(numericOnly));
+    handleSearchParamChange(field, numericOnly ? Number(numericOnly) : undefined);
+  };
+
+  // Helper for neighborhoods
+  const getFilteredNeighborhoods = (): string[] => {
+    const searchLower = neighborhoodSearchTerm.toLowerCase();
+    const neighborhoodsList = region === 'CABA' ? CABA_NEIGHBORHOODS : GBA_NEIGHBORHOODS;
+    const currentNeighborhoods = formData.searchParams.neighborhoods || [];
+
+    return neighborhoodsList
+      .filter(hood => !currentNeighborhoods.includes(hood))
+      .filter(hood => hood.toLowerCase().includes(searchLower));
+  };
+
+  // Close neighborhood dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (hoodInputRef.current && !hoodInputRef.current.contains(event.target as Node)) {
+        setIsHoodDropdownOpen(false);
+      }
+    };
+
+    if (isHoodDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isHoodDropdownOpen]);
 
   const handleInputChange = (field: keyof Client, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -166,6 +255,28 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
     return Object.keys(errors).length === 0;
   };
 
+  // Handler for ambientes - allows selecting up to 2 values
+  const toggleAmbientes = (val: string) => {
+    const currentAmbientes = Array.isArray(formData.searchParams.environments)
+      ? formData.searchParams.environments
+      : (formData.searchParams.environments ? [String(formData.searchParams.environments)] : []);
+
+    let newAmbientes: string[];
+
+    if (currentAmbientes.includes(val)) {
+      newAmbientes = currentAmbientes.filter(v => v !== val);
+    } else {
+      if (currentAmbientes.length >= 2) {
+        // Remove first and add new
+        newAmbientes = [currentAmbientes[1], val];
+      } else {
+        newAmbientes = [...currentAmbientes, val];
+      }
+    }
+
+    handleSearchParamChange('environments', newAmbientes);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -177,7 +288,19 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
       setSaving(true);
       setError(null);
 
-      const updateData = clientToUsuario(formData);
+      // Update formData with department preferences and region before saving
+      const updatedFormData = {
+        ...formData,
+        searchParams: {
+          ...formData.searchParams,
+          pisoMinimo,
+          avenida,
+          orientacion,
+          region
+        }
+      };
+
+      const updateData = clientToUsuario(updatedFormData);
       const updatedUsuario = await actualizarUsuario({
         id: formData.id,
         ...updateData
@@ -342,8 +465,8 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                     <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold text-gray-500 ml-1">Nombre Completo</label>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 value={formData.name}
                                 onChange={(e) => handleInputChange('name', e.target.value)}
                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none transition-all focus:bg-white"
@@ -362,19 +485,6 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                                 {validationErrors.email && (
                                     <p className="text-xs text-red-500 mt-1">{validationErrors.email}</p>
                                 )}
-                            </div>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-gray-500 ml-1">Teléfono</label>
-                            <div className="relative">
-                                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                <input
-                                    type="tel"
-                                    value={formData.phone || ''}
-                                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                                    placeholder="Ej. +54 11 1234-5678"
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-100 outline-none transition-all focus:bg-white"
-                                />
                             </div>
                         </div>
                     </div>
@@ -446,6 +556,81 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                       </div>
                   </div>
 
+                  {/* Department Preferences - Solo para Departamento */}
+                  {(formData.searchParams.propertyTypes?.includes('Departamento') || formData.searchParams.type === 'Departamento') && (
+                    <div className="space-y-6 p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/30 rounded-2xl border border-blue-100">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Building2 size={20} className="text-blue-600" />
+                            <h3 className="text-base font-bold text-gray-900">Preferencias de Departamento</h3>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Piso Mínimo */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 block">Piso Mínimo</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {['Indiferente', '1', '2', '3', '4', '5+'].map(piso => (
+                                        <button
+                                            key={piso}
+                                            type="button"
+                                            onClick={() => setPisoMinimo(piso)}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                                                pisoMinimo === piso
+                                                ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
+                                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                                            }`}
+                                        >
+                                            {piso}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Avenida */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 block">Preferencia de Avenida</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {['Indiferente', 'Sí', 'No'].map(av => (
+                                        <button
+                                            key={av}
+                                            type="button"
+                                            onClick={() => setAvenida(av)}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                                                avenida === av
+                                                ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
+                                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                                            }`}
+                                        >
+                                            {av}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Orientación */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 block">Orientación</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {['Indiferente', 'Frente', 'Contrafrente'].map(or => (
+                                        <button
+                                            key={or}
+                                            type="button"
+                                            onClick={() => setOrientacion(or)}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                                                orientacion === or
+                                                ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
+                                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                                            }`}
+                                        >
+                                            {or}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  )}
+
                   {/* Amenities - Solo para Departamento */}
                   {(formData.searchParams.propertyTypes?.includes('Departamento') || formData.searchParams.type === 'Departamento') && (
                     <div className="p-6 bg-white rounded-xl border border-primary-100 shadow-[0_0_15px_rgba(37,99,235,0.05)]">
@@ -481,24 +666,24 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                         </label>
                         <div className="flex items-center gap-4">
                             <div className="relative flex-1">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Min</span>
-                                <input 
-                                    type="number" 
-                                    value={formData.searchParams.minPrice || ''}
-                                    onChange={(e) => handleSearchParamChange('minPrice', Number(e.target.value))}
-                                    placeholder="0" 
-                                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all" 
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Desde</span>
+                                <input
+                                    type="text"
+                                    value={priceMinFormatted}
+                                    onChange={(e) => handleNumericChange(e.target.value, setPriceMinFormatted, 'minPrice')}
+                                    placeholder="0"
+                                    className="w-full pl-16 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all"
                                 />
                             </div>
                             <span className="text-gray-300 font-medium">-</span>
                             <div className="relative flex-1">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Max</span>
-                                <input 
-                                    type="number" 
-                                    value={formData.searchParams.maxPrice || ''}
-                                    onChange={(e) => handleSearchParamChange('maxPrice', Number(e.target.value))}
-                                    placeholder="Sin límite" 
-                                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all" 
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Hasta</span>
+                                <input
+                                    type="text"
+                                    value={priceMaxFormatted}
+                                    onChange={(e) => handleNumericChange(e.target.value, setPriceMaxFormatted, 'maxPrice')}
+                                    placeholder="Sin límite"
+                                    className="w-full pl-16 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all"
                                 />
                             </div>
                         </div>
@@ -509,42 +694,51 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                    {/* Dimensions & Distribution */}
                    <div>
                          <h3 className="text-sm font-bold text-primary-600 uppercase tracking-wider mb-6">Dimensiones y Distribución</h3>
-                         
+
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
                             {/* Area */}
                             <div className="space-y-3">
                                 <label className="text-sm font-medium text-gray-600 block">Metros Cuadrados (m²)</label>
-                                <div className="relative">
+                                <div className="relative flex items-center gap-2">
+                                    <Ruler size={16} className="text-gray-400" />
                                     <input
-                                        type="number"
-                                        value={formData.searchParams.minArea || ''}
-                                        onChange={(e) => handleSearchParamChange('minArea', Number(e.target.value))}
-                                        placeholder="Min"
-                                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
+                                        type="text"
+                                        value={m2MinFormatted}
+                                        onChange={(e) => handleNumericChange(e.target.value, setM2MinFormatted, 'minArea')}
+                                        placeholder="Ej: 50"
+                                        className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
                                     />
                                 </div>
                             </div>
-                            
+
                             {/* Ambientes */}
                             <div className="space-y-3">
-                                <label className="text-sm font-medium text-gray-600 block">Ambientes</label>
-                                <div className="flex gap-1 bg-gray-50 rounded-xl p-1 border border-gray-200">
+                                <label className="text-sm font-medium text-gray-600 block">Ambientes (Elegi Minimo y Maximo)</label>
+                                <div className="flex gap-2 flex-wrap">
                                     {['1', '2', '3', '4', '5+'].map(val => {
-                                        const isSelected = formData.searchParams.environments == val;
+                                        const currentAmbientes = Array.isArray(formData.searchParams.environments)
+                                          ? formData.searchParams.environments
+                                          : (formData.searchParams.environments ? [String(formData.searchParams.environments)] : []);
+                                        const isSelected = currentAmbientes.includes(val);
                                         return (
                                             <button
                                                 key={val}
                                                 type="button"
-                                                onClick={() => handleSearchParamChange('environments', val)}
-                                                className={`flex-1 py-2 text-sm font-bold rounded-full transition-all focus:outline-none ${
+                                                onClick={() => toggleAmbientes(val)}
+                                                className={`px-5 py-2.5 text-sm font-bold rounded-lg transition-all focus:outline-none ${
                                                     isSelected
-                                                    ? 'bg-white text-gray-900 shadow-sm'
-                                                    : 'text-gray-400 hover:text-gray-600 hover:bg-white/50'
+                                                    ? 'bg-primary-600 text-white shadow-sm'
+                                                    : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
                                                 }`}
                                             >{val}</button>
                                         )
                                     })}
                                 </div>
+                                {Array.isArray(formData.searchParams.environments) && formData.searchParams.environments.length > 0 && (
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Seleccionados: {formData.searchParams.environments.sort().join(' - ')}
+                                    </p>
+                                )}
                             </div>
 
                          </div>
@@ -561,14 +755,16 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                             <div>
                                 <label className="text-xs font-bold text-gray-500 uppercase mb-3 block">Antigüedad</label>
                                 <div className="flex flex-wrap gap-3">
-                                    {['Indiferente', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Hasta 50 años'].map(val => {
-                                        const currentAntiquity = formData.searchParams.antiquity?.[0] || '';
+                                    {['Indiferente', 'Pozo / Construcción', 'A estrenar', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Hasta 50 años'].map(val => {
+                                        const currentAntiquity = Array.isArray(formData.searchParams.antiquity)
+                                          ? formData.searchParams.antiquity[0]
+                                          : formData.searchParams.antiquity || 'Indiferente';
                                         const isSelected = currentAntiquity === val;
                                         return (
                                             <button
                                                 type="button"
                                                 key={val}
-                                                onClick={() => handleSearchParamChange('antiquity', [val])}
+                                                onClick={() => handleSearchParamChange('antiquity', val)}
                                                 className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
                                                     isSelected
                                                     ? 'bg-primary-50 text-primary-600 border-primary-200'
@@ -690,21 +886,110 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                                 </div>
                             </div>
 
-                            {/* Ubicación / Zona Geográfica */}
+                            {/* Ubicación / Barrios */}
                             <div className="md:col-span-3">
-                                <label className="flex items-center gap-2 mb-3 text-gray-900 font-bold text-sm">
-                                    <MapPin size={16} className="text-gray-400" /> Zona de Preferencia
+                                <label className="flex items-center gap-2 mb-4 text-gray-900 font-bold text-sm">
+                                    <MapPin size={16} className="text-gray-400" /> Barrios de Preferencia
                                 </label>
 
-                                <MapZoneDrawer
-                                    initialZone={formData.searchParams.geographicZone}
-                                    onZoneChange={(zone) => handleSearchParamChange('geographicZone', zone)}
-                                    height="400px"
-                                />
+                                {/* Region Toggle */}
+                                <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-xl mb-4 border border-gray-200 w-fit">
+                                    <button
+                                        type="button"
+                                        onClick={() => setRegion('CABA')}
+                                        className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${
+                                            region === 'CABA'
+                                            ? 'bg-white text-primary-600 shadow-sm'
+                                            : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                    >
+                                        CABA
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setRegion('GBA')}
+                                        className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${
+                                            region === 'GBA'
+                                            ? 'bg-white text-primary-600 shadow-sm'
+                                            : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                    >
+                                        GBA / Provincia
+                                    </button>
+                                </div>
 
-                                <p className="text-xs text-gray-500 mt-3">
-                                    Dibuja un polígono en el mapa para definir la zona de preferencia del cliente
-                                </p>
+                                {/* Selected Neighborhoods Tags */}
+                                {formData.searchParams.neighborhoods && formData.searchParams.neighborhoods.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                        {formData.searchParams.neighborhoods.map((hood) => (
+                                            <span
+                                                key={hood}
+                                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary-100 text-primary-700 text-sm font-medium rounded-lg"
+                                            >
+                                                {hood}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleNeighborhood(hood)}
+                                                    className="hover:bg-primary-200 rounded-full p-0.5 transition-colors"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Neighborhood Search Input */}
+                                <div className="relative" ref={hoodInputRef}>
+                                    <input
+                                        type="text"
+                                        value={neighborhoodSearchTerm}
+                                        onChange={(e) => {
+                                            setNeighborhoodSearchTerm(e.target.value);
+                                            setIsHoodDropdownOpen(true);
+                                        }}
+                                        onFocus={() => setIsHoodDropdownOpen(true)}
+                                        placeholder={`Buscar barrios en ${region === 'CABA' ? 'CABA' : 'GBA'}...`}
+                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-primary-300 focus:ring-2 focus:ring-primary-50 transition-all"
+                                    />
+
+                                    {/* Dropdown */}
+                                    {isHoodDropdownOpen && getFilteredNeighborhoods().length > 0 && (
+                                        <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                                            {getFilteredNeighborhoods().map((hood) => (
+                                                <button
+                                                    key={hood}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        toggleNeighborhood(hood);
+                                                        setNeighborhoodSearchTerm('');
+                                                        setIsHoodDropdownOpen(false);
+                                                    }}
+                                                    className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
+                                                >
+                                                    {hood}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Map - Only for CABA */}
+                                {region === 'CABA' && (
+                                    <div className="mt-6">
+                                        <label className="flex items-center gap-2 mb-3 text-gray-700 font-medium text-sm">
+                                            <Map size={16} className="text-primary-600" /> También dibuja tu zona de interés en el mapa
+                                        </label>
+                                        <MapZoneDrawer
+                                            initialZone={formData.searchParams.geographicZone}
+                                            onZoneChange={(zone) => handleSearchParamChange('geographicZone', zone)}
+                                            height="400px"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-3">
+                                            Dibuja un polígono en el mapa para definir la zona de preferencia del cliente
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                    </div>

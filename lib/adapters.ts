@@ -2,6 +2,14 @@ import type { Property, Client } from '../types';
 import type { Propiedad, Usuario } from './database.types';
 
 export function usuarioToClient(usuario: Usuario): Client {
+  // Convert avenida boolean to string
+  let avenidaValue = 'Indiferente';
+  if (usuario.preferencias_avenida === true) {
+    avenidaValue = 'Sí';
+  } else if (usuario.preferencias_avenida === false) {
+    avenidaValue = 'No';
+  }
+
   return {
     id: usuario.id,
     name: usuario.full_name || 'Usuario sin nombre',
@@ -32,11 +40,14 @@ export function usuarioToClient(usuario: Usuario): Client {
       amenities: usuario.preferencias_amenities || [],
       minArea: usuario.preferencias_m2_min || undefined,
       maxArea: undefined,
-      antiquity: usuario.preferencias_antiguedad || [],
+      antiquity: usuario.preferencias_antiguedad || 'Indiferente',
       hasGarage: usuario.preferencias_cochera || false,
       isCreditSuitable: usuario.preferencias_apto_credito || false,
       isProfessionalSuitable: usuario.preferencias_apto_profesional || false,
-      isPetFriendly: usuario.preferencias_apto_mascotas || false
+      isPetFriendly: usuario.preferencias_apto_mascotas || false,
+      pisoMinimo: usuario.preferencias_piso_minimo || 'Indiferente',
+      avenida: avenidaValue,
+      orientacion: usuario.preferencias_orientacion || 'Indiferente'
     },
     activityScore: 75,
     status: usuario.estado_usuario === 'Activo' ? 'active' : 'inactive'
@@ -44,6 +55,36 @@ export function usuarioToClient(usuario: Usuario): Client {
 }
 
 export function clientToUsuario(client: Client): Partial<Usuario> {
+  // Convert avenida string to boolean
+  let avenidaValue: boolean | null = null;
+  if (client.searchParams.avenida === 'Sí') {
+    avenidaValue = true;
+  } else if (client.searchParams.avenida === 'No') {
+    avenidaValue = false;
+  }
+
+  // Convert orientacion string to enum
+  let orientacionValue: 'Frente' | 'Contrafrente' | null = null;
+  if (client.searchParams.orientacion === 'Frente' || client.searchParams.orientacion === 'Contrafrente') {
+    orientacionValue = client.searchParams.orientacion;
+  }
+
+  // Handle environments - if it's an array, convert to string
+  let ambientesValue: string | null = null;
+  if (Array.isArray(client.searchParams.environments)) {
+    ambientesValue = client.searchParams.environments.join(',');
+  } else if (client.searchParams.environments) {
+    ambientesValue = client.searchParams.environments.toString();
+  }
+
+  // Handle antiquity - convert to PreferenciasAntiguedad type
+  let antiguedadValue: any = 'Indiferente';
+  if (Array.isArray(client.searchParams.antiquity)) {
+    antiguedadValue = client.searchParams.antiquity[0] || 'Indiferente';
+  } else if (client.searchParams.antiquity) {
+    antiguedadValue = client.searchParams.antiquity;
+  }
+
   return {
     id: client.id,
     full_name: client.name,
@@ -61,13 +102,16 @@ export function clientToUsuario(client: Client): Partial<Usuario> {
       : (client.searchParams.location ? [client.searchParams.location] : []),
     preferencias_zona_geografica: client.searchParams.geographicZone || null,
     preferencias_m2_min: client.searchParams.minArea || null,
-    preferencias_ambientes: client.searchParams.environments?.toString() || null,
+    preferencias_ambientes: ambientesValue,
     preferencias_amenities: client.searchParams.amenities || [],
-    preferencias_antiguedad: client.searchParams.antiquity || [],
+    preferencias_antiguedad: antiguedadValue,
     preferencias_apto_credito: client.searchParams.isCreditSuitable || null,
     preferencias_apto_profesional: client.searchParams.isProfessionalSuitable || null,
     preferencias_cochera: client.searchParams.hasGarage || null,
-    preferencias_apto_mascotas: client.searchParams.isPetFriendly || null
+    preferencias_apto_mascotas: client.searchParams.isPetFriendly || null,
+    preferencias_piso_minimo: (client.searchParams.pisoMinimo && client.searchParams.pisoMinimo !== 'Indiferente') ? client.searchParams.pisoMinimo : null,
+    preferencias_avenida: avenidaValue,
+    preferencias_orientacion: orientacionValue
   };
 }
 
