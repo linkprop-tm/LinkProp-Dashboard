@@ -84,7 +84,7 @@ export function useAuth() {
 
   const verificarUsuarioEnBD = async (authId: string, email: string): Promise<boolean> => {
     const maxIntentos = 5;
-    const delayEntreIntentos = 500;
+    const delayEntreIntentos = 800; // Increased from 500ms to 800ms
 
     console.log('[SignUp] Iniciando verificación de usuario en BD:', {
       authId,
@@ -95,8 +95,12 @@ export function useAuth() {
     });
 
     for (let intento = 1; intento <= maxIntentos; intento++) {
+      // Verify session is active before querying
+      const { data: { session } } = await supabase.auth.getSession();
       console.log(`[SignUp] Verificación - Intento ${intento}/${maxIntentos}`, {
         authId,
+        hasActiveSession: !!session,
+        sessionUserId: session?.user?.id,
         timestamp: new Date().toISOString(),
       });
 
@@ -109,6 +113,8 @@ export function useAuth() {
       if (error) {
         console.error(`[SignUp] Verificación - Intento ${intento} - Error en consulta:`, {
           error,
+          errorCode: error.code,
+          errorMessage: error.message,
           authId,
           timestamp: new Date().toISOString(),
         });
@@ -167,8 +173,34 @@ export function useAuth() {
       console.log('[SignUp] ✓ Usuario creado en auth.users:', {
         authId: data.user.id,
         email: data.user.email,
+        hasSession: !!data.session,
         timestamp: new Date().toISOString(),
       });
+
+      // CRITICAL: Ensure user is authenticated before proceeding
+      // If signUp didn't create a session automatically, sign in manually
+      if (!data.session) {
+        console.log('[SignUp] No session created by signUp, signing in manually...');
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          console.error('[SignUp] Error al iniciar sesión después de registro:', signInError);
+          throw new Error('Usuario creado pero no se pudo establecer sesión');
+        }
+
+        console.log('[SignUp] ✓ Sesión establecida manualmente:', {
+          hasSession: !!signInData.session,
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        console.log('[SignUp] ✓ Sesión establecida automáticamente por signUp');
+      }
+
+      // Wait a bit for session to propagate
+      await new Promise(resolve => setTimeout(resolve, 300));
     } catch (error) {
       console.error('[SignUp] ✗ FALLO en Paso 1 (auth.users)');
       throw error;
