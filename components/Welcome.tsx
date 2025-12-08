@@ -593,22 +593,20 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                 <p className="text-sm text-gray-500">Mira este breve tutorial para sacar el máximo provecho</p>
                             </div>
 
-                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                                <div className="aspect-video bg-gray-900 rounded-xl overflow-hidden relative">
-                                    <video
-                                        autoPlay
-                                        loop
-                                        muted
-                                        playsInline
-                                        disablePictureInPicture
-                                        controlsList="nodownload nofullscreen noremoteplayback"
-                                        className="w-full h-full object-cover"
-                                        style={{ pointerEvents: 'none' }}
-                                    >
-                                        <source src="/bienvenida-tutorial.mp4" type="video/mp4" />
-                                        <p className="text-gray-500 text-sm">Tu navegador no soporta la reproducción de videos.</p>
-                                    </video>
-                                </div>
+                            <div className="aspect-video bg-gray-900 rounded-xl overflow-hidden relative shadow-xl">
+                                <video
+                                    autoPlay
+                                    loop
+                                    muted
+                                    playsInline
+                                    disablePictureInPicture
+                                    controlsList="nodownload nofullscreen noremoteplayback"
+                                    className="w-full h-full object-cover"
+                                    style={{ pointerEvents: 'none' }}
+                                >
+                                    <source src="/tutorial-video.mp4" type="video/mp4" />
+                                    <p className="text-gray-500 text-sm">Tu navegador no soporta la reproducción de videos.</p>
+                                </video>
                             </div>
                         </div>
                     )}
