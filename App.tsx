@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
-import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { Clients } from './components/Clients';
 import { Properties } from './components/Properties';
@@ -97,11 +96,8 @@ const AppContent: React.FC = () => {
         </div>
 
         {/* Main Content Area - Single Scrollable Container */}
-        {/* Header is now INSIDE this container so sticky + backdrop blur works as content scrolls under it */}
         <div className="flex-1 h-screen overflow-y-auto scroll-smooth relative">
            <div className="pb-24 lg:pb-0">
-              <Header onAddProperty={() => setIsAddPropertyModalOpen(true)} />
-
               {renderAgentContent()}
 
               {/* Footer / Copyright */}
