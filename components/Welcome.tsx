@@ -589,7 +589,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                     {currentStep === 4 && (
                         <div className="w-full max-w-5xl mx-auto space-y-6 animate-fade-in">
                             <div className="text-center mb-8">
-                                <h3 className="text-lg font-bold text-gray-900">Cómo Funciona la Plataforma</h3>
+                                <h3 className="text-lg font-bold text-gray-900">Cómo Seleccionar la zona que quiero</h3>
                                 <p className="text-sm text-gray-500">Mira este breve tutorial para sacar el máximo provecho</p>
                             </div>
 
