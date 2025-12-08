@@ -19,6 +19,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthContext } from '../lib/contexts/AuthContext';
 import { Avatar } from './Avatar';
 import { UploadPhotoModal } from './UploadPhotoModal';
+import { MapZoneDrawer } from './MapZoneDrawer';
 import { obtenerMatchesParaUsuario } from '../lib/api/matches';
 import { crearRelacion, obtenerRelacion, marcarComoInteres, cambiarEtapa, obtenerPropiedadesPorEtapa } from '../lib/api/relationships';
 import type { Propiedad, PropiedadConRelacion } from '../lib/database.types';
@@ -283,7 +284,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const [settingsPriceMax, setSettingsPriceMax] = useState<string>('');
   const [settingsM2Min, setSettingsM2Min] = useState<string>('');
   const [settingsM2Max, setSettingsM2Max] = useState<string>('');
-  const [settingsAmbientes, setSettingsAmbientes] = useState<string>('');
+  const [settingsAmbientes, setSettingsAmbientes] = useState<string[]>([]);
 
   // Settings - Specific Features State
   const [settingsSpecifics, setSettingsSpecifics] = useState({
@@ -303,6 +304,12 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const [neighborhoodSearchTerm, setNeighborhoodSearchTerm] = useState('');
   const [isHoodDropdownOpen, setIsHoodDropdownOpen] = useState(false);
   const hoodInputRef = useRef<HTMLInputElement>(null);
+  const [settingsGeographicZone, setSettingsGeographicZone] = useState<any>(null);
+
+  // Settings - Department Preferences State
+  const [settingsPisoMinimo, setSettingsPisoMinimo] = useState<string>('Indiferente');
+  const [settingsAvenida, setSettingsAvenida] = useState<string>('Indiferente');
+  const [settingsOrientacion, setSettingsOrientacion] = useState<string>('Indiferente');
 
   // Matched Properties State
   const [matchedProperties, setMatchedProperties] = useState<Property[]>([]);
@@ -349,14 +356,19 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
           preferencias_precio_min,
           preferencias_precio_max,
           preferencias_ubicacion,
+          preferencias_zona_geografica,
           preferencias_amenities,
           preferencias_antiguedad,
           preferencias_m2_min,
+          preferencias_m2_max,
           preferencias_ambientes,
           preferencias_apto_credito,
           preferencias_apto_profesional,
           preferencias_cochera,
-          preferencias_apto_mascotas
+          preferencias_apto_mascotas,
+          preferencias_piso_minimo,
+          preferencias_avenida,
+          preferencias_orientacion
         `)
         .eq('auth_id', user.id)
         .maybeSingle();
@@ -373,10 +385,28 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
         setSettingsPriceMin(data.preferencias_precio_min?.toString() || '');
         setSettingsPriceMax(data.preferencias_precio_max?.toString() || '');
         setSettingsNeighborhoods(data.preferencias_ubicacion || ['Palermo Soho', 'Belgrano']);
+        setSettingsGeographicZone(data.preferencias_zona_geografica || null);
         setSettingsAmenities(data.preferencias_amenities || ['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Lavadero']);
         setSettingsAntiquity(data.preferencias_antiguedad || ['Indiferente']);
         setSettingsM2Min(data.preferencias_m2_min?.toString() || '');
-        setSettingsAmbientes(data.preferencias_ambientes || '');
+        setSettingsM2Max(data.preferencias_m2_max?.toString() || '');
+
+        const ambientesArray = data.preferencias_ambientes
+          ? data.preferencias_ambientes.split(',').map((a: string) => a.trim()).filter(Boolean)
+          : [];
+        setSettingsAmbientes(ambientesArray);
+
+        setSettingsPisoMinimo(data.preferencias_piso_minimo || 'Indiferente');
+
+        if (data.preferencias_avenida === true) {
+          setSettingsAvenida('Sí');
+        } else if (data.preferencias_avenida === false) {
+          setSettingsAvenida('No');
+        } else {
+          setSettingsAvenida('Indiferente');
+        }
+
+        setSettingsOrientacion(data.preferencias_orientacion || 'Indiferente');
 
         setSettingsSpecifics({
           credit: data.preferencias_apto_credito || false,
@@ -556,6 +586,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
         preferencias_tipo: settingsPropertyTypes,
         preferencias_operacion: settingsOperation,
         preferencias_ubicacion: settingsNeighborhoods,
+        preferencias_zona_geografica: settingsGeographicZone,
         preferencias_amenities: settingsAmenities,
         preferencias_antiguedad: settingsAntiquity,
         preferencias_apto_credito: settingsSpecifics.credit,
@@ -573,8 +604,29 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
       if (settingsM2Min) {
         preferencesData.preferencias_m2_min = parseFloat(settingsM2Min);
       }
-      if (settingsAmbientes) {
-        preferencesData.preferencias_ambientes = settingsAmbientes;
+      if (settingsM2Max) {
+        preferencesData.preferencias_m2_max = parseFloat(settingsM2Max);
+      }
+      if (settingsAmbientes && settingsAmbientes.length > 0) {
+        preferencesData.preferencias_ambientes = settingsAmbientes.join(', ');
+      }
+
+      if (settingsPropertyTypes.includes('Departamento')) {
+        preferencesData.preferencias_piso_minimo = settingsPisoMinimo !== 'Indiferente' ? settingsPisoMinimo : null;
+
+        if (settingsAvenida === 'Sí') {
+          preferencesData.preferencias_avenida = true;
+        } else if (settingsAvenida === 'No') {
+          preferencesData.preferencias_avenida = false;
+        } else {
+          preferencesData.preferencias_avenida = null;
+        }
+
+        preferencesData.preferencias_orientacion = settingsOrientacion !== 'Indiferente' ? settingsOrientacion : null;
+      } else {
+        preferencesData.preferencias_piso_minimo = null;
+        preferencesData.preferencias_avenida = null;
+        preferencesData.preferencias_orientacion = null;
       }
 
       const { error } = await supabase
@@ -732,10 +784,20 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const toggleSettingsAntiquity = (val: string) => {
      // Single selection logic for Antiquity
      if (settingsAntiquity.includes(val)) {
-        setSettingsAntiquity([]); 
+        setSettingsAntiquity([]);
      } else {
         setSettingsAntiquity([val]);
      }
+  };
+
+  const toggleSettingsAmbientes = (val: string) => {
+    if (settingsAmbientes.includes(val)) {
+      setSettingsAmbientes(settingsAmbientes.filter(a => a !== val));
+    } else {
+      if (settingsAmbientes.length < 2) {
+        setSettingsAmbientes([...settingsAmbientes, val]);
+      }
+    }
   };
 
   // Define navigation items with specific active colors (Solid fills)
@@ -1543,6 +1605,78 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                         </div>
                     </div>
 
+                    {/* Department Preferences - Only shown when Departamento is selected */}
+                    {settingsPropertyTypes.includes('Departamento') && (
+                        <div className="space-y-6 p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/30 rounded-2xl border border-blue-100">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Building size={20} className="text-blue-600" />
+                                <h3 className="text-base font-bold text-gray-900">Preferencias de Departamento</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Piso Mínimo */}
+                                <div>
+                                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 block">Piso Mínimo</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['Indiferente', '1', '2', '3', '4', '5+'].map(piso => (
+                                            <button
+                                                key={piso}
+                                                onClick={() => setSettingsPisoMinimo(piso)}
+                                                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                                                    settingsPisoMinimo === piso
+                                                    ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
+                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                                                }`}
+                                            >
+                                                {piso}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Avenida */}
+                                <div>
+                                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 block">Preferencia de Avenida</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['Indiferente', 'Sí', 'No'].map(av => (
+                                            <button
+                                                key={av}
+                                                onClick={() => setSettingsAvenida(av)}
+                                                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                                                    settingsAvenida === av
+                                                    ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
+                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                                                }`}
+                                            >
+                                                {av}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Orientación */}
+                                <div>
+                                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 block">Orientación</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['Indiferente', 'Frente', 'Contrafrente'].map(or => (
+                                            <button
+                                                key={or}
+                                                onClick={() => setSettingsOrientacion(or)}
+                                                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                                                    settingsOrientacion === or
+                                                    ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
+                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                                                }`}
+                                            >
+                                                {or}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Amenities - Conditionally rendered if 'Departamento' is selected */}
                     {settingsPropertyTypes.includes('Departamento') && (
                         <div className="p-6 bg-white rounded-xl border border-primary-100 shadow-[0_0_15px_rgba(37,99,235,0.05)]">
@@ -1644,6 +1778,23 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                             </div>
 
                          </div>
+
+                         {/* Map Zone Drawer - Only for CABA */}
+                         {settingsRegion === 'CABA' && (
+                            <div className="mt-6">
+                                <div className="mb-3 text-gray-600 text-sm font-medium flex items-center gap-2">
+                                    <Map size={16} className="text-gray-400" />
+                                    O dibuja tu zona de interés en el mapa
+                                </div>
+                                <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+                                    <MapZoneDrawer
+                                        initialZone={settingsGeographicZone}
+                                        onZoneChange={setSettingsGeographicZone}
+                                        height="450px"
+                                    />
+                                </div>
+                            </div>
+                         )}
                     </div>
 
                     {/* Price Range */}
@@ -1681,28 +1832,45 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                          <h3 className="text-sm font-bold text-primary-600 uppercase tracking-wider mb-6">Dimensiones y Distribución</h3>
                          
                          <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-12 gap-y-8">
-                            {/* Area */}
+                            {/* Area - Min and Max */}
                             <div className="space-y-3">
                                 <label className="text-sm font-medium text-gray-700 block">Metros Cuadrados (m²)</label>
-                                <div className="relative">
-                                    <input
-                                      type="text"
-                                      value={formatNumberWithDots(settingsM2Min)}
-                                      onChange={(e) => handleNumericChange(e.target.value, setSettingsM2Min)}
-                                      placeholder="Min"
-                                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
-                                    />
+                                <div className="flex items-center gap-4">
+                                    <div className="relative flex-1">
+                                        <input
+                                          type="text"
+                                          value={formatNumberWithDots(settingsM2Min)}
+                                          onChange={(e) => handleNumericChange(e.target.value, setSettingsM2Min)}
+                                          placeholder="Mín"
+                                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
+                                        />
+                                    </div>
+                                    <span className="text-gray-300 font-medium">-</span>
+                                    <div className="relative flex-1">
+                                        <input
+                                          type="text"
+                                          value={formatNumberWithDots(settingsM2Max)}
+                                          onChange={(e) => handleNumericChange(e.target.value, setSettingsM2Max)}
+                                          placeholder="Máx"
+                                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                            
-                            {/* Ambientes - Segmented Control */}
+
+                            {/* Ambientes - Multi-select (max 2) */}
                             <div className="space-y-3">
-                                <label className="text-sm font-medium text-gray-700 block">Ambientes</label>
-                                <div className="flex gap-1 bg-gray-50 rounded-xl p-1.5 border border-gray-200">
+                                <label className="text-sm font-medium text-gray-700 block">Ambientes (máx. 2 opciones)</label>
+                                <div className="flex gap-2 flex-wrap">
                                     {['1', '2', '3', '4', '5+'].map(val => (
                                         <button
                                           key={val}
-                                          className="flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-900 hover:bg-white rounded-lg transition-all focus:bg-white focus:shadow-sm focus:text-primary-600"
+                                          onClick={() => toggleSettingsAmbientes(val)}
+                                          className={`flex-1 min-w-[60px] py-2.5 text-sm font-bold rounded-lg transition-all ${
+                                            settingsAmbientes.includes(val)
+                                            ? 'bg-primary-600 text-white shadow-sm'
+                                            : 'bg-gray-50 text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-gray-200'
+                                          }`}
                                         >{val}</button>
                                     ))}
                                 </div>

@@ -7,6 +7,7 @@ export type DisposicionPropiedad = 'Frente' | 'Contrafrente' | 'Lateral' | 'Inte
 export type ConfiabilidadPropiedad = 'Alta' | 'Media';
 export type EtapaRelacion = 'Explorar' | 'Interes' | 'Visitada';
 export type EstadoUsuario = 'Activo' | 'Inactivo';
+export type PreferenciasOrientacion = 'Frente' | 'Contrafrente';
 
 export interface Propiedad {
   id: string;
@@ -77,6 +78,7 @@ export interface Usuario {
   preferencias_ubicacion: string[];
   preferencias_zona_geografica: any | null;
   preferencias_m2_min: number | null;
+  preferencias_m2_max: number | null;
   preferencias_ambientes: string | null;
   preferencias_amenities: string[];
   preferencias_antiguedad: string[];
@@ -84,6 +86,9 @@ export interface Usuario {
   preferencias_apto_profesional: boolean | null;
   preferencias_cochera: boolean | null;
   preferencias_apto_mascotas: boolean | null;
+  preferencias_piso_minimo: string | null;
+  preferencias_avenida: boolean | null;
+  preferencias_orientacion: PreferenciasOrientacion | null;
   fecha_creacion: string;
   fecha_actualizacion: string;
   foto_perfil_url: string | null;
