@@ -531,7 +531,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                             <button
                                                 key={pref}
                                                 onClick={() => handleRegChange('avenuePreference', pref)}
-                                                className={`flex-1 px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
+                                                className={`flex-1 px-4 py-2 rounded-full text-sm font-bold border transition-all ${
                                                     regData.avenuePreference === pref
                                                     ? 'bg-primary-50 text-primary-600 border-primary-200'
                                                     : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
@@ -552,7 +552,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                             <button
                                                 key={orientation}
                                                 onClick={() => handleRegChange('frontPreference', orientation)}
-                                                className={`flex-1 px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
+                                                className={`flex-1 px-4 py-2 rounded-full text-sm font-bold border transition-all ${
                                                     regData.frontPreference === orientation
                                                     ? 'bg-primary-50 text-primary-600 border-primary-200'
                                                     : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
@@ -573,7 +573,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                             <button
                                                 key={item}
                                                 onClick={() => toggleArrayItem('amenities', item)}
-                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                                                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
                                                     regData.amenities.includes(item)
                                                     ? 'bg-white text-primary-600 border-primary-200 shadow-sm'
                                                     : 'bg-white/50 text-gray-500 border-gray-200 hover:bg-white'

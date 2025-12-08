@@ -460,7 +460,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                                           type="button"
                                           key={item}
                                           onClick={() => toggleArrayItem('amenities', item)}
-                                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                                          className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
                                               isSelected
                                               ? 'bg-white text-primary-600 border-primary-200 shadow-sm'
                                               : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'
@@ -532,13 +532,13 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({ isOpen, onClos
                                     {['1', '2', '3', '4', '5+'].map(val => {
                                         const isSelected = formData.searchParams.environments == val;
                                         return (
-                                            <button 
+                                            <button
                                                 key={val}
                                                 type="button"
                                                 onClick={() => handleSearchParamChange('environments', val)}
-                                                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all focus:outline-none ${
-                                                    isSelected 
-                                                    ? 'bg-white text-gray-900 shadow-sm' 
+                                                className={`flex-1 py-2 text-sm font-bold rounded-full transition-all focus:outline-none ${
+                                                    isSelected
+                                                    ? 'bg-white text-gray-900 shadow-sm'
                                                     : 'text-gray-400 hover:text-gray-600 hover:bg-white/50'
                                                 }`}
                                             >{val}</button>
