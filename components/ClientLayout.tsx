@@ -1784,7 +1784,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                             <div className="mt-6">
                                 <div className="mb-3 text-gray-600 text-sm font-medium flex items-center gap-2">
                                     <Map size={16} className="text-gray-400" />
-                                    O dibuja tu zona de interés en el mapa
+                                    Tambien dibuja tu zona de interés en el mapa
                                 </div>
                                 <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
                                     <MapZoneDrawer
