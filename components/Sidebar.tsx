@@ -125,7 +125,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
           />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-gray-900 truncate">{userName}</p>
-            <p className="text-xs text-gray-500 truncate">{userEmail}</p>
           </div>
         </div>
       </div>
