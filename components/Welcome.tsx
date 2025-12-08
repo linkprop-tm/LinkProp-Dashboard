@@ -684,7 +684,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                     {currentStep === 6 && (
                         <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
                             <div className="text-center mb-8">
-                                <h3 className="text-lg font-bold text-gray-900">Características Numéricas</h3>
+                                <h3 className="text-lg font-bold text-gray-900">Características de la Propiedad</h3>
                                 <p className="text-sm text-gray-500">Define el rango de precios y características</p>
                             </div>
 
