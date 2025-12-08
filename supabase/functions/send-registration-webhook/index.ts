@@ -69,7 +69,11 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    console.log("[Webhook Function] Received request");
+    console.log("[Webhook Function] Received request", {
+      method: req.method,
+      headers: Object.fromEntries(req.headers.entries()),
+      url: req.url,
+    });
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -81,7 +85,42 @@ Deno.serve(async (req: Request) => {
       },
     });
 
-    const { nombreUsuario, preferencias }: RequestBody = await req.json();
+    let requestBody: RequestBody;
+    try {
+      const bodyText = await req.text();
+      console.log("[Webhook Function] Raw body:", bodyText);
+
+      if (!bodyText || bodyText.trim() === "") {
+        console.error("[Webhook Function] Empty body received");
+        return new Response(
+          JSON.stringify({
+            error: "Empty request body",
+            details: "The request body is empty. Make sure you're sending JSON data."
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      requestBody = JSON.parse(bodyText);
+      console.log("[Webhook Function] Parsed body:", requestBody);
+    } catch (parseError) {
+      console.error("[Webhook Function] JSON parse error:", parseError);
+      return new Response(
+        JSON.stringify({
+          error: "Invalid JSON in request body",
+          details: parseError instanceof Error ? parseError.message : String(parseError)
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const { nombreUsuario, preferencias } = requestBody;
 
     if (!nombreUsuario || !preferencias) {
       return new Response(

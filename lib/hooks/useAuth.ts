@@ -149,9 +149,13 @@ export function useAuth() {
     if (profileError) throw profileError;
 
     if (role === 'client' && profileData.preferences) {
-      enviarWebhookRegistro(profileData.name, profileData.preferences).catch((error) => {
+      try {
+        console.log('[SignUp] Enviando webhook de registro...');
+        await enviarWebhookRegistro(profileData.name, profileData.preferences);
+        console.log('[SignUp] Webhook enviado exitosamente');
+      } catch (error) {
         console.error('[SignUp] Error al enviar webhook (no afecta registro):', error);
-      });
+      }
     }
 
     return authData;
