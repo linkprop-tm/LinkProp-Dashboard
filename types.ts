@@ -108,7 +108,7 @@ export interface SearchParams {
   type: string; // Deprecated in UI but kept for compatibility, prefer 'propertyType' below
   maxPrice: number;
   currency: string;
-  environments: string | number; // '2' or '3+'
+  environments: string | number | string[]; // '2' or '3+' or ['2', '3'] for range
   location: string;
   neighborhoods?: string[]; // Full array of neighborhoods
   geographicZone?: any; // GeoJSON polygon drawn by user on map
@@ -132,7 +132,15 @@ export interface SearchParams {
   isPetFriendly?: boolean;
 
   // Specifics
-  antiquity?: string[]; // Array of strings e.g. ['A estrenar', 'Hasta 5 años']
+  antiquity?: string | string[]; // String or array, e.g. 'A estrenar' or ['A estrenar']
+
+  // Department Preferences
+  pisoMinimo?: string; // 'Indiferente', '1', '2', '3', '4', '5+'
+  avenida?: string; // 'Indiferente', 'Sí', 'No'
+  orientacion?: string; // 'Indiferente', 'Frente', 'Contrafrente'
+
+  // Region
+  region?: 'CABA' | 'GBA';
 }
 
 export interface Client {
