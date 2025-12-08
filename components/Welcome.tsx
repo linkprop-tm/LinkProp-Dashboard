@@ -724,17 +724,19 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Antigüedad</label>
-                                    <div className="grid grid-cols-2 gap-2">
+                                <div className="p-5 bg-blue-50/30 rounded-xl border border-blue-100/50">
+                                    <label className="flex items-center gap-2 mb-3 text-primary-700 font-bold text-sm">
+                                        <Building2 size={16} /> Antigüedad
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2.5">
                                         {['Indiferente', 'Pozo / Construccion', 'A estrenar', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Hasta 50 años'].map(val => (
                                             <button
                                                 key={val}
                                                 onClick={() => handleRegChange('antiguedad', val)}
-                                                className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+                                                className={`px-4 py-2.5 rounded-lg text-xs font-bold border transition-all ${
                                                     regData.antiguedad === val
-                                                    ? 'bg-primary-50 text-primary-600 border-primary-200'
-                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                                                    ? 'bg-white text-primary-600 border-primary-200 shadow-sm'
+                                                    : 'bg-white/50 text-gray-600 border-gray-200 hover:bg-white hover:border-primary-100'
                                                 }`}
                                             >
                                                 {val}
