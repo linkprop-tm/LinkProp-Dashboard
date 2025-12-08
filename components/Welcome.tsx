@@ -96,6 +96,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
       maxPrice: '',
       minArea: '',
       environments: [] as string[],
+      antiguedad: 'Indiferente',
 
       // Step 7: Special Features
       features: {
@@ -282,6 +283,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
           min_area: regData.minArea ? parseFloat(regData.minArea) : null,
           environments: regData.environments.length > 0 ? regData.environments.join(',') : null,
           amenities: regData.amenities || [],
+          antiguedad: regData.antiguedad ? [regData.antiguedad] : [],
           min_floor: regData.propertyTypes.includes('Departamento') ? regData.minFloor : null,
           avenue_preference: regData.propertyTypes.includes('Departamento') ? regData.avenuePreference : null,
           front_preference: regData.propertyTypes.includes('Departamento') ? regData.frontPreference : null,
@@ -321,6 +323,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
           maxPrice: '',
           minArea: '',
           environments: [],
+          antiguedad: 'Indiferente',
           features: {
             credit: false,
             professional: false,
@@ -711,6 +714,25 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                                 onClick={() => toggleArrayItem('environments', val)}
                                                 className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${
                                                     regData.environments.includes(val)
+                                                    ? 'bg-primary-50 text-primary-600 border-primary-200'
+                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                                                }`}
+                                            >
+                                                {val}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Antigüedad</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {['Indiferente', 'Pozo / Construccion', 'A estrenar', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Hasta 50 años'].map(val => (
+                                            <button
+                                                key={val}
+                                                onClick={() => handleRegChange('antiguedad', val)}
+                                                className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+                                                    regData.antiguedad === val
                                                     ? 'bg-primary-50 text-primary-600 border-primary-200'
                                                     : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                                                 }`}
