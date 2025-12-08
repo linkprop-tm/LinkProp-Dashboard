@@ -116,37 +116,46 @@ export function useAuth() {
     };
 
     // Create user profile in usuarios table
+    const insertData = {
+      auth_id: authData.user.id,
+      email,
+      rol: dbRole,
+      full_name: profileData.name,
+      // If client, add preferences
+      ...(role === 'client' && profileData.preferences ? {
+        preferencias_tipo: profileData.preferences.property_types || [],
+        preferencias_operacion: profileData.preferences.operation_type || 'Venta',
+        preferencias_precio_min: profileData.preferences.min_price || null,
+        preferencias_precio_max: profileData.preferences.max_price || null,
+        preferencias_ubicacion: profileData.preferences.neighborhoods || [],
+        preferencias_zona_geografica: profileData.preferences.geographic_zone || null,
+        preferencias_m2_min: profileData.preferences.min_area ? parseFloat(profileData.preferences.min_area) : null,
+        preferencias_ambientes: profileData.preferences.environments || null,
+        preferencias_antiguedad: profileData.preferences.antiguedad || 'Indiferente',
+        preferencias_amenities: profileData.preferences.amenities || [],
+        preferencias_apto_credito: profileData.preferences.credit || false,
+        preferencias_apto_profesional: profileData.preferences.professional || false,
+        preferencias_cochera: profileData.preferences.garage || false,
+        preferencias_apto_mascotas: profileData.preferences.pets || false,
+        // Department-specific preferences
+        preferencias_piso_minimo: convertFloorPreference(profileData.preferences.min_floor),
+        preferencias_avenida: convertAvenuePreference(profileData.preferences.avenue_preference),
+        preferencias_orientacion: convertOrientationPreference(profileData.preferences.front_preference),
+      } : {}),
+    };
+
+    console.log('[SignUp] Insertando usuario en tabla usuarios:', { email, rol: dbRole });
+
     const { error: profileError } = await supabase
       .from('usuarios')
-      .insert({
-        auth_id: authData.user.id,
-        email,
-        rol: dbRole,
-        full_name: profileData.name,
-        // If client, add preferences
-        ...(role === 'client' && profileData.preferences ? {
-          preferencias_tipo: profileData.preferences.property_types || [],
-          preferencias_operacion: profileData.preferences.operation_type || null,
-          preferencias_precio_min: profileData.preferences.min_price || null,
-          preferencias_precio_max: profileData.preferences.max_price || null,
-          preferencias_ubicacion: profileData.preferences.neighborhoods || [],
-          preferencias_zona_geografica: profileData.preferences.geographic_zone || null,
-          preferencias_m2_min: profileData.preferences.min_area ? parseFloat(profileData.preferences.min_area) : null,
-          preferencias_ambientes: profileData.preferences.environments || null,
-          preferencias_antiguedad: profileData.preferences.antiguedad || [],
-          preferencias_amenities: profileData.preferences.amenities || [],
-          preferencias_apto_credito: profileData.preferences.credit || false,
-          preferencias_apto_profesional: profileData.preferences.professional || false,
-          preferencias_cochera: profileData.preferences.garage || false,
-          preferencias_apto_mascotas: profileData.preferences.pets || false,
-          // Department-specific preferences
-          preferencias_piso_minimo: convertFloorPreference(profileData.preferences.min_floor),
-          preferencias_avenida: convertAvenuePreference(profileData.preferences.avenue_preference),
-          preferencias_orientacion: convertOrientationPreference(profileData.preferences.front_preference),
-        } : {}),
-      });
+      .insert(insertData);
 
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error('[SignUp] Error al insertar usuario en tabla usuarios:', profileError);
+      throw profileError;
+    }
+
+    console.log('[SignUp] Usuario insertado exitosamente en tabla usuarios');
 
     if (role === 'client' && profileData.preferences) {
       try {
