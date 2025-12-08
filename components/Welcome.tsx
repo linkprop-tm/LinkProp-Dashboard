@@ -587,13 +587,13 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
 
                     {/* STEP 4: VIDEO TUTORIAL */}
                     {currentStep === 4 && (
-                        <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+                        <div className="w-full max-w-5xl mx-auto space-y-6 animate-fade-in">
                             <div className="text-center mb-8">
                                 <h3 className="text-lg font-bold text-gray-900">Cómo Funciona la Plataforma</h3>
                                 <p className="text-sm text-gray-500">Mira este breve tutorial para sacar el máximo provecho</p>
                             </div>
 
-                            <div className="aspect-video bg-gray-900 rounded-xl overflow-hidden relative shadow-xl">
+                            <div className="aspect-video rounded-xl overflow-hidden relative shadow-2xl">
                                 <video
                                     autoPlay
                                     loop
@@ -604,7 +604,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                     className="w-full h-full object-cover"
                                     style={{ pointerEvents: 'none' }}
                                 >
-                                    <source src="/tutorial-video.mp4" type="video/mp4" />
+                                    <source src="/bienvenida-tutorial.mp4" type="video/mp4" />
                                     <p className="text-gray-500 text-sm">Tu navegador no soporta la reproducción de videos.</p>
                                 </video>
                             </div>
