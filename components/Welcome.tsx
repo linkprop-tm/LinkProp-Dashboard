@@ -726,12 +726,12 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
 
                                 <div>
                                     <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Antigüedad</label>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="flex flex-wrap gap-2">
                                         {['Indiferente', 'Pozo / Construccion', 'A estrenar', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Hasta 50 años'].map(val => (
                                             <button
                                                 key={val}
                                                 onClick={() => handleRegChange('antiguedad', val)}
-                                                className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+                                                className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${
                                                     regData.antiguedad === val
                                                     ? 'bg-primary-50 text-primary-600 border-primary-200'
                                                     : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
