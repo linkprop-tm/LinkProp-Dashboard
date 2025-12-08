@@ -278,7 +278,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   // Settings State
   const [settingsPropertyTypes, setSettingsPropertyTypes] = useState<string[]>(['Departamento']);
   const [settingsAmenities, setSettingsAmenities] = useState<string[]>(['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Lavadero']);
-  const [settingsAntiquity, setSettingsAntiquity] = useState<string[]>(['Indiferente']);
+  const [settingsAntiquity, setSettingsAntiquity] = useState<string>('Indiferente');
   const [settingsOperation, setSettingsOperation] = useState('Venta');
   const [settingsPriceMin, setSettingsPriceMin] = useState<string>('');
   const [settingsPriceMax, setSettingsPriceMax] = useState<string>('');
@@ -387,7 +387,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
         setSettingsNeighborhoods(data.preferencias_ubicacion || ['Palermo Soho', 'Belgrano']);
         setSettingsGeographicZone(data.preferencias_zona_geografica || null);
         setSettingsAmenities(data.preferencias_amenities || ['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Lavadero']);
-        setSettingsAntiquity(data.preferencias_antiguedad || ['Indiferente']);
+        setSettingsAntiquity(data.preferencias_antiguedad || 'Indiferente');
         setSettingsM2Min(data.preferencias_m2_min?.toString() || '');
         setSettingsM2Max(data.preferencias_m2_max?.toString() || '');
 
@@ -782,12 +782,8 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   };
 
   const toggleSettingsAntiquity = (val: string) => {
-     // Single selection logic for Antiquity
-     if (settingsAntiquity.includes(val)) {
-        setSettingsAntiquity([]);
-     } else {
-        setSettingsAntiquity([val]);
-     }
+     // Single selection logic for Antiquity - always set to the selected value (no deselection)
+     setSettingsAntiquity(val);
   };
 
   const toggleSettingsAmbientes = (val: string) => {
@@ -1876,12 +1872,12 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                             <div>
                                 <label className="text-xs font-bold text-gray-500 uppercase mb-3 block">Antigüedad</label>
                                 <div className="flex flex-wrap gap-3">
-                                    {['Indiferente', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Más de 20 años'].map(val => (
+                                    {['Indiferente', 'Pozo / Construcción', 'A estrenar', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Hasta 50 años'].map(val => (
                                          <button
                                             key={val}
                                             onClick={() => toggleSettingsAntiquity(val)}
                                             className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-                                                settingsAntiquity.includes(val)
+                                                settingsAntiquity === val
                                                 ? 'bg-primary-50 text-primary-600 border-primary-200'
                                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                                             }`}

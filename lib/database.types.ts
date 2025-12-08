@@ -8,6 +8,7 @@ export type ConfiabilidadPropiedad = 'Alta' | 'Media';
 export type EtapaRelacion = 'Explorar' | 'Interes' | 'Visitada';
 export type EstadoUsuario = 'Activo' | 'Inactivo';
 export type PreferenciasOrientacion = 'Frente' | 'Contrafrente';
+export type PreferenciasAntiguedad = 'Indiferente' | 'Pozo / Construcción' | 'A estrenar' | 'Hasta 5 años' | 'Hasta 10 años' | 'Hasta 20 años' | 'Hasta 50 años';
 
 export interface Propiedad {
   id: string;
@@ -72,7 +73,7 @@ export interface Usuario {
   telefono: string;
   estado_usuario: EstadoUsuario | null;
   preferencias_tipo: TipoPropiedad[];
-  preferencias_operacion: TipoOperacion | null;
+  preferencias_operacion: TipoOperacion;
   preferencias_precio_min: number | null;
   preferencias_precio_max: number | null;
   preferencias_ubicacion: string[];
@@ -81,7 +82,7 @@ export interface Usuario {
   preferencias_m2_max: number | null;
   preferencias_ambientes: string | null;
   preferencias_amenities: string[];
-  preferencias_antiguedad: string[];
+  preferencias_antiguedad: PreferenciasAntiguedad;
   preferencias_apto_credito: boolean | null;
   preferencias_apto_profesional: boolean | null;
   preferencias_cochera: boolean | null;
