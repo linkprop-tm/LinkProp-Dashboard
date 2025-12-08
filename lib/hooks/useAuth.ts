@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../supabase';
 import type { UserRole } from '../../App';
+import { enviarWebhookRegistro } from '../api/webhook';
 
 interface AuthState {
   user: User | null;
@@ -146,6 +147,12 @@ export function useAuth() {
       });
 
     if (profileError) throw profileError;
+
+    if (role === 'client' && profileData.preferences) {
+      enviarWebhookRegistro(profileData.name, profileData.preferences).catch((error) => {
+        console.error('[SignUp] Error al enviar webhook (no afecta registro):', error);
+      });
+    }
 
     return authData;
   };
