@@ -283,7 +283,6 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
   const [settingsPriceMin, setSettingsPriceMin] = useState<string>('');
   const [settingsPriceMax, setSettingsPriceMax] = useState<string>('');
   const [settingsM2Min, setSettingsM2Min] = useState<string>('');
-  const [settingsM2Max, setSettingsM2Max] = useState<string>('');
   const [settingsAmbientes, setSettingsAmbientes] = useState<string[]>([]);
 
   // Settings - Specific Features State
@@ -360,7 +359,6 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
           preferencias_amenities,
           preferencias_antiguedad,
           preferencias_m2_min,
-          preferencias_m2_max,
           preferencias_ambientes,
           preferencias_apto_credito,
           preferencias_apto_profesional,
@@ -389,7 +387,6 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
         setSettingsAmenities(data.preferencias_amenities || ['Pileta', 'SUM', 'Parrilla', 'Gimnasio', 'Lavadero']);
         setSettingsAntiquity(data.preferencias_antiguedad || 'Indiferente');
         setSettingsM2Min(data.preferencias_m2_min?.toString() || '');
-        setSettingsM2Max(data.preferencias_m2_max?.toString() || '');
 
         const ambientesArray = data.preferencias_ambientes
           ? data.preferencias_ambientes.split(',').map((a: string) => a.trim()).filter(Boolean)
@@ -603,9 +600,6 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
       }
       if (settingsM2Min) {
         preferencesData.preferencias_m2_min = parseFloat(settingsM2Min);
-      }
-      if (settingsM2Max) {
-        preferencesData.preferencias_m2_max = parseFloat(settingsM2Max);
       }
       if (settingsAmbientes && settingsAmbientes.length > 0) {
         preferencesData.preferencias_ambientes = settingsAmbientes.join(', ');

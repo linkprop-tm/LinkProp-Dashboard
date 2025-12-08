@@ -79,7 +79,6 @@ export interface Usuario {
   preferencias_ubicacion: string[];
   preferencias_zona_geografica: any | null;
   preferencias_m2_min: number | null;
-  preferencias_m2_max: number | null;
   preferencias_ambientes: string | null;
   preferencias_amenities: string[];
   preferencias_antiguedad: PreferenciasAntiguedad;
