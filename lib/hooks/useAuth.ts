@@ -93,6 +93,27 @@ export function useAuth() {
     // Map role to database role
     const dbRole = role === 'agent' ? 'admin' : 'user';
 
+    // Helper function to convert avenue preference string to boolean or null
+    const convertAvenuePreference = (pref: string | undefined | null): boolean | null => {
+      if (!pref || pref === 'Indiferente') return null;
+      if (pref === 'Sí') return true;
+      if (pref === 'No') return false;
+      return null;
+    };
+
+    // Helper function to convert orientation preference string to enum or null
+    const convertOrientationPreference = (pref: string | undefined | null): 'Frente' | 'Contrafrente' | null => {
+      if (!pref || pref === 'Indiferente') return null;
+      if (pref === 'Frente' || pref === 'Contrafrente') return pref;
+      return null;
+    };
+
+    // Helper function to convert floor preference string or null
+    const convertFloorPreference = (pref: string | undefined | null): string | null => {
+      if (!pref || pref === 'Indiferente') return null;
+      return pref;
+    };
+
     // Create user profile in usuarios table
     const { error: profileError } = await supabase
       .from('usuarios')
@@ -101,8 +122,6 @@ export function useAuth() {
         email,
         rol: dbRole,
         full_name: profileData.name,
-        telefono: profileData.phone,
-        estado_usuario: 'Activo',
         // If client, add preferences
         ...(role === 'client' && profileData.preferences ? {
           preferencias_tipo: profileData.preferences.property_types || [],
@@ -113,11 +132,16 @@ export function useAuth() {
           preferencias_zona_geografica: profileData.preferences.geographic_zone || null,
           preferencias_m2_min: profileData.preferences.min_area ? parseFloat(profileData.preferences.min_area) : null,
           preferencias_ambientes: profileData.preferences.environments || null,
+          preferencias_antiguedad: profileData.preferences.antiguedad || [],
           preferencias_amenities: profileData.preferences.amenities || [],
           preferencias_apto_credito: profileData.preferences.credit || false,
           preferencias_apto_profesional: profileData.preferences.professional || false,
           preferencias_cochera: profileData.preferences.garage || false,
           preferencias_apto_mascotas: profileData.preferences.pets || false,
+          // Department-specific preferences
+          preferencias_piso_minimo: convertFloorPreference(profileData.preferences.min_floor),
+          preferencias_avenida: convertAvenuePreference(profileData.preferences.avenue_preference),
+          preferencias_orientacion: convertOrientationPreference(profileData.preferences.front_preference),
         } : {}),
       });
 
