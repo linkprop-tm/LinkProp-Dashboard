@@ -21,6 +21,7 @@ export const MapZoneDrawer: React.FC<MapZoneDrawerProps> = ({
   const draw = useRef<MapboxDraw | null>(null);
   const [area, setArea] = useState<number>(0);
   const [hasPolygon, setHasPolygon] = useState(false);
+  const isMapReady = useRef(false);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -123,20 +124,65 @@ export const MapZoneDrawer: React.FC<MapZoneDrawerProps> = ({
     map.current.on('draw.update', updatePolygon);
     map.current.on('draw.delete', updatePolygon);
 
-    if (initialZone && initialZone.geometry) {
-      draw.current.add(initialZone);
-      if (initialZone.geometry.type === 'Polygon') {
-        const coords = initialZone.geometry.coordinates;
-        const calculatedArea = calculatePolygonArea(coords);
-        setArea(calculatedArea);
-        setHasPolygon(true);
-      }
-    }
+    map.current.on('load', () => {
+      isMapReady.current = true;
+    });
 
     return () => {
       map.current?.remove();
     };
   }, []);
+
+  // Load initial zone when it becomes available or changes
+  useEffect(() => {
+    if (!initialZone || !initialZone.geometry || !draw.current || !map.current) {
+      return;
+    }
+
+    // Wait for the map to be fully loaded
+    const loadZone = () => {
+      if (!draw.current || !map.current) return;
+
+      // Clear existing polygons
+      draw.current.deleteAll();
+
+      // Add the initial zone
+      draw.current.add(initialZone);
+
+      if (initialZone.geometry.type === 'Polygon') {
+        const coords = initialZone.geometry.coordinates;
+        const calculatedArea = calculatePolygonArea(coords);
+        setArea(calculatedArea);
+        setHasPolygon(true);
+
+        // Calculate bounds to fit the polygon in view
+        const bounds = new mapboxgl.LngLatBounds();
+        coords[0].forEach((coord: [number, number]) => {
+          bounds.extend(coord);
+        });
+
+        // Fit map to polygon bounds with padding
+        map.current.fitBounds(bounds, {
+          padding: 50,
+          duration: 1000
+        });
+      }
+    };
+
+    if (isMapReady.current) {
+      loadZone();
+    } else {
+      // If map is not ready yet, wait for it
+      const checkInterval = setInterval(() => {
+        if (isMapReady.current) {
+          loadZone();
+          clearInterval(checkInterval);
+        }
+      }, 100);
+
+      return () => clearInterval(checkInterval);
+    }
+  }, [initialZone]);
 
   const handleClearZone = () => {
     if (draw.current) {
