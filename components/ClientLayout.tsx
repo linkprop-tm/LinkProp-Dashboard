@@ -1832,29 +1832,17 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                          <h3 className="text-sm font-bold text-primary-600 uppercase tracking-wider mb-6">Dimensiones y Distribución</h3>
                          
                          <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-12 gap-y-8">
-                            {/* Area - Min and Max */}
+                            {/* Area - Min */}
                             <div className="space-y-3">
                                 <label className="text-sm font-medium text-gray-700 block">Metros Cuadrados (m²)</label>
-                                <div className="flex items-center gap-4">
-                                    <div className="relative flex-1">
-                                        <input
-                                          type="text"
-                                          value={formatNumberWithDots(settingsM2Min)}
-                                          onChange={(e) => handleNumericChange(e.target.value, setSettingsM2Min)}
-                                          placeholder="Mín"
-                                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
-                                        />
-                                    </div>
-                                    <span className="text-gray-300 font-medium">-</span>
-                                    <div className="relative flex-1">
-                                        <input
-                                          type="text"
-                                          value={formatNumberWithDots(settingsM2Max)}
-                                          onChange={(e) => handleNumericChange(e.target.value, setSettingsM2Max)}
-                                          placeholder="Máx"
-                                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
-                                        />
-                                    </div>
+                                <div className="relative">
+                                    <input
+                                      type="text"
+                                      value={formatNumberWithDots(settingsM2Min)}
+                                      onChange={(e) => handleNumericChange(e.target.value, setSettingsM2Min)}
+                                      placeholder="Mín"
+                                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center outline-none focus:bg-white focus:border-primary-300 transition-all"
+                                    />
                                 </div>
                             </div>
 
