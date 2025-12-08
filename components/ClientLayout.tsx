@@ -1860,7 +1860,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
 
                             {/* Ambientes - Multi-select (max 2) */}
                             <div className="space-y-3">
-                                <label className="text-sm font-medium text-gray-700 block">Ambientes (máx. 2 opciones)</label>
+                                <label className="text-sm font-medium text-gray-700 block">Ambientes (Elegi Minimo y Maximo)</label>
                                 <div className="flex gap-2 flex-wrap">
                                     {['1', '2', '3', '4', '5+'].map(val => (
                                         <button
