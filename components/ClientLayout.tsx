@@ -1607,30 +1607,25 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
 
                     {/* Department Preferences - Only shown when Departamento is selected */}
                     {settingsPropertyTypes.includes('Departamento') && (
-                        <div className="space-y-4 p-8 bg-gradient-to-br from-blue-50/80 to-sky-50/50 rounded-2xl border border-blue-100/50 shadow-sm">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 bg-blue-500 rounded-lg shadow-sm">
-                                    <Building size={20} className="text-white" />
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900">Preferencias de Departamento</h3>
+                        <div className="space-y-6 p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/30 rounded-2xl border border-blue-100">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Building size={20} className="text-blue-600" />
+                                <h3 className="text-base font-bold text-gray-900">Preferencias de Departamento</h3>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 {/* Piso Mínimo */}
-                                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                    <label className="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wider mb-4">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                        Piso Mínimo
-                                    </label>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 block">Piso Mínimo</label>
                                     <div className="flex flex-wrap gap-2">
                                         {['Indiferente', '1', '2', '3', '4', '5+'].map(piso => (
                                             <button
                                                 key={piso}
                                                 onClick={() => setSettingsPisoMinimo(piso)}
-                                                className={`px-4 py-2.5 rounded-lg text-sm font-semibold border-2 transition-all duration-200 ${
+                                                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
                                                     settingsPisoMinimo === piso
-                                                    ? 'bg-blue-500 text-white border-blue-500 shadow-md scale-105'
-                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400 hover:bg-blue-50 hover:scale-105'
+                                                    ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
+                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                                                 }`}
                                             >
                                                 {piso}
@@ -1640,20 +1635,17 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                                 </div>
 
                                 {/* Avenida */}
-                                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                    <label className="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wider mb-4">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                        Preferencia de Avenida
-                                    </label>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 block">Preferencia de Avenida</label>
                                     <div className="flex flex-wrap gap-2">
                                         {['Indiferente', 'Sí', 'No'].map(av => (
                                             <button
                                                 key={av}
                                                 onClick={() => setSettingsAvenida(av)}
-                                                className={`px-5 py-2.5 rounded-lg text-sm font-semibold border-2 transition-all duration-200 ${
+                                                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
                                                     settingsAvenida === av
-                                                    ? 'bg-blue-500 text-white border-blue-500 shadow-md scale-105'
-                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400 hover:bg-blue-50 hover:scale-105'
+                                                    ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
+                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                                                 }`}
                                             >
                                                 {av}
@@ -1663,20 +1655,17 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ onLogout }) => {
                                 </div>
 
                                 {/* Orientación */}
-                                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                    <label className="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wider mb-4">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                        Orientación
-                                    </label>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 block">Orientación</label>
                                     <div className="flex flex-wrap gap-2">
                                         {['Indiferente', 'Frente', 'Contrafrente'].map(or => (
                                             <button
                                                 key={or}
                                                 onClick={() => setSettingsOrientacion(or)}
-                                                className={`px-4 py-2.5 rounded-lg text-sm font-semibold border-2 transition-all duration-200 ${
+                                                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
                                                     settingsOrientacion === or
-                                                    ? 'bg-blue-500 text-white border-blue-500 shadow-md scale-105'
-                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400 hover:bg-blue-50 hover:scale-105'
+                                                    ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
+                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                                                 }`}
                                             >
                                                 {or}
