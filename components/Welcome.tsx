@@ -727,7 +727,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                                 <div>
                                     <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Antigüedad</label>
                                     <div className="flex flex-wrap gap-2">
-                                        {['Indiferente', 'Pozo / Construcción', 'A estrenar', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Hasta 50 años'].map(val => (
+                                        {['Indiferente', 'Pozo / Construccion', 'A estrenar', 'Hasta 5 años', 'Hasta 10 años', 'Hasta 20 años', 'Hasta 50 años'].map(val => (
                                             <button
                                                 key={val}
                                                 onClick={() => handleRegChange('antiguedad', val)}
